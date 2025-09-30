@@ -1,0 +1,58 @@
+include $(MAKE)files/Gitconfig.mk
+include $(MAKE)files/PREFAB.mk
+include $(MAKE)files/Export.mk
+
+build: header proc
+
+all:
+	@echo "--- start Clock ---"
+	@time $(MAKE) build -j
+	@echo "-------------------"
+
+TARGET = build/Proc
+exec:
+	@echo "Wechsel in: $(dir $(TARGET))"
+	cd $(dir $(TARGET)) && ./$(notdir $(TARGET)$(SUFFIX))
+
+execr:
+	@make exec SUFFIX=
+
+winExec:
+	powershell.exe -NoProfile -Command "Set-Location './build'; Start-Process -FilePath './$(notdir $(TARGET)$(SUFFIX))'"
+
+winExecr:
+	@make winExec SUFFIX=
+
+demo:
+	@$(MAKE) launch TARGET=build/3dRenderingDemo
+
+execDemo:
+	@$(MAKE) exec TARGET=build/3dRenderingDemo
+
+formula:
+	@$(MAKE) launch TARGET=build/FormulaEdit
+
+temp:
+	@$(MAKE) launch TARGET=build/temp
+
+flush:
+	rm build/*.ini
+
+clearCaches:
+	find Import -type f -name '*.RESULTCACHE' -delete
+
+launch: all exec
+
+relaunch: clear launch
+
+rlaunch:
+	make release
+	make execr
+
+ping:
+	@echo "Pong"
+
+api:
+	@$(MAKE) launch TARGET=build/ALFAPI
+
+.DEFAULT_GOAL := all

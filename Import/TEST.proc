@@ -1,0 +1,45 @@
+// Beispielhaftes Skript
+// ...
+
+// include
+#include <env>
+#include <fstreams>
+
+// inputs
+instream Tensor       tExpression
+
+// uniforms
+uniform LOGFILE       lFile;
+
+// ofstreams
+ofstream IDNTensor    tIDNExpression;
+ofstream Texture      ltxTexture;
+
+// forward Deklarationen
+fwdDecl proc main(...);
+fwdDecl tensor derive(tensor expression);
+fwdDecl IDNTensor convertToIndexNatation(...);
+fwdDecl Texture convertToLTXTexture(...);
+
+// ...
+decl proc main(...){
+    
+    // das ist die Deklaration des main proc
+    // der proc ist dabei ein Prozess und keine direkte Funktion
+    
+    //
+    [...] = instreams;
+    
+    // Init ofstreams
+    tIDNExpression = IDNTensor;
+    ltxTexture = Texture;
+    
+    // ...
+    
+    //
+    tIDNExpression = derive(tensor);
+    ltxTexture = convertToLTXTexture(tIDNExpression);
+    
+    //
+    flush ofstreams; // gute Idee
+}
