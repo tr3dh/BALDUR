@@ -77,9 +77,11 @@ struct TypeRegister{
     template<typename T>
     TypeIndex registerType(const std::string& keyword, const std::function<IObject*()>& initConstructor){
 
-        auto [it, _] = typeInfos.emplace(keyword, TypeInfo{initConstructor, typeCounter});
+        RETURNING_ASSERT(!typeInfos.contains(keyword), "Type Register hat Typ " + keyword + " bereits registriert", INVALID_TYPE_INDEX);
 
-        RETURNING_ASSERT(it != typeInfos.end(), "Type " + keyword + " konnte nicht registriert werden", -1);
+        auto [it, _] = typeInfos.emplace(keyword, TypeInfo{initConstructor, typeCounter});
+        RETURNING_ASSERT(it != typeInfos.end(), "Type " + keyword + " konnte nicht registriert werden", INVALID_TYPE_INDEX);
+
         return typeCounter++;
     }
 
@@ -89,5 +91,16 @@ struct TypeRegister{
             "Für keyword '" + keyword + "' sind keine Typinformationen hinterlegt", nullptr);
 
         return typeInfos[keyword].initConstructor();
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const TypeRegister& reg){
+
+        LOG << "Register mit " << reg.typeInfos.size() << " registrierten Typen" << endl;
+
+        for(const auto& [k, f] : reg.typeInfos){
+            
+            os << "type '" << k << "'; typeIndex " << f.typeIndex << endl;
+        }
+        return os;
     }
 };

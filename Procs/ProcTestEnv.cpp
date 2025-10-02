@@ -1,10 +1,21 @@
 #include "templateDecls.h"
 
-class Str : public IObject{
+class Str : public INativeObject<Str, std::string>{
 
 public:
-    TypeIndex getTypeIndex() override{
-        return -1;
+
+    static bool initialized;
+
+    static bool setUpClass(){
+
+        // register in TypeRegister
+        if(!init("str", [](){ return new Str(); })){
+            return false;
+        }
+
+        // function Register calls
+
+        return true;
     }
 
     void ping(){
@@ -12,14 +23,29 @@ public:
     }
 };
 
+bool Str::initialized = setUpClass();
+
+class Str2 : public INativeObject<Str2, std::string>{
+
+public:
+
+    static bool initialized;
+
+    void ping(){
+        LOG << "pong" << endl;
+    }
+};
+
+bool Str2::initialized = init("str2", [](){ return new Str2(); });
+
 int main(){
 
-    g_FunctionRegister.registerFunction("add", {Str().getTypeIndex(), Str().getTypeIndex()},
-        [&](std::vector<IObject*>& returns, const std::vector<IObject*>& inputs, IObject* member){
+    registerFunction("Add", {Str::typeIndex, Str::typeIndex},
+        [__functionLabel__ = "AddStrStr", __numArgs__ = 2](std::vector<IObject*>& returns, const std::vector<IObject*>& inputs, IObject* member){
 
             // Asserts
-            RETURNING_ASSERT(member == nullptr, "Funktion Add erwartet keinen validen Member",);
-            RETURNING_ASSERT(inputs.size() == 2, "Add Funktion akzeptiert nur genau zwei input Parameter",);
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
 
             // Casts
             Str* str1 = static_cast<Str*>(inputs[0]);
@@ -27,13 +53,58 @@ int main(){
 
             //
             str1->ping();
+            LOG << endl;
     });
 
+    registerMemberFunction(Str::typeIndex, "ping", {},
+        [__functionLabel__ = "pingStr", __numArgs__ = 0](std::vector<IObject*>& returns, const std::vector<IObject*>& inputs, IObject* member){
+
+            // Asserts
+            ASSERT_IS_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            // Casts
+            Str* castedMember = static_cast<Str*>(member);
+
+            //
+            LOG << "pinging Member" << endl;
+
+            //
+            castedMember->ping();
+            LOG << endl;
+    });
+
+    registerStaticFunction(Str::typeIndex, "getIdx", {},
+        [__functionLabel__ = "getIdxStr", __numArgs__ = 0](std::vector<IObject*>& returns, const std::vector<IObject*>& inputs, IObject* member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            //
+            LOG << "pinging Class" << endl;
+            LOG << Str::typeIndex << endl;
+            
+            LOG << endl;
+    });
+
+    LOG << g_TypeRegister << endl;
+    LOG << g_FunctionRegister << endl;
+    LOG << g_MemberFunctionRegisters << endl;
+    LOG << g_StaticFunctionRegisters << endl;
+
     Str a, b, c;
+    Str2 aa, bb, cc;
     std::vector<IObject*> rets;
 
-    g_FunctionRegister.callFunction("add", rets, {&a,&b});
+    callFunction("Add", rets, {&a,&b});
+    callFunction("Add", rets, {&a,&bb});
     
+    callMemberFunction("ping", rets, {}, &a);
+
+    callStaticFunction("str", "getIdx", rets, {});
+    callStaticFunction(1, "getIdx", rets, {});
+
     return 0;
 
     // Bspl Skript

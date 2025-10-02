@@ -13,60 +13,83 @@ extern FunctionRegister g_FunctionRegister;
 
 // globales FunctionRegister das Direkt von IObjectWrappern verwendet wird >> keine konkrete Angabe des Registers bei
 // Typedefinition nötig
-// hier das pair für Member und statics Funktionen
-// extern std::map<___, std::pair<FunctionRegister, FunctionRegister>> g_MemberFunctionRegisters;
+// jeweils eines für Member und statics Funktionen
+extern std::map<TypeIndex, FunctionRegister> g_MemberFunctionRegisters;
+extern std::map<TypeIndex, FunctionRegister> g_StaticFunctionRegisters;
 
-// // Der Tag dient hier als eine Art Signatur
-// // Dadurch das er gedefaultet ist kann die Klasse verwendet werden ohne einen eigenen Tag zu erstellen
-// // Wenn aber ein zwei Native Objects für das selbe T benötigt werden, und mit unterschiedlicher TypeId
-// // kann durch den Tag das erzeuge einer zweiten template Ausführung erzwungen werden
-// template<typename T, typename Tag=void>
-// class NativeObjectBase : public ObjectBase{
+//
+void registerFunction(const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func);
+void registerMemberFunction(TypeIndex tpIdx, const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func);
+void registerStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func);
 
-// public:
+//
+void callFunction(const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams);
+void callMemberFunction(const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams, IObject* member);
+void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams);
+void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams);
 
-//     static TypeIndex typeIndex;
+// Der Tag dient hier als eine Art Signatur
+// Dadurch das er gedefaultet ist kann die Klasse verwendet werden ohne einen eigenen Tag zu erstellen
+// Wenn aber ein zwei Native Objects für das selbe T benötigt werden, und mit unterschiedlicher TypeId
+// kann durch den Tag das erzeuge einer zweiten template Ausführung erzwungen werden
+template<typename Tag>
+class IIndexedObject : public IObject{
 
-//     T member;
-//     T* memberPtr;
+public:
 
-//     bool isReference(){
+    static TypeIndex typeIndex;
 
-//         return memberPtr != nullptr; 
-//     }
+    TypeIndex getTypeIndex() override{
+        return typeIndex;
+    }
 
-//     T& getMember(){
+    static bool init(const std::string& keyword, const std::function<IObject*()>& initConstructor, TypeRegister& tpReg = g_TypeRegister){
 
-//         return isReference() ? *memberPtr : member;
-//     }
+        typeIndex = tpReg.registerType<IIndexedObject<Tag>>(keyword, initConstructor);
+
+        if(typeIndex == INVALID_TYPE_INDEX){
+            
+            _ERROR << "Type Registrierung von Type '" <<  keyword << "' fehlgeschlagen" << endl;
+            return false;
+        }
+        else{
+            
+            LOG << "TypeRegistrierung für Type '" << keyword << "' vorgenommen, zugewiesenen TypeID : " << typeIndex << endl;
+        }
+
+        // Plätze in statics und memberfunktionsregistermaps anlegen
+        g_StaticFunctionRegisters.emplace(typeIndex, FunctionRegister());
+        g_MemberFunctionRegisters.emplace(typeIndex, FunctionRegister());
+        
+        //
+        return true;
+    }
+};
+
+template<typename Tag>
+TypeIndex IIndexedObject<Tag>::typeIndex = INVALID_TYPE_INDEX;
+
+// Natives Object
+template<typename Tag, typename T>
+class INativeObject : public IIndexedObject<Tag>{
+
+public:
+
+    T member;
+    T* memberPtr;
+
+    bool isReference(){
+
+        return memberPtr != nullptr; 
+    }
+
+    T& getMember(){
+
+        return isReference() ? *memberPtr : member;
+    }
     
-//     const T& getMember() const{
+    const T& getMember() const{
 
-//         return isReference() ? *memberPtr : member;
-//     }
-
-//     static bool init(const std::string& keyword, const std::function<ObjectBase*()>& initConstructor, TypeRegister& tpReg = g_TypeRegister){
-
-//         typeIndex = tpReg.registerType<NativeObjectBase<T>>(keyword, initConstructor);
-
-//         LOG << "NativeObject wird unter TypeID " << typeIndex << " mit Keyword '" << keyword << "' registriert" << endl;
-//         return typeIndex != -1;
-//     }
-
-//     TypeIndex getTypeIndex() override{
-//         return typeIndex;
-//     }
-// };
-
-// template<typename T, typename Tag>
-// TypeIndex NativeObjectBase<T, Tag>::typeIndex = -1;
-
-// class StrObject : public NativeObjectBase<std::string>{
-
-// public:
-
-//     // Existiert nur damit bei Zuweisung initialisierungsfunktionen ausgeführt werden
-//     static bool initialized;
-// };
-
-// bool StrObject::initialized = StrObject::init("str", [](){ return new StrObject(); });
+        return isReference() ? *memberPtr : member;
+    }
+};

@@ -9,6 +9,8 @@
 // Typeindex über den registrierte Interface Erben von IObject identifiziert werden können
 typedef uint16_t TypeIndex;
 
+constexpr TypeIndex INVALID_TYPE_INDEX = std::numeric_limits<uint16_t>::max();
+
 class IObject{
 
 public:
