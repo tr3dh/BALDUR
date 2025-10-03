@@ -14,5 +14,9 @@ constexpr TypeIndex INVALID_TYPE_INDEX = std::numeric_limits<uint16_t>::max();
 class IObject{
 
 public:
-    virtual TypeIndex getTypeIndex() = 0;
+
+    virtual ~IObject() = default;
+    virtual void print() const = 0;
+    virtual TypeIndex getTypeIndex() const = 0;
+    virtual std::unique_ptr<IObject> clone() const = 0;
 };

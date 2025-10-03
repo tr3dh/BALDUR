@@ -39,7 +39,7 @@ public:
 
     static TypeIndex typeIndex;
 
-    TypeIndex getTypeIndex() override{
+    TypeIndex getTypeIndex() const override{
         return typeIndex;
     }
 
@@ -75,21 +75,47 @@ class INativeObject : public IIndexedObject<Tag>{
 
 public:
 
-    T member;
-    T* memberPtr;
-
-    bool isReference(){
-
-        return memberPtr != nullptr; 
-    }
-
-    T& getMember(){
-
-        return isReference() ? *memberPtr : member;
-    }
+    // Helper: Prüft ob T ein Container mit nicht-kopierbaren Elementen ist
+    template<typename U>
+    struct is_problematic_container : std::false_type {};
     
-    const T& getMember() const{
+    template<typename... Args>
+    struct is_problematic_container<std::vector<Args...>> : std::true_type {};
+    
+    template<typename... Args>
+    struct is_problematic_container<std::map<Args...>> : std::true_type {};
+    
+    template<typename U, std::size_t N>
+    struct is_problematic_container<std::array<U, N>> : std::true_type {};
 
-        return isReference() ? *memberPtr : member;
+    T member;
+    
+    INativeObject() = default;
+
+    INativeObject(const T& memberIn) : member(memberIn){
+
+    }
+
+    T& getMember(){ return  member; }
+    const T& getMember() const{ return member; }
+
+    // virtual ist redundant, die print bleibt überscheibbar
+    void print() const override{
+        LOG << member;
+    }
+
+    //
+    std::unique_ptr<IObject> clone() const override {
+
+        if constexpr (!is_problematic_container<T>::value) {
+
+            // Standard
+            return std::make_unique<Tag>(static_cast<const Tag&>(*this));
+        }
+        else {
+            
+            // Container muss manuell überschrieben werden
+            RETURNING_ASSERT(TRIGGER_ASSERT, "Clone Funktion muss für diesen Typ manuell implementiert werden", nullptr);
+        }
     }
 };
