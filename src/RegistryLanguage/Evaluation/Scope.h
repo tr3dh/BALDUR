@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Value.h"
+#include "../Objects/Variable.h"
+#include "../LanguageRegister/RegisterInstances.h"
 
-typedef std::map<std::string, Value> VariableTable;
+typedef std::map<std::string, Variable> VariableTable;
 
 struct Scope {
 
@@ -10,20 +11,20 @@ struct Scope {
     VariableTable variableTable = {};
 
     //
-    void constructVariable(const std::string& variableName, Type tp){
+    void constructVariable(const std::string& variableName, const std::string& typeKeyword){
 
         if(getVariable(variableName) != nullptr){
 
             _ERROR << "Variable " << variableName << " ist bereits im Scope vorhanden" << endl;
         }
 
-        variableTable.try_emplace(variableName, tp);
+        variableTable.try_emplace(variableName);
+        variableTable[variableName].constructByObject(constructRegisteredType(typeKeyword));
     }
 
-    template<typename T>
-    void setVariable(const std::string& variableName, const T& member){
+    void setVariable(const std::string& variableName, IObject* member){
 
-        Value* variablePtr = getVariable(variableName);
+        Variable* variablePtr = getVariable(variableName);
 
         if(variablePtr == nullptr){
 
@@ -31,11 +32,11 @@ struct Scope {
             return;
         }
 
-        *variablePtr = member;
+        variablePtr->constructByObject(member);
     }
 
     //
-    Value* getVariable(const std::string& variableName){
+    Variable* getVariable(const std::string& variableName){
 
         //
         if(variableTable.contains(variableName)){

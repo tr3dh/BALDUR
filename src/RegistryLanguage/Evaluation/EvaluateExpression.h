@@ -1,6 +1,11 @@
 #pragma once
 
+#include "SemanticAnalysis/AST.h"
+
 #include "EvalResult.h"
+#include "Scope.h"
+
+#include "../TypeInstances/gatheredInstances.h"
 
 enum class Context : uint8_t{
 
@@ -8,9 +13,6 @@ enum class Context : uint8_t{
     ASSIGN_LEFTSIDE,
     ASSIGN_RIGHTSIDE
 };
-
-//
-Type getTypeFromKeyWord(const std::string& initKeyword);
 
 //
 EvalResult evaluateExpression(const ASTNode& node, Scope& scope, Context context);

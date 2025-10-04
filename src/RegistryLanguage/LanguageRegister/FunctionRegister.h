@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IObject.h"
+#include "../Objects/IObject.h"
 
 // Nutzung : <functionlabel, {paramIndices}>
 //    z.B  : <"add" , {0,0}> | 0 TypeIndex IntegerObject 

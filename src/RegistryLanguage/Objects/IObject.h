@@ -20,3 +20,5 @@ public:
     virtual TypeIndex getTypeIndex() const = 0;
     virtual std::unique_ptr<IObject> clone() const = 0;
 };
+
+std::ostream& operator<<(std::ostream& os, IObject* obj);

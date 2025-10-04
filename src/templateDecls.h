@@ -17,7 +17,7 @@
 #include "GUI/Terminal.h"
 #include "SemanticAnalysis/AST.h"
 #include "CleanUp/ClearCaches.h"
-#include "RegistryLanguage/IObjectWrappers.h"
+#include "RegistryLanguage/Interpreter.h"
 
 // Precompiles
 #include "bin/EigenPrecompiles.h"

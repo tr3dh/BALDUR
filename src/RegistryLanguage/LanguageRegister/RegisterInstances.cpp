@@ -1,4 +1,4 @@
-#include "IObjectWrappers.h"
+#include "RegisterInstances.h"
 
 // Typen Register
 // >> enthält für keyword : zugehörige TypeIdx, nullConstructor
@@ -9,6 +9,9 @@ TypeRegister g_TypeRegister;
 FunctionRegister g_FunctionRegister;
 std::map<TypeIndex, FunctionRegister> g_MemberFunctionRegisters;
 std::map<TypeIndex, FunctionRegister> g_StaticFunctionRegisters;
+
+//
+KeywordRegister g_KeywordRegister;
 
 // Register Funktionen
 void registerFunction(const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func){
@@ -67,4 +70,35 @@ void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, std::
         "Statische funktionen Register Map enthält keinen Eintrag für ID " + std::to_string(tpIdx),);
     
     g_StaticFunctionRegisters[tpIdx].callFunction(functionLabel, returns, functionParams, nullptr);
+}
+
+//
+TypeIndex registerType(const std::string& keyword, const std::function<IObject*()>& initConstructor){
+
+    return g_TypeRegister.registerType(keyword, initConstructor);
+}
+
+IObject* constructRegisteredType(const std::string& keyword){
+
+    return g_TypeRegister.constructRegisteredType(keyword);
+}
+
+bool typeForKeywordExists(const std::string& keyword){
+
+    return g_TypeRegister.contains(keyword);
+}
+
+bool valueForKeywordExists(const std::string& keyword){
+
+    return g_KeywordRegister.contains(keyword);
+}
+
+void registerKeyword(const std::string& keyword, IObject* object){
+
+    g_KeywordRegister.registerKeyword(keyword, object);
+}
+
+IObject* constructFromKeyword(const std::string& keyword){
+
+    return g_KeywordRegister.constructFromKeyword(keyword);
 }

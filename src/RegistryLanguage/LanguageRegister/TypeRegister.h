@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IObject.h"
+#include "../Objects/IObject.h"
 
 // Idee hinter dem TypeRegister
 //
@@ -74,7 +74,6 @@ struct TypeRegister{
     TypeIndex typeCounter = 0;
     std::map<std::string, TypeInfo> typeInfos = {};
 
-    template<typename T>
     TypeIndex registerType(const std::string& keyword, const std::function<IObject*()>& initConstructor){
 
         RETURNING_ASSERT(!typeInfos.contains(keyword), "Type Register hat Typ " + keyword + " bereits registriert", INVALID_TYPE_INDEX);
@@ -83,6 +82,11 @@ struct TypeRegister{
         RETURNING_ASSERT(it != typeInfos.end(), "Type " + keyword + " konnte nicht registriert werden", INVALID_TYPE_INDEX);
 
         return typeCounter++;
+    }
+
+    bool contains(const std::string& keyword){
+        
+        return typeInfos.contains(keyword);
     }
 
     IObject* constructRegisteredType(const std::string& keyword){

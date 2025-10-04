@@ -1,33 +1,9 @@
 #pragma once
 
-#include "TypeRegister.h"
-#include "FunctionRegister.h"
+#include "../LanguageRegister/RegisterInstances.h"
 
-// globales TypeRegister das Direkt von IObjectWrappern verwendet wird >> keine konkrete Angabe des Registers bei
-// Typedefinition nötig
-extern TypeRegister g_TypeRegister;
-
-// globales FunctionRegister das Direkt von IObjectWrappern verwendet wird >> keine konkrete Angabe des Registers bei
-// Typedefinition nötig
-extern FunctionRegister g_FunctionRegister;
-
-// globales FunctionRegister das Direkt von IObjectWrappern verwendet wird >> keine konkrete Angabe des Registers bei
-// Typedefinition nötig
-// jeweils eines für Member und statics Funktionen
-extern std::map<TypeIndex, FunctionRegister> g_MemberFunctionRegisters;
-extern std::map<TypeIndex, FunctionRegister> g_StaticFunctionRegisters;
-
-//
-void registerFunction(const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func);
-void registerMemberFunction(TypeIndex tpIdx, const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func);
-void registerStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func);
-
-//
-void callFunction(const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams);
-void callMemberFunction(const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams, IObject* member);
-void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams);
-void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams);
-
+// Interface die Indizierung eines TypeFrontends festlegt
+// 
 // Der Tag dient hier als eine Art Signatur
 // Dadurch das er gedefaultet ist kann die Klasse verwendet werden ohne einen eigenen Tag zu erstellen
 // Wenn aber ein zwei Native Objects für das selbe T benötigt werden, und mit unterschiedlicher TypeId
@@ -43,9 +19,9 @@ public:
         return typeIndex;
     }
 
-    static bool init(const std::string& keyword, const std::function<IObject*()>& initConstructor, TypeRegister& tpReg = g_TypeRegister){
+    static bool init(const std::string& keyword, const std::function<IObject*()>& initConstructor){
 
-        typeIndex = tpReg.registerType<IIndexedObject<Tag>>(keyword, initConstructor);
+        typeIndex = registerType(keyword, initConstructor);
 
         if(typeIndex == INVALID_TYPE_INDEX){
             
@@ -69,6 +45,8 @@ public:
 template<typename Tag>
 TypeIndex IIndexedObject<Tag>::typeIndex = INVALID_TYPE_INDEX;
 
+// Interface für Wrap konkret EINER Instanz (T) eines Backendtypen fürs Frontend 
+//
 // Natives Object
 template<typename Tag, typename T>
 class INativeObject : public IIndexedObject<Tag>{
