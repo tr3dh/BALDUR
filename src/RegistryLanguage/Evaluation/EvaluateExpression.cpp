@@ -1,7 +1,7 @@
 #include "EvaluateExpression.h"
 
 //
-EvalResult evaluateExpression(const ASTNode& node, Scope& scope, Context context){
+std::vector<std::shared_ptr<EvalResult>> evaluateExpression(const ASTNode& node, Scope& scope, Context context){
 
     //
     switch(node.Relation){
@@ -32,7 +32,16 @@ EvalResult evaluateExpression(const ASTNode& node, Scope& scope, Context context
         // return Variable(node.value);
         break;
     }
+    case(TkType::Argument):{
+
+        if(valueForKeywordExists(node.argument)){
+
+            return {std::make_shared<EvalResult>(constructFromKeyword(node.argument))};
+        }
+
+        break;
+    }
     }
 
-    return EvalResult();
+    return {};
 }

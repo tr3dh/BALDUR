@@ -15,6 +15,12 @@ struct Variable{
         referenceSelf();
     }
 
+    void constructByUniquePtr(std::unique_ptr<IObject> uniqueObjectPtr){
+
+        ownedObject = std::move(uniqueObjectPtr);
+        referenceSelf();
+    }
+
     // selbst Referenzierung
     // in Folge können Referenzen und Owner in gleicher Art und Weise auf den owned Value (unique_ptr) zugreifen
     // macht Auswertung einfach konsistenter

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Objects/Variable.h"
-#include "../LanguageRegister/RegisterInstances.h"
 
 struct EvalResult {
 
@@ -14,6 +13,12 @@ struct EvalResult {
 
     //
     EvalResult() = default;
+
+    //
+    EvalResult(IObject* objectPtr){
+
+        variable.constructByUniquePtr(objectPtr->clone());
+    }
 
     //
     void moveIntoRValue(Variable& varIn){
@@ -58,6 +63,16 @@ struct EvalResult {
     const Variable& getVariableRef() const{
 
         return isLValue() ? *variablePtr : variable;
+    }
+
+    TypeIndex getTypeIndex(){
+
+        return getVariableRef().getData()->getTypeIndex();
+    }
+
+    IObject* getData(){
+
+        return getVariableRef().getData();
     }
 
     bool isValid() const{

@@ -6,6 +6,16 @@ struct KeywordRegister{
 
     KeywordRegister() = default;
 
+    ~KeywordRegister(){
+
+        for(auto& [kw, object] : keywordObjects){
+
+            delete object;
+        }
+
+        keywordObjects.clear();
+    }
+
     void registerKeyword(const std::string& keyword, IObject* object){
         
         RETURNING_ASSERT(!keywordObjects.contains(keyword), "Keyword bereits vorhanden",);

@@ -1,16 +1,55 @@
 #pragma once
 
 #include "../Objects/IObject.h"
+#include "../Evaluation/EvalResult.h"
 
 // Nutzung : <functionlabel, {paramIndices}>
 //    z.B  : <"add" , {0,0}> | 0 TypeIndex IntegerObject 
 typedef std::pair<std::string, std::vector<TypeIndex>> FunctionRegisterKey;
 
 // Parameter : void({outputs}, {inputs}, MemberRef)
-typedef std::function<void(std::vector<IObject*>&, const std::vector<IObject*>&, IObject*)> IObjectFunction;
+typedef std::function<void(std::vector<std::shared_ptr<EvalResult>>&, const std::vector<std::shared_ptr<EvalResult>>&, const std::vector<TypeIndex>&, std::shared_ptr<EvalResult>)> IObjectFunction;
+
+//
+typedef std::pair<IObjectFunction, std::vector<TypeIndex>> FunctionRegisterValue;
+
+//
+struct FunctionRegisterKeyComparator {
+
+    bool operator()(const FunctionRegisterKey& lhs, const FunctionRegisterKey& rhs) const {
+
+        // Sortierung nach Funktionslabel
+        if (lhs.first < rhs.first) return true;
+        if (lhs.first > rhs.first) return false;
+
+        // Sortierung nach Argument Idx Vektor
+        const auto& lvec = lhs.second;
+        const auto& rvec = rhs.second;
+
+        size_t n = std::min(lvec.size(), rvec.size());
+        for (size_t i = 0; i < n; ++i) {
+
+            //
+            if (lvec[i] == rvec[i]) continue;
+
+            // Sortierung der Null Fälle nach hinten damit Verhalten für Arbitary Types überschrieben werden können
+            // und die Funktion beim Loop durchs Register zuerst gefunden wird
+            if (lvec[i] == 0 && rvec[i] != 0) return false;
+            if (rvec[i] == 0 && lvec[i] != 0) return true;
+
+            //
+            return lvec[i] < rvec[i];
+        }
+
+        // kürzerer Vektor ist kleiner (wie Standard)
+        return lvec.size() < rvec.size();
+    }
+};
 
 // Kombination in Map
-typedef std::map<FunctionRegisterKey, IObjectFunction> FunctionMap;
+// Einkommentieren für Sortierung der Arbitaryalternativen nach hinten
+// >> Hilfreich für Funktionsüberladung und allgemeingültige Funktionen
+typedef std::map<FunctionRegisterKey, FunctionRegisterValue/*, FunctionRegisterKeyComparator*/> FunctionMap;
 
 //
 class FunctionRegister {
@@ -20,35 +59,43 @@ public:
     FunctionMap functions;
 
     // Registrierung mit expliziten Typen
-    void registerFunction(const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func) {
+    void registerFunction(const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes,
+        const IObjectFunction& func, const std::vector<TypeIndex>& functionReturnTypes) {
 
         FunctionRegisterKey key = {functionLabel, functionArgsTypes};
-        functions[key] = func;
+        functions[key] = {func,functionReturnTypes};
     }
 
-    std::vector<TypeIndex> getArgTypes(const std::vector<IObject*>& params) {
+    std::vector<TypeIndex> getArgTypes(const std::vector<std::shared_ptr<EvalResult>>& params) {
 
         std::vector<TypeIndex> types = {};
 
         for(const auto& ptr : params){
-            types.emplace_back(ptr->getTypeIndex());
+            types.emplace_back(ptr->getVariableRef().getData()->getTypeIndex());
         }
 
         return types;
     }
 
-    void callFunction(const std::string& functionLabel, std::vector<IObject*>& returns, const std::vector<IObject*>& functionParams, IObject* member = nullptr) {
+    void callFunction(const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams, std::shared_ptr<EvalResult> member = nullptr) {
 
         auto fIt = functions.find({functionLabel, getArgTypes(functionParams)});
 
-        RETURNING_ASSERT(fIt != functions.end(), "Function für angegebenes Label " + functionLabel + " konnte nicht gefunden werden",);
-
         if(fIt != functions.end()){
-            fIt->second(returns, functionParams, member);
+
+            fIt->second.first(returns, functionParams, fIt->second.second, member);
+            return;
         }
-        else{
-            _ERROR << "Function " << functionLabel << " für angegebene Typen nicht gefunden" << endl;
+        
+        auto nullfIt = functions.find({functionLabel, std::vector<TypeIndex>(functionParams.size(), IObject::ARBITATRY_TYPE)});
+
+        if(nullfIt != functions.end()){
+
+            nullfIt->second.first(returns, functionParams, nullfIt->second.second, member);
+            return;
         }
+
+        RETURNING_ASSERT(TRIGGER_ASSERT, "Function für angegebenes Label " + functionLabel + " konnte nicht gefunden werden",);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const FunctionRegister& reg){
@@ -126,4 +173,26 @@ public:
         AGRESSIVLY_RESIZE_RETURNS(numInputArgs)\
     }
     
+#define PREPARE_RETURNS \
+    \
+    ASSERT(returns.empty(), "return Vaktor enthält bereits Elemente"); \
+    PERMISSIVLY_RESIZE_RETURNS(1); \
+    \
+    for(size_t retIdx = 0; retIdx < functionReturnTypes.size(); retIdx++){ \
+        \
+        if(returns[retIdx] == nullptr){ \
+            \
+            returns[retIdx] = std::make_shared<EvalResult>(); \
+            returns[retIdx]->constructRValueByObject(constructRegisteredType(functionReturnTypes[retIdx])); \
+        } \
+    }
+
 #define CLEAR_RETURNS returns.clear();
+
+#define GET_RETURN(CastType, Position) \
+    CastType* ret##Position = static_cast<CastType*>(returns[Position]->getVariableRef().getData())
+
+#define GET_ARG(Casttype, Position) \
+    Casttype* arg##Position = static_cast<Casttype*>(inputs[Position]->getVariableRef().getData())
+
+#define END_OF_FUNCTION_REG_FILE

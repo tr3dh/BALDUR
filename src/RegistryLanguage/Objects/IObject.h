@@ -15,6 +15,8 @@ class IObject{
 
 public:
 
+    static TypeIndex ARBITATRY_TYPE;
+
     virtual ~IObject() = default;
     virtual void print() const = 0;
     virtual TypeIndex getTypeIndex() const = 0;

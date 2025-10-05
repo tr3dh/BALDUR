@@ -64,6 +64,7 @@
 
 struct TypeInfo{
 
+    std::string keyword;
     std::function<IObject*()> initConstructor;
     TypeIndex typeIndex;
 };
@@ -71,14 +72,16 @@ struct TypeInfo{
 // Decl des TypeRegisters
 struct TypeRegister{
 
-    TypeIndex typeCounter = 0;
-    std::map<std::string, TypeInfo> typeInfos = {};
+    TypeIndex typeCounter = 1;
+
+    std::map<TypeIndex, TypeInfo> typeInfos = {};
+    std::map<std::string, TypeIndex> typeIndices = {};
 
     TypeIndex registerType(const std::string& keyword, const std::function<IObject*()>& initConstructor){
 
-        RETURNING_ASSERT(!typeInfos.contains(keyword), "Type Register hat Typ " + keyword + " bereits registriert", INVALID_TYPE_INDEX);
+        RETURNING_ASSERT(!typeIndices.contains(keyword), "Type Register hat Typ " + keyword + " bereits registriert", INVALID_TYPE_INDEX);
 
-        auto [it, _] = typeInfos.emplace(keyword, TypeInfo{initConstructor, typeCounter});
+        auto [it, _] = typeInfos.emplace(typeCounter, TypeInfo{keyword, initConstructor, typeCounter});
         RETURNING_ASSERT(it != typeInfos.end(), "Type " + keyword + " konnte nicht registriert werden", INVALID_TYPE_INDEX);
 
         return typeCounter++;
@@ -86,15 +89,23 @@ struct TypeRegister{
 
     bool contains(const std::string& keyword){
         
-        return typeInfos.contains(keyword);
+        return typeIndices.contains(keyword);
     }
 
     IObject* constructRegisteredType(const std::string& keyword){
 
-        RETURNING_ASSERT(typeInfos.contains(keyword),
+        RETURNING_ASSERT(typeIndices.contains(keyword),
             "Für keyword '" + keyword + "' sind keine Typinformationen hinterlegt", nullptr);
 
-        return typeInfos[keyword].initConstructor();
+        return typeInfos[typeIndices[keyword]].initConstructor();
+    }
+
+    IObject* constructRegisteredType(TypeIndex typeIndex){
+
+        RETURNING_ASSERT(typeInfos.contains(typeIndex),
+            "Für index '" + std::to_string(typeIndex) + "' sind keine Typinformationen hinterlegt", nullptr);
+
+        return typeInfos[typeIndex].initConstructor();
     }
 
     friend std::ostream& operator<<(std::ostream& os, const TypeRegister& reg){
@@ -103,7 +114,7 @@ struct TypeRegister{
 
         for(const auto& [k, f] : reg.typeInfos){
             
-            os << "type '" << k << "'; typeIndex " << f.typeIndex << endl;
+            os << "type " << k << "; keyword '" << f.keyword << "'" << endl;
         }
         return os;
     }

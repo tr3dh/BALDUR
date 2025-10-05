@@ -61,9 +61,13 @@ int executeScript(const std::string& scriptPath){
     LOG << "Writing into Scope\n" << endl;
 
     Scope nullScope = {};
-    evaluateExpression(Expr, nullScope, Context::NONE);
+    auto r = evaluateExpression(Expr, nullScope, Context::NONE);
 
+    LOG << "Scope:" << endl;
     LOG << nullScope << endl;
+
+    LOG << "Skript Outcome:" << endl;
+    LOG << *r[0].get() << endl;
 
     return 0;
 }

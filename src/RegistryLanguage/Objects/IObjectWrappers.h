@@ -28,10 +28,6 @@ public:
             _ERROR << "Type Registrierung von Type '" <<  keyword << "' fehlgeschlagen" << endl;
             return false;
         }
-        else{
-            
-            LOG << "TypeRegistrierung für Type '" << keyword << "' vorgenommen, zugewiesenen TypeID : " << typeIndex << endl;
-        }
 
         // Plätze in statics und memberfunktionsregistermaps anlegen
         g_StaticFunctionRegisters.emplace(typeIndex, FunctionRegister());
