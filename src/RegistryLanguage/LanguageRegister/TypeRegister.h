@@ -84,6 +84,9 @@ struct TypeRegister{
         auto [it, _] = typeInfos.emplace(typeCounter, TypeInfo{keyword, initConstructor, typeCounter});
         RETURNING_ASSERT(it != typeInfos.end(), "Type " + keyword + " konnte nicht registriert werden", INVALID_TYPE_INDEX);
 
+        auto [itIdx, _] = typeIndices.emplace(keyword, typeCounter);
+        RETURNING_ASSERT(itIdx != typeIndices.end(), "Type " + keyword + " konnte nicht registriert werden", INVALID_TYPE_INDEX);
+
         return typeCounter++;
     }
 

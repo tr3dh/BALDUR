@@ -16,4 +16,4 @@ enum class Context : uint8_t{
 };
 
 //
-std::vector<std::shared_ptr<EvalResult>> evaluateExpression(const ASTNode& node, Scope& scope, Context context);
+EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context context);

@@ -3,12 +3,18 @@
 #include "../Objects/IObject.h"
 #include "../Evaluation/EvalResult.h"
 
+//
+typedef std::vector<EvalResult> EvalResultVec;
+typedef EvalResultVec& FunctionReturns;
+typedef const EvalResultVec& FunctionParams;
+typedef EvalResult* TypeMember;
+
 // Nutzung : <functionlabel, {paramIndices}>
 //    z.B  : <"add" , {0,0}> | 0 TypeIndex IntegerObject 
 typedef std::pair<std::string, std::vector<TypeIndex>> FunctionRegisterKey;
 
 // Parameter : void({outputs}, {inputs}, MemberRef)
-typedef std::function<void(std::vector<std::shared_ptr<EvalResult>>&, const std::vector<std::shared_ptr<EvalResult>>&, const std::vector<TypeIndex>&, std::shared_ptr<EvalResult>)> IObjectFunction;
+typedef std::function<void(FunctionReturns, FunctionParams, const std::vector<TypeIndex>&, TypeMember)> IObjectFunction;
 
 //
 typedef std::pair<IObjectFunction, std::vector<TypeIndex>> FunctionRegisterValue;
@@ -66,18 +72,18 @@ public:
         functions[key] = {func,functionReturnTypes};
     }
 
-    std::vector<TypeIndex> getArgTypes(const std::vector<std::shared_ptr<EvalResult>>& params) {
+    std::vector<TypeIndex> getArgTypes(FunctionParams params) {
 
         std::vector<TypeIndex> types = {};
 
         for(const auto& ptr : params){
-            types.emplace_back(ptr->getVariableRef().getData()->getTypeIndex());
+            types.emplace_back(ptr.getVariableRef().getData()->getTypeIndex());
         }
 
         return types;
     }
 
-    void callFunction(const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams, std::shared_ptr<EvalResult> member = nullptr) {
+    void callFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams, TypeMember member = nullptr) {
 
         auto fIt = functions.find({functionLabel, getArgTypes(functionParams)});
 
@@ -115,24 +121,6 @@ public:
         return os;
     }
 };
-
-// Verwendung des Registers
-// ImGerister können Funktionen unter einem Schlüssel bestehend aus einem Keyword und einer Idx Liste die Funktion hinterlegt werden
-// 
-// g_FunctionRegister.registerFunction("add", {Str().getTypeIndex(), Str().getTypeIndex()},
-//     [__functionLabel__ = "add", __numArgs__ = 2](std::vector<IObject*>& returns, const std::vector<IObject*>& inputs, IObject* member){
-
-//         // Asserts
-//         ASSERT_IS_NO_MEMBER_FUNCTION;
-//         ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-
-//         // Casts
-//         Str* str1 = static_cast<Str*>(inputs[0]);
-//         Str* str2 = static_cast<Str*>(inputs[1]);
-
-//         //
-//         str1->ping();
-// });
 
 // Die folgenden Makros übernehmen dabei mehrere Asserts
 #define L_ASSERT_IS_NO_MEMBER_FUNCTION(FunctionLabel)\
@@ -176,23 +164,19 @@ public:
 #define PREPARE_RETURNS \
     \
     ASSERT(returns.empty(), "return Vaktor enthält bereits Elemente"); \
-    PERMISSIVLY_RESIZE_RETURNS(1); \
+    PERMISSIVLY_RESIZE_RETURNS(functionReturnTypes.size()); \
     \
     for(size_t retIdx = 0; retIdx < functionReturnTypes.size(); retIdx++){ \
         \
-        if(returns[retIdx] == nullptr){ \
-            \
-            returns[retIdx] = std::make_shared<EvalResult>(); \
-            returns[retIdx]->constructRValueByObject(constructRegisteredType(functionReturnTypes[retIdx])); \
-        } \
+        returns[retIdx].constructRValueByObject(constructRegisteredType(functionReturnTypes[retIdx])); \
     }
 
 #define CLEAR_RETURNS returns.clear();
 
 #define GET_RETURN(CastType, Position) \
-    CastType* ret##Position = static_cast<CastType*>(returns[Position]->getVariableRef().getData())
+    CastType* ret##Position = static_cast<CastType*>(returns[Position].getVariableRef().getData())
 
 #define GET_ARG(Casttype, Position) \
-    Casttype* arg##Position = static_cast<Casttype*>(inputs[Position]->getVariableRef().getData())
+    Casttype* arg##Position = static_cast<Casttype*>(inputs[Position].getVariableRef().getData())
 
 #define END_OF_FUNCTION_REG_FILE

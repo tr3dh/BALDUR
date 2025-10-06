@@ -49,7 +49,7 @@ class INativeObject : public IIndexedObject<Tag>{
 
 public:
 
-    // Helper: Prüft ob T ein Container mit nicht-kopierbaren Elementen ist
+    // Helper, Prüft ob T ein Container mit nicht kopierbaren Elementen ist
     template<typename U>
     struct is_problematic_container : std::false_type {};
     

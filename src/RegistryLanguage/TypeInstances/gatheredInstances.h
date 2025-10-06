@@ -4,5 +4,6 @@
 
 // Types
 #include "BOOL.h"
+#include "INT.h"
 
 void setUpTypes();

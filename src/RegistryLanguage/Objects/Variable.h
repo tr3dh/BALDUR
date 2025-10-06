@@ -106,22 +106,18 @@ struct Variable{
             return os;
         }
 
-        LOG << "Type : " << var.referencedObject->getTypeIndex() << " ";
+        LOG << "[" << var.referencedObject->getTypeIndex();
 
         if(var.isReference()){
 
-            LOG << "Ref ";
+            LOG << "Ref] ";
         }
         else{
 
-            LOG << "    ";
+            LOG << "   ] ";
         }
 
-        LOG << "| Value '";
         var.getData()->print();
-        LOG << "'";
-
-        LOG << " | Validcheck : " << (var.isValid() ? "true" : "false"); 
 
         return os;
     }

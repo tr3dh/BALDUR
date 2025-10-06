@@ -38,12 +38,12 @@ void registerStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, c
 }
 
 // Call Funktionen
-void callFunction(const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams){
+void callFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams){
 
     g_FunctionRegister.callFunction(functionLabel, returns, functionParams, nullptr);
 }
 
-void callMemberFunction(const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams, std::shared_ptr<EvalResult> member){
+void callMemberFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams, TypeMember member){
 
     TypeIndex tpIdx = member->getVariableRef().getData()->getTypeIndex();
     RETURNING_ASSERT(tpIdx != INVALID_TYPE_INDEX, "Übergebener TypeIndex ist invalide",);
@@ -54,7 +54,7 @@ void callMemberFunction(const std::string& functionLabel, std::vector<std::share
     g_MemberFunctionRegisters[tpIdx].callFunction(functionLabel, returns, functionParams, member);
 }
 
-void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams){
+void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams){
 
     RETURNING_ASSERT(g_TypeRegister.typeIndices.contains(typeLabel), "TypeRegister enthält keinen Typ für keyword " + typeLabel,);
 
@@ -62,7 +62,7 @@ void callStaticFunction(const std::string& typeLabel, const std::string& functio
     callStaticFunction(tpIdx, functionLabel, returns, functionParams);
 }
 
-void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams){
+void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams){
 
     RETURNING_ASSERT(tpIdx != INVALID_TYPE_INDEX, "Übergebener TypeIndex ist invalide",);
     

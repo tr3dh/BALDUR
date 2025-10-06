@@ -32,10 +32,10 @@ void registerMemberFunction(TypeIndex tpIdx, const std::string& functionLabel, c
 void registerStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func, const std::vector<TypeIndex>& functionReturnTypes);
 
 //
-void callFunction(const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams);
-void callMemberFunction(const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams, std::shared_ptr<EvalResult> member);
-void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams);
-void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& functionParams);
+void callFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams);
+void callMemberFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams, TypeMember member);
+void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams);
+void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams);
 
 //
 TypeIndex registerType(const std::string& keyword, const std::function<IObject*()>& initConstructor);

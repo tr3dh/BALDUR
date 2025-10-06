@@ -1,103 +1,59 @@
 #include "templateDecls.h"
 
-class Str : public INativeObject<Str, std::string>{
+// class Vec : public INativeObject<Vec, std::vector<Variable>>{
 
-public:
+// public:
 
-    static bool initialized;
+//     static bool initialized;
 
-    static bool setUpClass(){
+//     static bool setUpClass(){
 
-        // register in TypeRegister
-        if(!init("str", [](){ return new Str(); })){
-            return false;
-        }
+//         // register in TypeRegister
+//         if(!init("vec", [](){ return new Vec(); })){
+//             return false;
+//         }
 
-        // function Register calls
+//         // function Register calls
 
-        return true;
-    }
+//         return true;
+//     }
 
-    Str() = default;
+//     Vec() = default;
 
-    Str(const std::string& str) : INativeObject<Str, std::string>(str){
-        
-    }
+//     // virtual ist redundant, die print bleibt überscheibbar
+//     void print() const override{
+//         LOG << member;
+//     }
 
-    void ping(){
-        LOG << "pong" << endl;
-    }
-};
+//     std::unique_ptr<IObject> clone() const override{
 
-bool Str::initialized = setUpClass();
+//         std::unique_ptr<Vec> v = std::make_unique<Vec>();
 
-class Str2 : public INativeObject<Str2, std::string>{
+//         v->getMember().resize(getMember().size());
 
-public:
+//         for(size_t i = 0; i < v->getMember().size(); i++){
+//             v->getMember()[i].clone(getMember()[i]);
+//         }
 
-    static bool initialized;
+//         // static_cast<const Vec&>(*this)
+//         return v;
+//     };
 
-    void ping(){
-        LOG << "pong" << endl;
-    }
-};
+//     void ping(){
+//         LOG << "pong" << endl;
+//     }
+// };
 
-bool Str2::initialized = init("str2", [](){ return new Str2(); });
-
-class Vec : public INativeObject<Vec, std::vector<Variable>>{
-
-public:
-
-    static bool initialized;
-
-    static bool setUpClass(){
-
-        // register in TypeRegister
-        if(!init("vec", [](){ return new Vec(); })){
-            return false;
-        }
-
-        // function Register calls
-
-        return true;
-    }
-
-    Vec() = default;
-
-    // virtual ist redundant, die print bleibt überscheibbar
-    void print() const override{
-        LOG << member;
-    }
-
-    std::unique_ptr<IObject> clone() const override{
-
-        std::unique_ptr<Vec> v = std::make_unique<Vec>();
-
-        v->getMember().resize(getMember().size());
-
-        for(size_t i = 0; i < v->getMember().size(); i++){
-            v->getMember()[i].clone(getMember()[i]);
-        }
-
-        // static_cast<const Vec&>(*this)
-        return v;
-    };
-
-    void ping(){
-        LOG << "pong" << endl;
-    }
-};
-
-bool Vec::initialized = setUpClass();
+// bool Vec::initialized = setUpClass();
 
 int main(){
 
-    //
-    setUpTypes();
-
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "false",
+        "bool b = bool();",
+        "bool c = true;",
+        "int d = 4;",
+        "int e = int(5);",
     };
 
     std::ofstream outfile("../bin/temp.proc");

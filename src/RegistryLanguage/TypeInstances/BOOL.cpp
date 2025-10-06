@@ -11,8 +11,50 @@ namespace types{
         registerKeyword("true", new BOOL(true));
         registerKeyword("false", new BOOL(false));
 
+        // Konstruktoren
+        registerFunction("bool", {},
+            [__functionLabel__ = "bool", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                //
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(BOOL, 0);
+
+                // schreiben in returns
+                ret0->getMember() = false;
+        },
+        {BOOL::typeIndex});
+
+        // Konstruktoren
+        registerFunction("bool", {BOOL::typeIndex},
+            [__functionLabel__ = "bool", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                //
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(BOOL, 0);
+
+                //
+                GET_ARG(BOOL, 0);
+
+                // schreiben in returns
+                ret0->getMember() = arg0->getMember();
+        },
+        {BOOL::typeIndex});
+
+        // Operatoren
         registerFunction("equals", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "equals", __numArgs__ = 2](std::vector<std::shared_ptr<EvalResult>>& returns, const std::vector<std::shared_ptr<EvalResult>>& inputs, const std::vector<TypeIndex>& functionReturnTypes, std::shared_ptr<EvalResult> member){
+            [__functionLabel__ = "equals", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
