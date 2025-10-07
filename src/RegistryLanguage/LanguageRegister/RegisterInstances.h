@@ -21,6 +21,9 @@ extern std::map<TypeIndex, FunctionRegister> g_StaticFunctionRegisters;
 // Keyword Register für nicht Kontruktionskeywords, die Werte zurückgeben soll >> zb true, false, nullptr, nullstr, ...
 extern KeywordRegister g_KeywordRegister;
 
+// Keyword Register für nicht Kontruktionskeywords, die Werte zurückgeben soll >> zb true, false, nullptr, nullstr, ...
+extern std::map<TypeIndex, std::unique_ptr<IObject>> g_nullRefs;
+
 // statische und Attribut Keyword Register analog zu den Funktionen implementieren
 // ...
 // extern std::map<TypeIndex, KeywordRegister> g_MemberAttribRegister;

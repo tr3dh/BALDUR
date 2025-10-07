@@ -19,11 +19,13 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             case(ConstantType::INT):
             case(ConstantType::SIZE):
                 results.emplace_back(new types::INT(static_cast<int>(node.value)));
+                break;
 
             // kein Cast, bestehender double wird übergeben
             case(ConstantType::FLOAT):
             case(ConstantType::DOUBLE):
                 results.emplace_back(new types::DOUBLE(node.value));
+                break;
             
             default:{
 
@@ -99,6 +101,9 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             //
             RETURNING_ASSERT(!recipientIsRValue, "Variable der Wert zuwewiesen wird ist Rvalue",{});
 
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                "narrowing conversion");
+
             //
             if(recipient.getVariableRef().isReference()){
 
@@ -136,6 +141,9 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             //
             EvalResult& recipient = leftSide[0];
             EvalResult& source = rightSide[0];
+
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                    "narrowing conversion");
 
             //
             bool recipientIsRValue = recipient.isRValue();
@@ -211,55 +219,58 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 //
                 // Deshalb wird für danach unterschieden wo die letzte Argument Node liegt
                 
-                // Für Fall das ein Kontruktor Aufruf hinten angestellt ist
-                const size_t offset = node.children[node.children.size() - 1].Relation == TkType::Params ? 1 : 0;
+                bool constructReference;
+                const std::string& variableName = node.children[node.children.size() - 1].argument;
+                const std::string& typeKeyword = node.children[0].argument;
 
-                const ASTNode& keywordNode = (firstNonArgChildPosition == node.children.size() - offset) ?
-                    node.children[node.children.size() - 2 - offset] :              // Standard fall
-                    node.children[firstNonArgChildPosition - 1];                    // spezifizierende Notation
-
-                const ASTNode& variableNameNode = (firstNonArgChildPosition == node.children.size() - offset) ?
-                    node.children[node.children.size() - 1 - offset] : 
-                    node.children[node.children.size() - 1 - offset];
-
-                if(keywordNode.argument == "ref"){
+                if(node.children.size() == 2 && typeKeyword != "ref"){
                     
-                    // Referenz erzeugen
+                    // normaler init
+                    RETURNING_ASSERT(g_TypeRegister.contains(typeKeyword),
+                        "Kein Type für unbekanntes Keyword " + typeKeyword + " gefunden", {});
 
                     //
-                    RETURNING_ASSERT(!scope.containsVariable(variableNameNode.argument),
-                        "Variable " + variableNameNode.argument + " existiert bereits im Scope", {});
-                    
-                    //
-                    Variable* variablePtr = scope.constructAndReturnVariable(variableNameNode.argument);
-                    variablePtr->reference(&types::VOID::nullRef);
+                    RETURNING_ASSERT(!scope.containsVariable(variableName),
+                        "Variable " + variableName + " existiert bereits im Scope", {});
+
+                    // initialisierung der leeren Variable unter dem entsprechenden namen
+                    Variable* variablePtr = scope.constructAndReturnVariable(variableName);
+                    variablePtr->constructByObject(constructRegisteredType(typeKeyword));
 
                     //
                     results.emplace_back();
                     results[0].setLValue(variablePtr);
+
+                }
+                else if(node.children.size() == 2){
+
+                    // init void ref
+                    RETURNING_ASSERT(!scope.containsVariable(variableName),
+                        "Variable " + variableName + " existiert bereits im Scope", {});
+                    
+                    //
+                    Variable* variablePtr = scope.constructAndReturnVariable(variableName);
+                    variablePtr->reference(&g_nullRefs[types::VOID::typeIndex]);
+
+                    //
+                    results.emplace_back();
+                    results[0].setLValue(variablePtr);
+
                 }
                 else{
 
-                    // Standard Konstruktions Syntax
-
+                    // init type ref
+                    RETURNING_ASSERT(!scope.containsVariable(variableName),
+                        "Variable " + variableName + " existiert bereits im Scope", {});
+                    
                     //
-                    RETURNING_ASSERT(g_TypeRegister.contains(keywordNode.argument),
-                        "Kein Type für unbekanntes Keyword " + keywordNode.argument + " gefunden", {});
-
-                    //
-                    RETURNING_ASSERT(!scope.containsVariable(variableNameNode.argument),
-                        "Variable " + variableNameNode.argument + " existiert bereits im Scope", {});
-
-                    // initialisierung der leeren Variable unter dem entsprechenden namen
-                    scope.variableTable.try_emplace(variableNameNode.argument);
-
-                    //
-                    Variable* variablePtr = scope.getVariable(variableNameNode.argument);
-                    variablePtr->constructByObject(constructRegisteredType(keywordNode.argument));
+                    Variable* variablePtr = scope.constructAndReturnVariable(variableName);
+                    variablePtr->reference(&g_nullRefs[getTypeIndexByKeyword(typeKeyword)]);
 
                     //
                     results.emplace_back();
                     results[0].setLValue(variablePtr);
+
                 }
             }
         }
@@ -278,8 +289,7 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             const ASTNode& child = node.children[childIdx];
             EvalResultVec paramResults = evaluateExpression(child, scope, context);
 
-            RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt mehr als ein shared EvalResult zurück", {});
-
+            RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
             results[childIdx] = std::move(paramResults[0]);
         }
 

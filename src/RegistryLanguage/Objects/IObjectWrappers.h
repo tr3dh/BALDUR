@@ -34,6 +34,9 @@ public:
         g_MemberFunctionRegisters.emplace(typeIndex, FunctionRegister());
         
         //
+        g_nullRefs.emplace(typeIndex, std::make_unique<Tag>());
+
+        //
         return true;
     }
 };

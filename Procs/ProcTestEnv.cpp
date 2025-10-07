@@ -50,14 +50,13 @@ int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "int d = 8;",
-        "ref y << d;"
-        "ref z << y;",
-        "z = true;",
-        "int g = bool();",
-        "double a = 4.2345;"
-        //"ref g << d;",
-        //"g = 10;",
+        "ref a;",
+        "a = 10;",
+        "int b = 10;",
+        "int c = int(b);",
+        "a << b;",
+        "a = 2;",
+        "double d = 40;"
     };
 
     std::ofstream outfile("../bin/temp.proc");

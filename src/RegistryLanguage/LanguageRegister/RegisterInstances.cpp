@@ -13,6 +13,9 @@ std::map<TypeIndex, FunctionRegister> g_StaticFunctionRegisters;
 //
 KeywordRegister g_KeywordRegister;
 
+// Keyword Register für nicht Kontruktionskeywords, die Werte zurückgeben soll >> zb true, false, nullptr, nullstr, ...
+std::map<TypeIndex, std::unique_ptr<IObject>> g_nullRefs;
+
 // Register Funktionen
 void registerFunction(const std::string& functionLabel, const std::vector<TypeIndex>& functionArgsTypes, const IObjectFunction& func, const std::vector<TypeIndex>& functionReturnTypes){
 

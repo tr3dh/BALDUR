@@ -20,5 +20,5 @@ namespace types{
 
 bool IsReferenceValid(std::unique_ptr<IObject>* ptr){
 
-    return ptr != &types::VOID::nullRef;
+    return ptr != &g_nullRefs[ptr->get()->getTypeIndex()];
 }
