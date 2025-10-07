@@ -46,40 +46,16 @@
 
 // bool Vec::initialized = setUpClass();
 
-// Beispielklasse, die IObject implementiert
-class INTObject : public IObject {
-private:
-    int value;
-
-public:
-
-    INTObject(int v = 0) : value(v) {}
-
-    // Copy-Konstruktor für clone()
-    INTObject(const INTObject& other) : value(other.value) {}
-
-    void print() const override {
-        std::cout << "INTObject: " << value;
-    }
-
-    TypeIndex getTypeIndex() const override {
-        return 1; // irgendein Index für INTObject
-    }
-
-    std::unique_ptr<IObject> clone() const override {
-        return std::make_unique<INTObject>(*this);
-    }
-
-    // Getter / Setter für value
-    int getValue() const { return value; }
-    void setValue(int v) { value = v; }
-};
-
 int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "int d = 4;",
+        "int d = 8;",
+        "ref y << d;"
+        "ref z << y;",
+        "z = true;",
+        "int g = bool();",
+        "double a = 4.2345;"
         //"ref g << d;",
         //"g = 10;",
     };

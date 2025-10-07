@@ -18,8 +18,6 @@ namespace types{
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-
-                //
                 PREPARE_RETURNS;
 
                 // Returns
@@ -37,18 +35,14 @@ namespace types{
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-
-                //
                 PREPARE_RETURNS;
 
-                // Returns
+                // Returns | Inputs
                 GET_RETURN(INT, 0);
+                GET_ARG(INT, 0);
 
-                // //
-                // GET_ARG(INT, 0);
-
-                // // schreiben in returns
-                // ret0->getMember() = arg0->getMember();
+                // schreiben in returns
+                ret0->getMember() = arg0->getMember();
         },
         {INT::typeIndex});
 
@@ -59,19 +53,14 @@ namespace types{
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-
-                //
                 PREPARE_RETURNS;
 
-                // Returns
+                // Returns | Inputs
                 GET_RETURN(BOOL, 0);
+                GET_ARG(INT, 0); GET_ARG(INT, 1);
 
-                // // Inputs
-                // GET_ARG(INT, 0);
-                // GET_ARG(INT, 1);
-
-                // // schreiben in returns
-                // ret0->getMember() = arg0->getMember() == arg1->getMember();
+                // schreiben in returns
+                ret0->getMember() = arg0->getMember() == arg1->getMember();
         },
         {INT::typeIndex});
 

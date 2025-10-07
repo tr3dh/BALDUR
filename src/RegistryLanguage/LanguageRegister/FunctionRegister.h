@@ -5,8 +5,11 @@
 
 //
 typedef std::vector<EvalResult> EvalResultVec;
+typedef std::vector<EvalResult*> EvalResultPtrVec;
+
+//
 typedef EvalResultVec& FunctionReturns;
-typedef EvalResultVec& FunctionParams;
+typedef const EvalResultPtrVec& FunctionParams;
 typedef EvalResult* TypeMember;
 
 // Nutzung : <functionlabel, {paramIndices}>
@@ -77,7 +80,7 @@ public:
         std::vector<TypeIndex> types = {};
 
         for(auto& ptr : params){
-            types.emplace_back(ptr.getVariableRef().getData()->getTypeIndex());
+            types.emplace_back(ptr->getVariableRef().getData()->getTypeIndex());
         }
 
         return types;
@@ -177,6 +180,6 @@ public:
     CastType* ret##Position = static_cast<CastType*>(returns[Position].getVariableRef().getData())
 
 #define GET_ARG(CastType, Position) \
-    CastType* arg##Position = static_cast<CastType*>(inputs[Position].getVariableRef().getData())
+    CastType* arg##Position = static_cast<CastType*>(inputs[Position]->getVariableRef().getData())
 
 #define END_OF_FUNCTION_REG_FILE

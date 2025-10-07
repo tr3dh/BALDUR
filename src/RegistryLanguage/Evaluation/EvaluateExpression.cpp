@@ -8,292 +8,287 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
     //
     EvalResultVec results;
 
-    // //
-    // switch(node.Relation){
+    //
+    switch(node.Relation){
 
-    // case(TkType::Constant):{
+    case(TkType::Constant):{
 
-    //     switch(node.constantType){
+        switch(node.constantType){
 
-    //         // Cast in INT
-    //         case(ConstantType::INT):
-    //         case(ConstantType::SIZE):
-    //             results.emplace_back(new types::INT(static_cast<int>(node.value)));
+            // Cast in INT
+            case(ConstantType::INT):
+            case(ConstantType::SIZE):
+                results.emplace_back(new types::INT(static_cast<int>(node.value)));
 
-    //         // kein Cast, bestehender double wird übergeben
-    //         case(ConstantType::FLOAT):
-    //         case(ConstantType::DOUBLE):
-    //             // return Variable(node.value);
+            // kein Cast, bestehender double wird übergeben
+            case(ConstantType::FLOAT):
+            case(ConstantType::DOUBLE):
+                results.emplace_back(new types::DOUBLE(node.value));
             
-    //         default:{
+            default:{
 
-    //             break;
-    //         }
-    //     }
+                break;
+            }
+        }
 
-    //     // return Variable(node.value);
-    //     break;
-    // }
-    // case(TkType::Argument):{
+        // return Variable(node.value);
+        break;
+    }
+    case(TkType::Argument):{
 
-    //     if(valueForKeywordExists(node.argument)){
+        if(valueForKeywordExists(node.argument)){
 
-    //         results.emplace_back(constructFromKeyword(node.argument));
-    //     }
-    //     else if(context == Context::ASSIGN_RIGHTSIDE){
+            results.emplace_back(constructFromKeyword(node.argument));
+        }
+        else if(context == Context::ASSIGN_RIGHTSIDE){
 
-    //         // ist Object das einem anderen als Wert zugewiesen wird
-    //         RETURNING_ASSERT(scope.containsVariable(node.argument), "Variable, die zugewiesen werden soll ist nicht im scope vorhanden", {});
+            // ist Object das einem anderen als Wert zugewiesen wird
+            RETURNING_ASSERT(scope.containsVariable(node.argument), "Variable, die zugewiesen werden soll ist nicht im scope vorhanden", {});
 
-    //         //
-    //         results.emplace_back();
-    //         results[0].setLValue(scope.getVariable(node.argument));
-    //     }
-    //     // else if(context == Context::ASSIGN_LEFTSIDE){
-    //     else{
+            //
+            results.emplace_back();
+            results[0].setLValue(scope.getVariable(node.argument));
+        }
+        // else if(context == Context::ASSIGN_LEFTSIDE){
+        else{
 
-    //         // default verhalten für Zuweisung als Wert und alle anderen Fälle
-    //         if(!scope.containsVariable(node.argument)){
+            // default verhalten für Zuweisung als Wert und alle anderen Fälle
+            if(!scope.containsVariable(node.argument)){
 
-    //             scope.constructVariable(node.argument, types::VOID::typeIndex);
-    //         }
+                scope.constructVariable(node.argument, types::VOID::typeIndex);
+            }
             
-    //         //
-    //         results.emplace_back();
-    //         results[0].setLValue(scope.getVariable(node.argument));
-    //     }
+            //
+            results.emplace_back();
+            results[0].setLValue(scope.getVariable(node.argument));
+        }
 
-    //     break;
-    // }
-    // case(TkType::Operator):{
+        break;
+    }
+    case(TkType::Operator):{
 
-    //     const std::string& Operator = g_lengthSortedLexerOperators[node.Operator];
+        const std::string& Operator = g_lengthSortedLexerOperators[node.Operator];
 
-    //     if(Operator == COLON){
+        if(Operator == COLON){
 
-    //         for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
+            for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
 
-    //             //
-    //             evaluateExpression(node.children[childIdx], scope, context);
-    //         }
-    //     }
-    //     else if(Operator == "="){
+                //
+                evaluateExpression(node.children[childIdx], scope, context);
+            }
+        }
+        else if(Operator == "="){
 
-    //         LOG << "am zuweisen" << endl;
+            RETURNING_ASSERT(node.children.size() == 2,
+                "Verknüpfung über '=' Operator von ungleich 2 child nodes", {});
 
-    //         RETURNING_ASSERT(node.children.size() == 2,
-    //             "Verknüpfung über '=' Operator von ungleich 2 child nodes", {});
+            auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
+            RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
 
-    //         auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
-    //         RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
+            auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
+            RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
 
-    //         auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
-    //         RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
+            //
+            EvalResult& recipient = leftSide[0];
+            EvalResult& source = rightSide[0];
 
-    //         //
-    //         EvalResult& recipient = leftSide[0];
-    //         EvalResult& source = rightSide[0];
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
 
-    //         //
-    //         bool recipientIsRValue = recipient.isRValue();
-    //         bool sourceIsRValue = source.isRValue();
+            //
+            RETURNING_ASSERT(!recipientIsRValue, "Variable der Wert zuwewiesen wird ist Rvalue",{});
 
-    //         //
-    //         RETURNING_ASSERT(!recipientIsRValue, "Variable der Wert zuwewiesen wird ist Rvalue",{});
+            //
+            if(recipient.getVariableRef().isReference()){
 
-    //         //
-    //         if(recipient.getVariableRef().isReference()){
+                RETURNING_ASSERT(IsReferenceValid(recipient.getVariableRef().getUniqueData()), "Nicht initialisierte Recipient Referenz", {});
+            }
 
-    //             RETURNING_ASSERT(IsReferenceValid(recipient.getVariableRef().getUniqueData()), "Nicht initialisierte Recipient Referenz", {});
-    //         }
+            if(source.getVariableRef().isReference()){
 
-    //         if(source.getVariableRef().isReference()){
+                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz", {});
+            }
 
-    //             RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz", {});
-    //         }
-
-    //         //
-    //         if(sourceIsRValue){
+            //
+            if(sourceIsRValue){
                 
-    //             // RValue wird gemovt, da er eh nur temporär vorhanden ist
-    //             recipient.getVariableRef().move(source.getVariableRef());
-    //         }
-    //         else{
+                // RValue wird gemovt, da er eh nur temporär vorhanden ist
+                recipient.getVariableRef().move(source.getVariableRef());
+            }
+            else{
 
-    //             //
-    //             recipient.getVariableRef().clone(source.getVariableRef());
-    //         }
+                //
+                recipient.getVariableRef().clone(source.getVariableRef());
+            }
+        }
+        else if(Operator == "<<"){
 
-    //         // assignTo->getVariableRef() = assignedValue->isRValue() ? std::move(assignedValue.getRef()) : assignedValue.getRef();
-    //     }
-    //     else if(Operator == "<<"){
+            RETURNING_ASSERT(node.children.size() == 2,
+                "Verknüpfung über '<<' Operator von ungleich 2 child nodes", {});
 
-    //         //
-    //         LOG << "am Referenzieren" << endl;
+            auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
+            RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
 
-    //         RETURNING_ASSERT(node.children.size() == 2,
-    //             "Verknüpfung über '<<' Operator von ungleich 2 child nodes", {});
+            auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
+            RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
 
-    //         auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
-    //         RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
+            //
+            EvalResult& recipient = leftSide[0];
+            EvalResult& source = rightSide[0];
 
-    //         auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
-    //         RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
 
-    //         //
-    //         EvalResult& recipient = leftSide[0];
-    //         EvalResult& source = rightSide[0];
+            //
+            RETURNING_ASSERT(!recipientIsRValue && !sourceIsRValue,
+                "Bei Referenzierung sind rvalues mit im Spiel ",{});
 
-    //         //
-    //         bool recipientIsRValue = recipient.isRValue();
-    //         bool sourceIsRValue = source.isRValue();
+            RETURNING_ASSERT(recipient.getVariableRef().isReference(), "Recipient bei Referenzierung ist keine Referenz", {});
 
-    //         //
-    //         LOG << recipient << "   <<<<   " << source << endl;
+            if(source.getVariableRef().isReference()){
 
-    //         //
-    //         RETURNING_ASSERT(!recipientIsRValue && recipient.getVariableRef().isReference(),
-    //             "Variable der Wertreferenz zuwewiesen wird ist rvalue oder keine referenz",{});
+                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz", {});
+            }
 
-    //         //
-    //         // if(recipient.getVariableRef().isReference()){
+            recipient.getVariableRef().reference(source.getVariableRef());
+        }
 
-    //         //     RETURNING_ASSERT(IsReferenceValid(recipient.getVariableRef().getData()), "Nicht initialisierte Recipient Referenz", {});
-    //         // }
+        break;
+    }
+    case TkType::Chain:{
 
-    //         if(source.getVariableRef().isReference()){
+        //
+        bool allMembersAreArgs = std::all_of(
+            node.children.begin(), node.children.end(),
+            [](const ASTNode& child) { return child.Relation == TkType::Argument; });
 
-    //             RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz", {});
-    //         }
+        // Find the first element not equal to 1
+        auto firstNonArgChild = std::find_if(node.children.begin(), node.children.end(),
+                    [](const ASTNode& child) { return child.Relation != TkType::Argument; });
 
-    //         recipient.getVariableRef().reference(source.getVariableRef());
+        size_t firstNonArgChildPosition = std::distance(node.children.begin(), firstNonArgChild);
 
-    //         // assignTo->getVariableRef() = assignedValue->isRValue() ? std::move(assignedValue.getRef()) : assignedValue.getRef();
-    //     }
+        if(node.children.size() > 1){
 
-    //     break;
-    // }
-    // case TkType::Chain:{
+            bool IsFunctionCall = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Params;
 
-    //     //
-    //     bool allMembersAreArgs = std::all_of(
-    //         node.children.begin(), node.children.end(),
-    //         [](const ASTNode& child) { return child.Relation == TkType::Argument; });
+            if(IsFunctionCall){
 
-    //     // Find the first element not equal to 1
-    //     auto firstNonArgChild = std::find_if(node.children.begin(), node.children.end(),
-    //                 [](const ASTNode& child) { return child.Relation != TkType::Argument; });
+                //
+                const std::string& functionLabel = node.children[0].argument;
 
-    //     size_t firstNonArgChildPosition = std::distance(node.children.begin(), firstNonArgChild);
+                //
+                EvalResultVec params = evaluateExpression(node.children[1], scope, context);
 
-    //     if(node.children.size() > 1){
+                //
+                RETURNING_ASSERT(node.children[1].children.size() == params.size(),
+                    "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
-    //         bool IsFunctionCall = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Params;
+                //
+                EvalResultPtrVec paramPtrs;
+                paramPtrs.reserve(params.size());
 
-    //         if(IsFunctionCall){
+                for(auto& p : params){
 
-    //             //
-    //             const std::string& functionLabel = node.children[0].argument;
+                    paramPtrs.emplace_back(&p);
+                }
 
-    //             //
-    //             EvalResultVec params = evaluateExpression(node.children[1], scope, context);
+                //
+                callFunction(functionLabel, results, paramPtrs);
+            }
+            else{
 
-    //             //
-    //             RETURNING_ASSERT(node.children[1].children.size() == params.size(),
-    //                 "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
-
-    //             //
-    //             callFunction(functionLabel, results, params);
-    //         }
-    //         else{
-
-    //             // Keyword Argument
-    //             // Dabei gibts es zwei verschiedene Notationen
-    //             // 1. Für klassen die spezifiziert werden können (templates Tensoren ...)
-    //             // 2. Standard
-    //             // 
-    //             // Bspl:
-    //             // 1. const Tensor[4]{...} F;
-    //             // 2. const BOOL F;
-    //             //
-    //             // Deshalb wird für danach unterschieden wo die letzte Argument Node liegt
+                // Keyword Argument
+                // Dabei gibts es zwei verschiedene Notationen
+                // 1. Für klassen die spezifiziert werden können (templates Tensoren ...)
+                // 2. Standard
+                // 
+                // Bspl:
+                // 1. const Tensor[4]{...} F;
+                // 2. const BOOL F;
+                //
+                // Deshalb wird für danach unterschieden wo die letzte Argument Node liegt
                 
-    //             // Für Fall das ein Kontruktor Aufruf hinten angestellt ist
-    //             const size_t offset = node.children[node.children.size() - 1].Relation == TkType::Params ? 1 : 0;
+                // Für Fall das ein Kontruktor Aufruf hinten angestellt ist
+                const size_t offset = node.children[node.children.size() - 1].Relation == TkType::Params ? 1 : 0;
 
-    //             const ASTNode& keywordNode = (firstNonArgChildPosition == node.children.size() - offset) ?
-    //                 node.children[node.children.size() - 2 - offset] :              // Standard fall
-    //                 node.children[firstNonArgChildPosition - 1];                    // spezifizierende Notation
+                const ASTNode& keywordNode = (firstNonArgChildPosition == node.children.size() - offset) ?
+                    node.children[node.children.size() - 2 - offset] :              // Standard fall
+                    node.children[firstNonArgChildPosition - 1];                    // spezifizierende Notation
 
-    //             const ASTNode& variableNameNode = (firstNonArgChildPosition == node.children.size() - offset) ?
-    //                 node.children[node.children.size() - 1 - offset] : 
-    //                 node.children[node.children.size() - 1 - offset];
+                const ASTNode& variableNameNode = (firstNonArgChildPosition == node.children.size() - offset) ?
+                    node.children[node.children.size() - 1 - offset] : 
+                    node.children[node.children.size() - 1 - offset];
 
-    //             if(keywordNode.argument == "ref"){
+                if(keywordNode.argument == "ref"){
                     
-    //                 //
-    //                 RETURNING_ASSERT(!scope.containsVariable(variableNameNode.argument),
-    //                     "Variable " + variableNameNode.argument + " existiert bereits im Scope", {});
+                    // Referenz erzeugen
+
+                    //
+                    RETURNING_ASSERT(!scope.containsVariable(variableNameNode.argument),
+                        "Variable " + variableNameNode.argument + " existiert bereits im Scope", {});
                     
-    //                 //
-    //                 Variable* variablePtr = scope.constructAndReturnVariable(variableNameNode.argument);
-    //                 variablePtr->reference(types::VOID::nullRef);
+                    //
+                    Variable* variablePtr = scope.constructAndReturnVariable(variableNameNode.argument);
+                    variablePtr->reference(&types::VOID::nullRef);
 
-    //                 //
-    //                 results.emplace_back();
-    //                 results[0].setLValue(variablePtr);
-    //             }
-    //             else{
+                    //
+                    results.emplace_back();
+                    results[0].setLValue(variablePtr);
+                }
+                else{
 
-    //                 // Standard Constructions Syntax
+                    // Standard Konstruktions Syntax
 
-    //                 //
-    //                 RETURNING_ASSERT(g_TypeRegister.contains(keywordNode.argument),
-    //                     "Kein Type für unbekanntes Keyword " + keywordNode.argument + " gefunden", {});
+                    //
+                    RETURNING_ASSERT(g_TypeRegister.contains(keywordNode.argument),
+                        "Kein Type für unbekanntes Keyword " + keywordNode.argument + " gefunden", {});
 
-    //                 //
-    //                 RETURNING_ASSERT(!scope.containsVariable(variableNameNode.argument),
-    //                     "Variable " + variableNameNode.argument + " existiert bereits im Scope", {});
+                    //
+                    RETURNING_ASSERT(!scope.containsVariable(variableNameNode.argument),
+                        "Variable " + variableNameNode.argument + " existiert bereits im Scope", {});
 
-    //                 // initialisierung der leeren Variable unter dem entsprechenden namen
-    //                 scope.variableTable.try_emplace(variableNameNode.argument);
+                    // initialisierung der leeren Variable unter dem entsprechenden namen
+                    scope.variableTable.try_emplace(variableNameNode.argument);
 
-    //                 //
-    //                 Variable* variablePtr = scope.getVariable(variableNameNode.argument);
-    //                 variablePtr->constructByObject(constructRegisteredType(keywordNode.argument));
+                    //
+                    Variable* variablePtr = scope.getVariable(variableNameNode.argument);
+                    variablePtr->constructByObject(constructRegisteredType(keywordNode.argument));
 
-    //                 //
-    //                 results.emplace_back();
-    //                 results[0].setLValue(variablePtr);
-    //             }
-    //         }
-    //     }
+                    //
+                    results.emplace_back();
+                    results[0].setLValue(variablePtr);
+                }
+            }
+        }
 
-    //     break;
-    // }
-    // case(TkType::Params):{
+        break;
+    }
+    case(TkType::Params):{
 
-    //     //
-    //     results.resize(node.children.size());
+        //
+        results.resize(node.children.size());
 
-    //     //
-    //     for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
+        //
+        for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
 
-    //         //
-    //         const ASTNode& child = node.children[childIdx];
-    //         EvalResultVec paramResults = evaluateExpression(child, scope, context);
+            //
+            const ASTNode& child = node.children[childIdx];
+            EvalResultVec paramResults = evaluateExpression(child, scope, context);
 
-    //         RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt mehr als ein shared EvalResult zurück", {});
+            RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt mehr als ein shared EvalResult zurück", {});
 
-    //         results[childIdx] = std::move(paramResults[0]);
-    //     }
+            results[childIdx] = std::move(paramResults[0]);
+        }
 
-    //     break;
-    // }
-    // default:{
-    //     break;
-    // }
-    // }
+        break;
+    }
+    default:{
+        break;
+    }
+    }
 
     return results;
 }
