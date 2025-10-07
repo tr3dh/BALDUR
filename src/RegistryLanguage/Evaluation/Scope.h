@@ -22,6 +22,29 @@ struct Scope {
         variableTable[variableName].constructByObject(constructRegisteredType(typeKeyword));
     }
 
+    //
+    void constructVariable(const std::string& variableName, TypeIndex typeIndex){
+
+        if(getVariable(variableName) != nullptr){
+
+            _ERROR << "Variable " << variableName << " ist bereits im Scope vorhanden" << endl;
+        }
+
+        variableTable.try_emplace(variableName);
+        variableTable[variableName].constructByObject(constructRegisteredType(typeIndex));
+    }
+
+    Variable* constructAndReturnVariable(const std::string& variableName){
+
+        if(getVariable(variableName) != nullptr){
+
+            _ERROR << "Variable " << variableName << " ist bereits im Scope vorhanden" << endl;
+        }
+
+        variableTable.try_emplace(variableName);
+        return getVariable(variableName);
+    }
+
     void setVariable(const std::string& variableName, IObject* member){
 
         Variable* variablePtr = getVariable(variableName);
@@ -33,6 +56,12 @@ struct Scope {
         }
 
         variablePtr->constructByObject(member);
+    }
+
+    //
+    bool containsVariable(const std::string& variableName){
+
+        return getVariable(variableName) != nullptr;
     }
 
     //

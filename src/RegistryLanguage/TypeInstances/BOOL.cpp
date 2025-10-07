@@ -45,10 +45,10 @@ namespace types{
                 GET_RETURN(BOOL, 0);
 
                 //
-                GET_ARG(BOOL, 0);
+                // GET_ARG(BOOL, 0);
 
                 // schreiben in returns
-                ret0->getMember() = arg0->getMember();
+                // ret0->getMember() = arg0->getMember();
         },
         {BOOL::typeIndex});
 
@@ -67,11 +67,11 @@ namespace types{
                 GET_RETURN(BOOL, 0);
 
                 // Inputs
-                GET_ARG(BOOL, 0);
-                GET_ARG(BOOL, 1);
+                // GET_ARG(BOOL, 0);
+                // GET_ARG(BOOL, 1);
 
-                // schreiben in returns
-                ret0->getMember() = arg0->getMember() == arg1->getMember();
+                // // schreiben in returns
+                // ret0->getMember() = arg0->getMember() == arg1->getMember();
         },
         {BOOL::typeIndex});
 

@@ -5,68 +5,44 @@
 struct Variable{
 
     std::unique_ptr<IObject> ownedObject = nullptr;
-    IObject* referencedObject = nullptr;
+    std::unique_ptr<IObject>* referencedObject = nullptr;
 
     Variable() = default;
 
     void constructByObject(IObject* object) {
 
-        ownedObject.reset(object);              // Ownership übernehmen
-        referenceSelf();
+        ownedObject.reset(object);
     }
 
     void constructByUniquePtr(std::unique_ptr<IObject> uniqueObjectPtr){
 
         ownedObject = std::move(uniqueObjectPtr);
-        referenceSelf();
-    }
-
-    // selbst Referenzierung
-    // in Folge können Referenzen und Owner in gleicher Art und Weise auf den owned Value (unique_ptr) zugreifen
-    // macht Auswertung einfach konsistenter
-    void referenceSelf(){
-
-        RETURNING_ASSERT(isValid(), "MM Semantik für Invalide Variable aufgerufen",);
-        RETURNING_ASSERT(ownedObject != nullptr, "Selbstreferenzierung ohne Ownership eines Wertes versucht",);
-        referencedObject = ownedObject.get();
-    }
-
-    void dereferenceSelf(){
-
-        referencedObject = nullptr;
     }
 
     void move(Variable& other){
         
-        RETURNING_ASSERT(other.isValid(), "MM Semantik für Invalide Variable aufgerufen",);
-        RETURNING_ASSERT(!isReference() && !other.isReference(), "Move von Referenz Objekten versucht",);
-        ownedObject = std::move(other.ownedObject);
-
-        other.dereferenceSelf();
-        referenceSelf();
+        *getUniqueData() = std::move(*other.getUniqueData());
     }
 
     void swap(Variable& other){
-        
-        RETURNING_ASSERT(isValid() && other.isValid(), "MM Semantik für Invalide Variable aufgerufen",);
-        RETURNING_ASSERT(!isReference() && !other.isReference(), "Move von Referenz Objekten versucht",);
-        std::swap(ownedObject, other.ownedObject);
 
-        referenceSelf();
-        other.referenceSelf();
+        std::swap(*getUniqueData(), *other.getUniqueData());
     }
 
-    void clone(const Variable& other){
+    void clone(Variable& other){
 
         RETURNING_ASSERT(other.isValid(), "MM Semantik für Invalide Variable aufgerufen",);
-        ownedObject = other.getData()->clone();
-        referenceSelf();
+        *getUniqueData() = other.getData()->clone();
     }
 
-    void reference(const Variable& other){
+    void reference(Variable& other){
         
-        RETURNING_ASSERT(other.isValid(), "MM Semantik für Invalide Variable aufgerufen",);
-        referencedObject = other.getData();
+        reference(other.getUniqueData());
+    }
+
+    void reference(std::unique_ptr<IObject>* other){
+        
+        referencedObject = other;
     }
 
     bool isValid() const {
@@ -88,14 +64,26 @@ struct Variable{
         return ownedObject == nullptr;
     }
 
-    IObject* getData() const{
+    // Für nicht-const
+    std::unique_ptr<IObject>* getUniqueData() {
 
-        // nicht nötig aufgrund von Eigenref
-        // if(!isReference()){
-        //     return ownedObject.get();
-        // }
+        return isReference() ? referencedObject : &ownedObject;
+    }
 
-        return referencedObject;
+    IObject* getData() {
+
+        return getUniqueData()->get();
+    }
+
+    // Für const-Variable
+    const std::unique_ptr<IObject>* getUniqueData() const {
+
+        return isReference() ? referencedObject : &ownedObject;
+    }
+
+    const IObject* getData() const {
+
+        return getUniqueData()->get();
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Variable& var){
@@ -106,15 +94,15 @@ struct Variable{
             return os;
         }
 
-        LOG << "[" << var.referencedObject->getTypeIndex();
+        LOG << "[tID " << var.getData()->getTypeIndex();
 
         if(var.isReference()){
 
-            LOG << "Ref] ";
+            LOG << " Ref] ";
         }
         else{
 
-            LOG << "   ] ";
+            LOG << "    ] ";
         }
 
         var.getData()->print();

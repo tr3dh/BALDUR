@@ -33,4 +33,16 @@ struct KeywordRegister{
     }
 
     std::map<std::string, IObject*> keywordObjects = {};
+
+    friend std::ostream& operator<<(std::ostream& os, const KeywordRegister& reg){
+
+        LOG << "Register mit " << reg.keywordObjects.size() << " registrierten Keywords" << endl;
+
+        for(const auto& [kw, obj] : reg.keywordObjects){
+            
+            LOG << "Key : " << kw << " >> IObject Ptr with tID " << obj->getTypeIndex(); 
+        }
+
+        return os;
+    }
 };

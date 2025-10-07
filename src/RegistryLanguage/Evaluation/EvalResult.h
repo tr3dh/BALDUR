@@ -27,7 +27,7 @@ struct EvalResult {
     }
 
     //
-    void cloneIntoRValue(const Variable& varIn){
+    void cloneIntoRValue(Variable& varIn){
 
         variable.clone(varIn);
     }
