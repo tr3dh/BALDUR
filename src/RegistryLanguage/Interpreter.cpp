@@ -42,7 +42,7 @@ int executeScript(const std::string& scriptPath){
     LOG << scriptContent << endl;
 
     //
-    SetUpLexer({COLON, KOMMA, "=", ".=", ":=",
+    SetUpLexer({COLON, "=", KOMMA, ".=", ":=",
                 "+", "-", "*", "/", "^",
                 "+=", "-=", "*=", "/=", "^="                                    // arithmetische Operatoren
                 "++", "--", ">>", "<<",                                         // Verschiebungsoperatoren

@@ -72,7 +72,8 @@ struct TypeInfo{
 // Decl des TypeRegisters
 struct TypeRegister{
 
-    TypeIndex typeCounter = 1;
+    // Arbitary Type is 0
+    TypeIndex typeCounter = 2;
 
     std::map<TypeIndex, TypeInfo> typeInfos = {};
     std::map<std::string, TypeIndex> typeIndices = {};

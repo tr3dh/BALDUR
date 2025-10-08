@@ -8,4 +8,6 @@
 #include "INT.h"
 #include "DOUBLE.h"
 
+#include "Operations.h"
+
 void setUpTypes();

@@ -1,6 +1,29 @@
 #include "EvaluateExpression.h"
 
 // Alles auf vector<EvalResult> ummünzen 
+template<typename T>
+void moveAppendVector(std::vector<T>& recipient, std::vector<T>& source){
+
+    //
+    recipient.reserve(source.size());
+
+    // alle elemente aus der eval des parameters in den results vec moven
+    std::move(source.begin(), source.end(), std::back_inserter(recipient));
+}
+
+EvalResultPtrVec convertEvalResultsToPtrVec(EvalResultVec& resVec){
+
+    //
+    EvalResultPtrVec memberPtrs;
+    memberPtrs.reserve(resVec.size());
+
+    for(auto& m : resVec){
+
+        memberPtrs.emplace_back(&m);
+    }
+
+    return memberPtrs;
+}
 
 //
 EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context context){
@@ -79,58 +102,27 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 evaluateExpression(node.children[childIdx], scope, context);
             }
         }
-        else if(Operator == "="){
-
-            RETURNING_ASSERT(node.children.size() == 2,
-                "Verknüpfung über '=' Operator von ungleich 2 child nodes", {});
-
-            auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
-            RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
-
-            auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
-            RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
+        else if(Operator == KOMMA){
 
             //
-            EvalResult& recipient = leftSide[0];
-            EvalResult& source = rightSide[0];
+            EvalResultVec paramResults;
 
-            //
-            bool recipientIsRValue = recipient.isRValue();
-            bool sourceIsRValue = source.isRValue();
-
-            //
-            RETURNING_ASSERT(!recipientIsRValue, "Variable der Wert zuwewiesen wird ist Rvalue",{});
-
-            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
-                "narrowing conversion");
-
-            //
-            if(recipient.getVariableRef().isReference()){
-
-                RETURNING_ASSERT(IsReferenceValid(recipient.getVariableRef().getUniqueData()), "Nicht initialisierte Recipient Referenz", {});
-            }
-
-            if(source.getVariableRef().isReference()){
-
-                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz", {});
-            }
-
-            //
-            if(sourceIsRValue){
-                
-                // RValue wird gemovt, da er eh nur temporär vorhanden ist
-                recipient.getVariableRef().move(source.getVariableRef());
-            }
-            else{
+            // Wie Params
+            for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
 
                 //
-                recipient.getVariableRef().clone(source.getVariableRef());
+                const ASTNode& child = node.children[childIdx];
+                paramResults = evaluateExpression(child, scope, context);
+
+                RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
+
+                moveAppendVector(results, paramResults);
             }
         }
-        else if(Operator == "<<"){
-
+        else if(g_TwoArgOperations.contains(Operator)){
+            
             RETURNING_ASSERT(node.children.size() == 2,
-                "Verknüpfung über '<<' Operator von ungleich 2 child nodes", {});
+                "Verknüpfung über zweiseitige Operatoren von ungleich 2 child nodes nicht möglich", {});
 
             auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
             RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
@@ -138,29 +130,13 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
             RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
 
-            //
-            EvalResult& recipient = leftSide[0];
-            EvalResult& source = rightSide[0];
-
-            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
-                    "narrowing conversion");
+            RETURNING_ASSERT(leftSide.size() == rightSide.size(), "ungleiche Seitengrößen bei assign", {});
 
             //
-            bool recipientIsRValue = recipient.isRValue();
-            bool sourceIsRValue = source.isRValue();
+            moveAppendVector(leftSide, rightSide);
 
             //
-            RETURNING_ASSERT(!recipientIsRValue && !sourceIsRValue,
-                "Bei Referenzierung sind rvalues mit im Spiel ",{});
-
-            RETURNING_ASSERT(recipient.getVariableRef().isReference(), "Recipient bei Referenzierung ist keine Referenz", {});
-
-            if(source.getVariableRef().isReference()){
-
-                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz", {});
-            }
-
-            recipient.getVariableRef().reference(source.getVariableRef());
+            callFunction(g_TwoArgOperations[Operator], results, convertEvalResultsToPtrVec(leftSide));
         }
 
         break;
@@ -181,6 +157,7 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
         if(node.children.size() > 1){
 
             bool IsFunctionCall = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Params;
+            bool IsListingConstruction = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Listing;
 
             if(IsFunctionCall){
 
@@ -195,16 +172,27 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                     "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
                 //
-                EvalResultPtrVec paramPtrs;
-                paramPtrs.reserve(params.size());
-
-                for(auto& p : params){
-
-                    paramPtrs.emplace_back(&p);
-                }
+                callFunction(functionLabel, results, convertEvalResultsToPtrVec(params));
+            }
+            else if(IsListingConstruction){
 
                 //
-                callFunction(functionLabel, results, paramPtrs);
+                const std::string& typeKeyword = node.children[0].argument;
+
+                //
+                results = evaluateExpression(node.children[1], scope, context);
+
+                //
+                RETURNING_ASSERT(node.children[1].children.size() == results.size(),
+                    "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
+
+                RETURNING_ASSERT(typeForKeywordExists(typeKeyword), "Invalid Keyword", {});
+
+                //
+                for(auto& expr : results){
+
+                    expr.getVariableRef().constructByObject(constructRegisteredType(typeKeyword));
+                }
             }
             else{
 
@@ -277,10 +265,11 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
 
         break;
     }
+    case(TkType::Listing):
     case(TkType::Params):{
 
         //
-        results.resize(node.children.size());
+        // results.resize(node.children.size());
 
         //
         for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
@@ -290,7 +279,8 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             EvalResultVec paramResults = evaluateExpression(child, scope, context);
 
             RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
-            results[childIdx] = std::move(paramResults[0]);
+            
+            moveAppendVector(results, paramResults);
         }
 
         break;

@@ -104,6 +104,14 @@ public:
             return;
         }
 
+        auto argfIt = functions.find({functionLabel, {IObject::ARGS_TYPE}});
+
+        if(argfIt != functions.end()){
+
+            argfIt->second.first(returns, functionParams, argfIt->second.second, member);
+            return;
+        }
+
         RETURNING_ASSERT(TRIGGER_ASSERT, "Function für angegebenes Label " + functionLabel + " konnte nicht gefunden werden",);
     }
 

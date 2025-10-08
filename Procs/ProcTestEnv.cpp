@@ -50,13 +50,13 @@ int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "ref a;",
-        "a = 10;",
-        "int b = 10;",
-        "int c = int(b);",
-        "a << b;",
-        "a = 2;",
-        "double d = 40;"
+        // "int b = 10;",
+        // "int c = int(b);",
+        // "int ref a << b;",
+        // "a = 2;",
+        // "double d = 40;",
+        // "int myInt = countArgs(a, b, c, d);",
+        "int[a, b, c, d] = 4, 3, 2, 1;"
     };
 
     std::ofstream outfile("../bin/temp.proc");
