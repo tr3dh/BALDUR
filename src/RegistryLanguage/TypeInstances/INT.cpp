@@ -64,6 +64,23 @@ namespace types{
         },
         {INT::typeIndex});
 
+        // Operatoren
+        registerFunction("__addAssign__", {INT::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "equals", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_ARG(INT, 0); GET_ARG(INT, 1);
+
+                // schreiben in returns
+                arg0->getMember() += arg1->getMember();
+        },
+        {});
+
         return true;
     }
 };

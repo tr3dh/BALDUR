@@ -175,6 +175,42 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 RETURNING_ASSERT(TRIGGER_ASSERT, "ungleiche Seitengrößen bei two side operator Funktion", {});
             }
         }
+        // argChainOperators enthält den Operator der Operation die mehrere Argumente verknüpft und die Funktion
+        // über die diese jeweils zwei argumente verknüpft
+        // für lange Operationsketten so im Gegensatz zum klassichen AST etwas effizient
+        // Aufgrund nur einer eventuellen Kopie und sonst immer beaufschlagung mit __...assign__
+        else if(g_ArgChainOperations.contains(Operator)){
+
+            //
+            RETURNING_ASSERT(node.children.size() > 1, "Zu wenig childs", {});
+
+            //
+            EvalResultVec res, tmpRes;
+            results = evaluateExpression(node.children[0], scope, context);
+
+            //
+            for(auto& evr : results){
+
+                evr.constructRValueByContainedLValue();
+            }
+
+            //
+            for(size_t childIdx = 1; childIdx < node.children.size(); childIdx++){
+
+                //
+                tmpRes = evaluateExpression(node.children[childIdx], scope, context);
+
+                //
+                RETURNING_ASSERT(results.size() == tmpRes.size(), "Ungleiche Größen in Seiten beim 2 s ops",{});
+                
+                //
+                for(size_t resIdx = 0; resIdx < results.size(); resIdx++){
+
+                    //
+                    callFunction(g_ArgChainOperations[Operator], res, {&results[resIdx], &tmpRes[resIdx]});
+                }
+            }
+        }
 
         break;
     }

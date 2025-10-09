@@ -195,4 +195,11 @@ public:
 #define GET_MEMBER(CastType) \
     CastType* mb = static_cast<CastType*>(member->getVariableRef().getData());
 
+// speichert sich Member des alten Inputs
+// rekonstruiert Input mit erforderlichem Typ und setzt Member über cast des gespeicherten vormaligen Members
+#define RECAST_INPUT_INPLACE(CastToType, CastFromType, Position) \
+    decltype(CastFromType::member) formerMb##Position = static_cast<CastFromType*>(inputs[Position]->getData())->getMember(); \
+    inputs[Position]->getVariableRef().constructByObject(constructRegisteredType(CastToType::typeIndex)); \
+    static_cast<CastToType*>(inputs[Position]->getData())->getMember() = static_cast<decltype(CastToType::member)>(formerMb##Position);
+
 #define END_OF_FUNCTION_REG_FILE

@@ -236,6 +236,8 @@ void emplaceStdOperations(){
             for(const auto& param : inputs){
                 param->getVariableRef().getData()->print();
             }
+
+            LOG << endl;
     },
     {});
 }

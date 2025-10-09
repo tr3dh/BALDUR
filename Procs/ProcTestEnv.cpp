@@ -50,10 +50,9 @@ int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "string a = \"abcd\";",
-        "size = a->size();",
-        "string n = typename(size);",
-        "log(timeStamp(), \" :  \" ,\"Hello World!\", \"\n\");"
+        "int db = 1;",
+        "db = db + double(2.2) + int(10.4) + 11 + 4;"
+        "log(timeStamp(), \" : \" ,\"double Var : \", , db);"
     };
 
     std::ofstream outfile("../bin/temp.proc");
@@ -69,18 +68,14 @@ int main(){
 
     outfile.close();
 
-    executeScript("../bin/temp.proc");
+    std::string cmd = ".\\ProcLang_d execute ../bin/temp.proc";
 
-    // std::string cmd = ".\\ProcLang_d execute ../bin/temp.proc";
+    LOG << "calling Interpreter" << endl;
+    LOG << endl;
 
-    // LOG << "calling Interpreter" << endl;
-    // LOG << endl;
-
-    // streamWinCommand(cmd, [&](const char* callback){
-    //     LOG << callback;
-    // });
-
-    // std::cin.get();
+    streamWinCommand(cmd, [&](const char* callback){
+        LOG << callback;
+    });
 
     return 0;
 }

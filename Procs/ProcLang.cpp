@@ -39,9 +39,7 @@ int main(int argc, char* argv[]){
 
         LOG << "!! API wurde ohne Argumente angesprochen, invalider Aufruf" << ENDL;
         LOG << "   um mehr zu Erfahren die API mit dem Argument '--help' aufrufen" << ENDL;
-        LOG << "   zum Fortfahren eine beliebige Taste drücken..." << ENDL;
 
-        std::cin.get();
         return 1;
     }
 
@@ -115,7 +113,7 @@ int main(int argc, char* argv[]){
         LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
         LOG << "Start Unpacking and Simulating " << path << ENDL;
 
-        // int result = executeScript(path);
+        int result = executeScript(path);
     }
 
     // Programm ohne args gestartet
@@ -123,11 +121,6 @@ int main(int argc, char* argv[]){
 
         LOG << "!! API wurde ohne valide Argumente angesprochen, invalider Aufruf" << ENDL;
         LOG << "   um mehr zu Erfahren die API mit dem Argument '--help' aufrufen" << ENDL;
-        LOG << "   zum Fortfahren beliebige Taste drücken..." << ENDL;
-
-        #ifdef DEBUG
-        // std::cin.get();
-        #endif
 
         return 1;
     }

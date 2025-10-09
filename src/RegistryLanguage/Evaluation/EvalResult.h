@@ -39,6 +39,17 @@ struct EvalResult {
     }
 
     //
+    void constructRValueByContainedLValue(){
+
+        if(isRValue()){
+            return;
+        }
+
+        cloneIntoRValue(*variablePtr);
+        variablePtr = nullptr;
+    }
+
+    //
     void setLValue(Variable* ptrIn){
 
         variablePtr = ptrIn;

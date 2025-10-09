@@ -2,6 +2,7 @@
 
 #include "InstanceIncludes.h"
 #include "BOOL.h"
+#include "INT.h"
 
 namespace types{
 
