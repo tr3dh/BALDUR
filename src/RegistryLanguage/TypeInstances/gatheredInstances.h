@@ -7,6 +7,7 @@
 #include "BOOL.h"
 #include "INT.h"
 #include "DOUBLE.h"
+#include "STRING.h"
 
 #include "Operations.h"
 

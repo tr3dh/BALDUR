@@ -19,6 +19,16 @@ public:
         return typeIndex;
     }
 
+    const std::string& getTypeKeyword() const override{
+        
+        return getKeywordByTypeIndex(typeIndex); 
+    };
+
+    size_t getSize() const override{
+
+        return 0;
+    }
+
     static bool init(const std::string& keyword, const std::function<IObject*()>& initConstructor){
 
         typeIndex = registerType(keyword, initConstructor);
@@ -78,7 +88,13 @@ public:
 
     // virtual ist redundant, die print bleibt überscheibbar
     void print() const override{
+
         LOG << member;
+    }
+
+    size_t getSize() const override{
+
+        return sizeof(member);
     }
 
     //

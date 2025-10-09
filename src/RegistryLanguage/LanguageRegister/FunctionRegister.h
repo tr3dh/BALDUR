@@ -80,6 +80,8 @@ public:
         std::vector<TypeIndex> types = {};
 
         for(auto& ptr : params){
+
+            RETURNING_ASSERT(ptr->getVariableRef().isValid(), "",{});
             types.emplace_back(ptr->getVariableRef().getData()->getTypeIndex());
         }
 
@@ -189,5 +191,8 @@ public:
 
 #define GET_ARG(CastType, Position) \
     CastType* arg##Position = static_cast<CastType*>(inputs[Position]->getVariableRef().getData())
+
+#define GET_MEMBER(CastType) \
+    CastType* mb = static_cast<CastType*>(member->getVariableRef().getData());
 
 #define END_OF_FUNCTION_REG_FILE

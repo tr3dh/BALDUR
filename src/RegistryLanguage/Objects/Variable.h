@@ -37,6 +37,7 @@ struct Variable{
 
     void reference(Variable& other){
         
+        RETURNING_ASSERT(isReference() || !isValid(), "Referenzierung durch eine nicht Referenz variable versucht",);
         reference(other.getUniqueData());
     }
 

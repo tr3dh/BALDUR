@@ -34,6 +34,11 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
     //
     switch(node.Relation){
 
+    case(TkType::String):{
+
+        results.emplace_back(new types::STRING(node.argument));
+        break;
+    }
     case(TkType::Constant):{
 
         switch(node.constantType){
@@ -80,7 +85,8 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             // default verhalten für Zuweisung als Wert und alle anderen Fälle
             if(!scope.containsVariable(node.argument)){
 
-                scope.constructVariable(node.argument, types::VOID::typeIndex);
+                Variable* variablePtr = scope.constructAndReturnVariable(node.argument);
+                variablePtr->constructByObject(constructRegisteredType(types::VOID::typeIndex));
             }
             
             //
@@ -119,6 +125,21 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 moveAppendVector(results, paramResults);
             }
         }
+        else if(Operator == "->"){
+
+            RETURNING_ASSERT(node.children.size() == 2, "",{});
+            RETURNING_ASSERT(node.children[0].Relation == TkType::Argument, "",{});
+            RETURNING_ASSERT(node.children[1].Relation == TkType::Chain, "", {});
+            
+            const ASTNode& member = node.children[0];
+            const ASTNode& memberFunc = node.children[1].children[0];
+            const ASTNode& paramsNd = node.children[1].children[1];
+
+            EvalResultVec res = evaluateExpression(member, scope, context);
+            EvalResultVec params = evaluateExpression(paramsNd, scope, context);
+
+            callMemberFunction(memberFunc.argument, results, convertEvalResultsToPtrVec(params), &res[0]);
+        }
         else if(g_TwoArgOperations.contains(Operator)){
             
             RETURNING_ASSERT(node.children.size() == 2,
@@ -130,13 +151,29 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
             RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
 
-            RETURNING_ASSERT(leftSide.size() == rightSide.size(), "ungleiche Seitengrößen bei assign", {});
+            if(leftSide.size() == rightSide.size()){
 
-            //
-            moveAppendVector(leftSide, rightSide);
+                //
+                for(size_t childIdx = 0; childIdx < leftSide.size(); childIdx++){
 
+                    callFunction(g_TwoArgOperations[Operator], results, { &leftSide[childIdx], &rightSide[childIdx] });
+                }
+            }
+            // Problematisch da rvalue aus evalresult beim assign weggemovt wird und dann nur noch als
+            // invalide Variable zur Verfügung steht
             //
-            callFunction(g_TwoArgOperations[Operator], results, convertEvalResultsToPtrVec(leftSide));
+            // else if(rightSide.size() == 1){
+
+            //     //
+            //     for(size_t childIdx = 0; childIdx < leftSide.size(); childIdx++){
+
+            //         callFunction(g_TwoArgOperations[Operator], results, { &leftSide[childIdx], &rightSide[0] });
+            //     }
+            // }
+            else{
+
+                RETURNING_ASSERT(TRIGGER_ASSERT, "ungleiche Seitengrößen bei two side operator Funktion", {});
+            }
         }
 
         break;
@@ -157,7 +194,7 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
         if(node.children.size() > 1){
 
             bool IsFunctionCall = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Params;
-            bool IsListingConstruction = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Listing;
+            bool IsListingConstruction = node.children[0].Relation == TkType::Argument && node.children[node.children.size() - 1].Relation == TkType::Listing;
 
             if(IsFunctionCall){
 
@@ -180,18 +217,44 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 const std::string& typeKeyword = node.children[0].argument;
 
                 //
-                results = evaluateExpression(node.children[1], scope, context);
+                results = evaluateExpression(node.children[node.children.size() - 1], scope, context);
 
                 //
-                RETURNING_ASSERT(node.children[1].children.size() == results.size(),
+                RETURNING_ASSERT(node.children[node.children.size() - 1].children.size() == results.size(),
                     "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
-                RETURNING_ASSERT(typeForKeywordExists(typeKeyword), "Invalid Keyword", {});
+                RETURNING_ASSERT(typeForKeywordExists(typeKeyword) || typeKeyword == "ref", "Invalid Keyword", {});
 
-                //
-                for(auto& expr : results){
+                if(node.children.size() == 3 && node.children[1].argument != "ref"){
+                    return {};
+                }
+                else if(node.children.size() == 3){
 
-                    expr.getVariableRef().constructByObject(constructRegisteredType(typeKeyword));
+                    for(auto& expr : results){
+
+                        //
+                        expr.getVariableRef().inValidate();
+                        expr.getVariableRef().reference(&g_nullRefs[getTypeIndexByKeyword(typeKeyword)]);
+                    }
+                }
+                else if(node.children.size() == 2 && node.children[0].argument == "ref"){
+
+                    for(auto& expr : results){
+
+                        //
+                        expr.getVariableRef().inValidate();
+                        expr.getVariableRef().reference(&g_nullRefs[types::VOID::typeIndex]);
+                    }
+                }
+                else{
+
+                    // LOG << (node.children.size() == 2) << " " << node.children[0].argument << endl;
+
+                    for(auto& expr : results){
+
+                        //
+                        expr.getVariableRef().constructByObject(constructRegisteredType(typeKeyword));
+                    }
                 }
             }
             else{
@@ -243,7 +306,6 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                     //
                     results.emplace_back();
                     results[0].setLValue(variablePtr);
-
                 }
                 else{
 
@@ -258,7 +320,6 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                     //
                     results.emplace_back();
                     results[0].setLValue(variablePtr);
-
                 }
             }
         }

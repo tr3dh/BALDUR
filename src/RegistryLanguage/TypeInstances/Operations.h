@@ -4,6 +4,7 @@
 #include "VOID.h"
 #include "BOOL.h"
 #include "INT.h"
+#include "STRING.h"
 
 // Map der Form Operator | Funktionslabel
 extern std::map<std::string, std::string> g_TwoArgOperations;

@@ -7,6 +7,7 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     
     {"=", "__assign__"},
     {"<<", "__reference__"},
+    {"<>", "__swap__"},
     {"+=", "__addAssign__"},
     {"-=", "__subAssign__"},
     {"*=", "__mulAssign__"},
@@ -31,32 +32,6 @@ std::map<std::string, std::string> g_ArgChainOperations = {
 
 //
 void emplaceStdOperations(){
-
-    // später weitere assign die args entgegen nimmt und diese zwei param dann für jedes zuweisungspaar aufruft
-
-    registerFunction("__assign__", {IObject::ARGS_TYPE},
-        [__functionLabel__ = "__assign__", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
-
-            // Asserts
-            ASSERT_IS_NO_MEMBER_FUNCTION;
-            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-            PREPARE_RETURNS;
-
-            RETURNING_ASSERT(inputs.size() % 2 == 0, "Ungerade Arg Anzahl in Mehrfach zuweisung",);
-
-            //
-            size_t halfSize = inputs.size() / 2;
-
-            //
-            EvalResultVec res{};
-
-            //
-            for(size_t childIdx = 0; childIdx < halfSize; childIdx++){
-
-                callFunction("__assign__", res, {inputs[childIdx], inputs[childIdx + halfSize]});
-            }
-    },
-    {});
 
     registerFunction("__assign__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
         [__functionLabel__ = "__assign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
@@ -138,6 +113,32 @@ void emplaceStdOperations(){
     },
     {});
 
+    registerFunction("__swap__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__swap__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            EvalResult& recipient = *inputs[0];
+            EvalResult& source = *inputs[1];
+
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
+
+            //
+            RETURNING_ASSERT(!recipientIsRValue && !sourceIsRValue, "Bei " + std::string(__functionLabel__) + " sind rvalues mit im Spiel ",);
+
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                    "narrowing conversion");
+
+            recipient.getVariableRef().swap(source.getVariableRef());
+    },
+    {});
+
     registerFunction("countArgs", {IObject::ARGS_TYPE},
         [__functionLabel__ = "countArgs", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
 
@@ -153,4 +154,88 @@ void emplaceStdOperations(){
             ret0->getMember() = inputs.size();
     },
     {types::INT::typeIndex});
+
+    //
+    registerFunction("sizeof", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "countArgs", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            // Returns
+            GET_RETURN(types::INT, 0);
+
+            // schreiben in returns
+            ret0->getMember() = (!inputs[0]->getVariableRef().isReference()) ? inputs[0]->getVariableRef().getData()->getSize() : 8;
+    },
+    {types::INT::typeIndex});
+
+    //
+    registerFunction("typeid", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "countArgs", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            // Returns
+            GET_RETURN(types::INT, 0);
+
+            // schreiben in returns
+            ret0->getMember() = inputs[0]->getTypeIndex();
+    },
+    {types::INT::typeIndex});
+
+    //
+    registerFunction("typename", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "typename", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            // Returns
+            GET_RETURN(types::STRING, 0);
+
+            // schreiben in returns
+            ret0->getMember() = getKeywordByTypeIndex(inputs[0]->getTypeIndex());
+    },
+    {types::STRING::typeIndex});
+
+    //
+    registerFunction("timeStamp", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            // Returns
+            GET_RETURN(types::STRING, 0);
+
+            // schreiben in returns
+            ret0->getMember() = getTimestamp();
+    },
+    {types::STRING::typeIndex});
+
+    //
+    registerFunction("log", {IObject::ARGS_TYPE},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            // Returns
+            for(const auto& param : inputs){
+                param->getVariableRef().getData()->print();
+            }
+    },
+    {});
 }

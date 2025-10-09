@@ -21,6 +21,8 @@ public:
     virtual ~IObject() = default;
     virtual void print() const = 0;
     virtual TypeIndex getTypeIndex() const = 0;
+    virtual const std::string& getTypeKeyword() const = 0;
+    virtual size_t getSize() const = 0;
     virtual std::unique_ptr<IObject> clone() const = 0;
 };
 

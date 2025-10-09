@@ -42,14 +42,17 @@ int executeScript(const std::string& scriptPath){
     LOG << scriptContent << endl;
 
     //
-    SetUpLexer({COLON, "=", KOMMA, ".=", ":=",
+    SetUpLexer({COLON,
+                "=", "<<", "<>", ".=", ":=",
+                "+=", "-=", "*=", "/=", "^=",                                   // arithmetische Operatoren
+                "->",
                 "+", "-", "*", "/", "^",
-                "+=", "-=", "*=", "/=", "^="                                    // arithmetische Operatoren
-                "++", "--", ">>", "<<",                                         // Verschiebungsoperatoren
+                "++", "--", ">>", "<<<<",                                       // Verschiebungsoperatoren
                 ">", "<", "&&", "&", "||", "|", "!", "?",                       // logische Operatoren
                 ">=", "<=", "&=", "|=", "!=",                                   // logische Operatoren mit =
                 ".", "...", "..", ":",                                          // dots
-                "cdots", "vdots", "cdot"});                                     // ausformulierungen
+                "cdots", "vdots", "cdot",                                       // ausformulierungen
+                KOMMA,});                                     
 
     auto tokens = lexExpression(scriptContent);
     LOG << tokens << endl;
