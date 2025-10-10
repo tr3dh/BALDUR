@@ -50,9 +50,7 @@ int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "int db = 1;",
-        "db = db + double(2.2) + int(10.4) + 11 + 4;"
-        "log(timeStamp(), \" : \" ,\"double Var : \", , db);"
+        "log(!(true, true) x| (true, false));"
     };
 
     std::ofstream outfile("../bin/temp.proc");

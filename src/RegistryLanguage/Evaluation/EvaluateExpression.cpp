@@ -140,6 +140,20 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
 
             callMemberFunction(memberFunc.argument, results, convertEvalResultsToPtrVec(params), &res[0]);
         }
+        else if(g_OneArgOperations.contains(Operator)){
+
+            RETURNING_ASSERT(node.children.size() == 1, "One Arg Operation bekommt mehr als ein Argument übergeben", {});
+
+            EvalResultVec res;
+            results = evaluateExpression(node.children[0], scope, context);
+
+            //
+            for(size_t resIdx = 0; resIdx < results.size(); resIdx++){
+
+                //
+                callFunction(g_OneArgOperations[Operator], res, {&results[resIdx]});
+            }
+        }
         else if(g_TwoArgOperations.contains(Operator)){
             
             RETURNING_ASSERT(node.children.size() == 2,
@@ -241,8 +255,8 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 EvalResultVec params = evaluateExpression(node.children[1], scope, context);
 
                 //
-                RETURNING_ASSERT(node.children[1].children.size() == params.size(),
-                    "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
+                // RETURNING_ASSERT(node.children[1].children.size() == params.size(),
+                // "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
                 //
                 callFunction(functionLabel, results, convertEvalResultsToPtrVec(params));
@@ -375,7 +389,7 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             const ASTNode& child = node.children[childIdx];
             EvalResultVec paramResults = evaluateExpression(child, scope, context);
 
-            RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
+            // RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
             
             moveAppendVector(results, paramResults);
         }

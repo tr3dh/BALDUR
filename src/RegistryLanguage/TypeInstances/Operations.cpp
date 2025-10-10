@@ -1,5 +1,11 @@
 #include "Operations.h"
 
+//
+std::map<std::string, std::string> g_OneArgOperations{
+
+    {"!", "__negate__"}
+};
+
 // Map der Form Operator | Funktionslabel
 std::map<std::string, std::string> g_TwoArgOperations = {
 
@@ -8,10 +14,26 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"=", "__assign__"},
     {"<<", "__reference__"},
     {"<>", "__swap__"},
+
     {"+=", "__addAssign__"},
     {"-=", "__subAssign__"},
     {"*=", "__mulAssign__"},
-    {"/=", "__divAssign__"}
+    {"/=", "__divAssign__"},
+    {"^=", "__expAssign__"},
+
+    {"==", "__equal__"},
+    {"!=", "__notEqual__"},
+    {">",  "__bigger__"},
+    {"<",  "__smaller__"},
+    {">=", "__biggerEqual__"},
+    {"<=",  "__smallerEqual__"},
+
+    {"&=", "__andAssign__"},
+    {"|=", "__orAssign__"},
+    {"x|=", "__xorAssign__"},
+    {"!&=", "__nandAssign__"},
+    {"!|=", "__norAssign__"},
+    {"!x|=", "__nxorAssign__"},
 };
 
 // Map der Form Operator | (Funktionslabel, verknüpfende Operation)
@@ -27,7 +49,24 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {"+", "__addAssign__"},
     {"-", "__subAssign__"},
     {"*", "__mulAssign__"},
-    {"/", "__divAssign__"}
+    {"/", "__divAssign__"},
+    {"^", "__expAssign__"},
+    
+    // Bools
+    {"&&", "__andAssign__"},
+    {"||", "__orAssign__"},
+    {"x|", "__xorAssign__"},
+    {"!&", "__nandAssign__"},
+    {"!|", "__norAssign__"},
+    {"!x|", "__nxorAssign__"},
+    
+    // Bools
+    {"and", "__andAssign__"},
+    {"or", "__orAssign__"},
+    {"xor", "__xorAssign__"},
+    {"nand", "__nandAssign__"},
+    {"nor", "__norAssign__"},
+    {"nxor", "__nxorAssign__"},
 };
 
 //
@@ -235,6 +274,7 @@ void emplaceStdOperations(){
             // Returns
             for(const auto& param : inputs){
                 param->getVariableRef().getData()->print();
+                LOG << " ";
             }
 
             LOG << endl;

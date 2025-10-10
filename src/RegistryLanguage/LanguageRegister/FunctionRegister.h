@@ -176,7 +176,6 @@ public:
     
 #define PREPARE_RETURNS \
     \
-    ASSERT(returns.empty(), "return Vaktor enthält bereits Elemente"); \
     PERMISSIVLY_RESIZE_RETURNS(functionReturnTypes.size()); \
     \
     for(size_t retIdx = 0; retIdx < functionReturnTypes.size(); retIdx++){ \

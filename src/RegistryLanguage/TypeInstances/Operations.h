@@ -7,6 +7,9 @@
 #include "STRING.h"
 
 // Map der Form Operator | Funktionslabel
+extern std::map<std::string, std::string> g_OneArgOperations;
+
+// Map der Form Operator | Funktionslabel
 extern std::map<std::string, std::string> g_TwoArgOperations;
 
 // Map der Form Operator | Funktionslabel
