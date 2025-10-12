@@ -246,6 +246,23 @@ namespace types{
         },
         {BOOL::typeIndex});
 
+        //
+        registerFunction("__negate__", {INT::typeIndex},
+            [__functionLabel__ = "__negate__", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_ARG(INT, 0);
+
+                // schreiben in returns
+                arg0->getMember() = -arg0->getMember();
+        },
+        {});
+
         return true;
     }
 };

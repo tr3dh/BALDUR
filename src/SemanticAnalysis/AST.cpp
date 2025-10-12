@@ -207,6 +207,7 @@ void convertTokensToAST(ASTNode& Expr, const std::vector<Token>& tokens, const s
 
             if(tokens[Expr.begin].type == TkType::Paren){
                 Expr.Relation = TkType::Params;
+                primOperator = g_kommaOperatorIndex;
             }
             else if(tokens[Expr.begin].type == TkType::Brace){
                 Expr.Relation = TkType::Section;
@@ -221,7 +222,7 @@ void convertTokensToAST(ASTNode& Expr, const std::vector<Token>& tokens, const s
             
             Expr.end -= 1;
             minHierarchie = tokens[Expr.begin].hierarchie + 1;
-            primOperator = Expr.Relation == TkType::Section ? g_colonOperatorIndex : g_kommaOperatorIndex;
+            // primOperator = Expr.Relation == TkType::Section ? g_colonOperatorIndex : g_kommaOperatorIndex;
         }
         else{
 
@@ -284,7 +285,7 @@ void convertTokensToAST(ASTNode& Expr, const std::vector<Token>& tokens, const s
         if(Expr.Relation == TkType::Operator
             
             // zeile auskommentieren wenn section und params nicht automatisch nach , / ; gesplittet werden sollen
-            || Expr.Relation == TkType::Params || Expr.Relation == TkType::Listing || Expr.Relation == TkType::Section
+            || Expr.Relation == TkType::Params // || Expr.Relation == TkType::Listing || Expr.Relation == TkType::Section
         ){
 
             size_t beginWithToken = Expr.Relation == TkType::Operator ? Expr.begin : Expr.begin + 1;

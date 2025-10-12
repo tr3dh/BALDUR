@@ -1,1 +1,3 @@
-int main();
+If(1 == 2){ log("If Statement wird ausgeführt"); };
+else nIf([1,2 == 1,2]){ log("else nIf statement wird ausgeführt");};
+else {log("else section wird ausgeführt");};

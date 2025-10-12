@@ -209,6 +209,103 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("If", {IObject::ARGS_TYPE},
+            [__functionLabel__ = "If", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                RETURNING_ASSERT(inputs.size() == 1, "If Statement erwartet genau eine bedingung",);
+                RETURNING_ASSERT(inputs[0]->getData()->getTypeIndex() == BOOL::typeIndex, "If Statement erwartet Bool input",);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(BOOL, 0);
+                GET_ARG(BOOL, 0);
+
+                ret0->getMember() = arg0->getMember();
+        },
+        {BOOL::typeIndex});
+
+        //
+        registerFunction("nIf", {IObject::ARGS_TYPE},
+            [__functionLabel__ = "nIf", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(BOOL, 0);
+
+                //
+                for(size_t argIdx = 0; argIdx < inputs.size(); argIdx++){
+
+                    RETURNING_ASSERT(inputs[argIdx]->getData()->getTypeIndex() == BOOL::typeIndex,
+                                     "if Statement benötigt Bools als inputs",);
+
+                    bool member = static_cast<BOOL*>(inputs[argIdx]->getVariableRef().getData())->getMember();
+
+                    if(argIdx == 0){ ret0->getMember() = member; }
+                    else{ ret0->getMember() &= member; }
+                }
+        },
+        {BOOL::typeIndex});
+
+        //
+        registerFunction("rIf", {IObject::ARGS_TYPE},
+            [__functionLabel__ = "rIf", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(BOOL, 0);
+
+                //
+                for(size_t argIdx = 0; argIdx < inputs.size(); argIdx++){
+
+                    RETURNING_ASSERT(inputs[argIdx]->getData()->getTypeIndex() == BOOL::typeIndex,
+                                     "if Statement benötigt Bools als inputs",);
+
+                    bool member = static_cast<BOOL*>(inputs[argIdx]->getVariableRef().getData())->getMember();
+
+                    if(argIdx == 0){ ret0->getMember() = member; }
+                    else{ ret0->getMember() |= member; }
+                }
+        },
+        {BOOL::typeIndex});
+
+        //
+        registerFunction("xIf", {IObject::ARGS_TYPE},
+            [__functionLabel__ = "xIf", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(BOOL, 0);
+
+                //
+                for(size_t argIdx = 0; argIdx < inputs.size(); argIdx++){
+
+                    RETURNING_ASSERT(inputs[argIdx]->getData()->getTypeIndex() == BOOL::typeIndex,
+                                     "if Statement benötigt Bools als inputs",);
+
+                    bool member = static_cast<BOOL*>(inputs[argIdx]->getVariableRef().getData())->getMember();
+
+                    if(argIdx == 0){ ret0->getMember() = member; }
+                    else{ ret0->getMember() ^= member; }
+                }
+        },
+        {BOOL::typeIndex});
+
         return true;
     }
 };

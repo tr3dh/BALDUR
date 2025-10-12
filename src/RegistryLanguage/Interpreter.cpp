@@ -1,18 +1,60 @@
 #include "Interpreter.h"
 
+int countOccurrences(const std::string& str, const std::string& sub) {
+
+    if (sub.empty()) return 0;
+
+    int count = 0;
+    size_t pos = str.find(sub);
+
+    while (pos != std::string::npos) {
+        ++count;
+        pos = str.find(sub, pos + sub.length());
+    }
+
+    return count;
+}
+
+struct Script{
+
+    std::vector<size_t> lineBreaks = {};
+    std::string scriptContent;
+    size_t numLines = -1;
+
+    void cacheLineBreaks(){
+        
+        numLines = countOccurrences(scriptContent, "\n");
+        lineBreaks.reserve(numLines);
+
+        size_t pos = 0, count = 0;
+        const std::string par = "\n";
+
+        while (pos != std::string::npos) {
+            
+            pos = scriptContent.find(par, pos + par.length());
+            
+            if(pos != std::string::npos){
+                lineBreaks.emplace_back(pos);
+            }
+        }
+    }
+};
+
 int executeScript(const std::string& scriptPath){
 
     // Aufsetzen der mitgelieferten Standard Typen
     // weitere eigene Typen können bspl. in der eigenen main aufgerufen werden
     setUpTypes();
 
+    //
     std::ifstream file(scriptPath);
     if (!file) {
         _ERROR << "kein Script " << scriptPath << " gefunden" << ENDL;
         return 1;
     }
 
-    std::string scriptContent = "";
+    Script src;
+    src.scriptContent = "";
 
     std::string line;
     while (std::getline(file, line)) {
@@ -25,21 +67,25 @@ int executeScript(const std::string& scriptPath){
             }
             else{
                 
-                scriptContent += line.substr(0, line.find_first_of("//"));
-                scriptContent += "\n";
+                src.scriptContent += line.substr(0, line.find_first_of("//"));
+                src.scriptContent += "\n";
                 continue;
             }
         }
 
-        scriptContent += line;
-        scriptContent += "\n";
+        src.scriptContent += line;
+        src.scriptContent += "\n";
     }
 
     file.close();
 
     LOG << "Werte Skript " << scriptPath << " aus" << endl;
     LOG << endl;
-    LOG << scriptContent << endl;
+    LOG << src.scriptContent << endl;
+
+    //
+    src.cacheLineBreaks();
+    // LOG << src.lineBreaks << endl;
 
     //
     SetUpLexer({COLON,
@@ -49,18 +95,18 @@ int executeScript(const std::string& scriptPath){
                 "&", "|", "!&", "!|", "&=", "|=", "!&=", "!|=",
                 "x|", "!x|", "x|=", "!x|=",
                 "==", "!=", ">=", "<=", ">", "<",
-                "!",
                 "+", "-", "*", "/", "^",
+                "!",
                 "->",
                 KOMMA,});                                  
 
-    auto tokens = lexExpression(scriptContent);
+    auto tokens = lexExpression(src.scriptContent);
     LOG << tokens << endl;
 
     ASTNode Expr;
     Expr.end = tokens.size();
 
-    convertTokensToAST(Expr, tokens, scriptContent);
+    convertTokensToAST(Expr, tokens, src.scriptContent);
     LOG << Expr << endl;
 
     LOG << g_TypeRegister << endl;

@@ -3,7 +3,8 @@
 //
 std::map<std::string, std::string> g_OneArgOperations{
 
-    {"!", "__negate__"}
+    {"!", "__negate__"},
+    {"-", "__negate__"}
 };
 
 // Map der Form Operator | Funktionslabel

@@ -105,7 +105,28 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
 
                 //
-                evaluateExpression(node.children[childIdx], scope, context);
+                EvalResultVec vec = evaluateExpression(node.children[childIdx], scope, context);
+
+                if(vec.size() == 1 && vec[0].getTypeIndex() == types::BOOL::typeIndex &&
+                   static_cast<types::BOOL*>(vec[0].getVariableRef().getData())->getMember() &&
+                   childIdx < node.children.size() - 1 &&
+                   node.children[childIdx + 1].children.size() > 0 &&
+                   node.children[childIdx + 1].children[0].argument == "else"){
+
+                   childIdx++;
+                }
+
+                // //
+                // if(vec.size() == 1 && vec[0].getTypeIndex() == types::BOOL::typeIndex &&
+                //     static_cast<types::BOOL*>(vec[0].getVariableRef().getData())->getMember() &&
+                //     node.children[childIdx].children.size() > 0 && node.children[childIdx].children[0].argument == "else"
+                //     // childIdx < node.children.size() 
+                //     ){
+
+                //     LOG << "esc" << endl;        
+
+                //     childIdx++;
+                // }
             }
         }
         else if(Operator == KOMMA){
@@ -140,9 +161,7 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
 
             callMemberFunction(memberFunc.argument, results, convertEvalResultsToPtrVec(params), &res[0]);
         }
-        else if(g_OneArgOperations.contains(Operator)){
-
-            RETURNING_ASSERT(node.children.size() == 1, "One Arg Operation bekommt mehr als ein Argument übergeben", {});
+        else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
 
             EvalResultVec res;
             results = evaluateExpression(node.children[0], scope, context);
@@ -246,7 +265,42 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             bool IsFunctionCall = node.children[0].Relation == TkType::Argument && node.children[1].Relation == TkType::Params;
             bool IsListingConstruction = node.children[0].Relation == TkType::Argument && node.children[node.children.size() - 1].Relation == TkType::Listing;
 
-            if(IsFunctionCall){
+            bool IsIfStatement = (node.children[0].Relation == TkType::Argument) &&
+                                 (node.children[node.children.size() - 2].Relation == TkType::Params) &&
+                                 (node.children[node.children.size() - 1].Relation == TkType::Section);
+
+            bool RawElse = (node.children[0].Relation == TkType::Argument) &&
+                           (node.children[0].argument == "else") &&
+                           (node.children[1].Relation == TkType::Section);
+
+            if(IsIfStatement){
+
+                //
+                const ASTNode& paramSection = node.children[node.children.size() - 2];
+                const std::string& functionLabel = node.children[node.children.size() - 3].argument;
+                const ASTNode& section = node.children[node.children.size() - 1];
+
+                //
+                EvalResultVec paramResults = evaluateExpression(paramSection, scope, context);
+
+                //
+                callFunction(functionLabel, results, convertEvalResultsToPtrVec(paramResults));
+
+                RETURNING_ASSERT(results.size() == 1, "If Statement gibt mehr als ein return zurück",{});
+
+                //
+                bool executeSection = static_cast<types::BOOL*>(results[0].getVariableRef().getData())->getMember();
+
+                //
+                if(executeSection){
+                    evaluateExpression(section, scope, context);
+                }
+            }
+            else if(RawElse){
+                
+                evaluateExpression(node.children[1], scope, context);
+            }
+            else if(IsFunctionCall){
 
                 //
                 const std::string& functionLabel = node.children[0].argument;
@@ -270,8 +324,8 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 results = evaluateExpression(node.children[node.children.size() - 1], scope, context);
 
                 //
-                RETURNING_ASSERT(node.children[node.children.size() - 1].children.size() == results.size(),
-                    "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
+                // RETURNING_ASSERT(node.children[node.children.size() - 1].children.size() == results.size(),
+                //     "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
                 RETURNING_ASSERT(typeForKeywordExists(typeKeyword) || typeKeyword == "ref", "Invalid Keyword", {});
 
@@ -376,6 +430,7 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
 
         break;
     }
+    case(TkType::Section):
     case(TkType::Listing):
     case(TkType::Params):{
 

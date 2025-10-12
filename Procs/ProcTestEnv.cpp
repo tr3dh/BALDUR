@@ -50,9 +50,15 @@ int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "log(!(true, true) x| (true, false));"
+        "If([1, 2 == 1, 3]){ log(\"If Statement wird ausgeführt\"); };",
+        "else If(0 == 1){ log(\"Else If Statement wird ausgeführt\"); };",
+        "else{ log(\"Else Statement wird ausgeführt\"); };",
+
+        "rIf(1 == 1, 1 == 2){ log(\"If Statement wird ausgeführt\"); };"
+        "else{ log(\"Else Statement wird ausgeführt\"); };"
     };
 
+    //
     std::ofstream outfile("../bin/temp.proc");
     if (!outfile) {
         std::cerr << "Fehler: Datei konnte nicht erstellt werden!" << endl;
