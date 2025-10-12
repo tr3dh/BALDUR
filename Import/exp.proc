@@ -1,3 +1,33 @@
-If(1 == 2){ log("If Statement wird ausgeführt"); };
-else nIf([1,2 == 1,2]){ log("else nIf statement wird ausgeführt");};
-else {log("else section wird ausgeführt");};
+// Src
+int [x,y,z] = 1,2,3;
+int ref[xr,yr,zr] << x,y,z;
+
+// Standard If Konjunktion >> erwartet 1 zurückgegebenes EvalResult
+If(x == xr){
+    
+    log("If Statement wird ausgeführt");
+    
+    If(1 == 1){
+        log("Verschalteltes If Statement ausgeführt");
+    };
+};
+
+//
+else nIf([x,y == xr,yr]){
+    log("else nIf statement wird ausgeführt");
+};
+
+// Else Section
+else {
+
+    log("else section wird ausgeführt");
+};
+
+// And If Konjuktion
+nIf([x,y == xr, yr]){
+
+    log("nIf Konjunktion ausgeführt");
+};
+
+// Hier kann geprintet werden kann, da die if Konjunktionen direkt als Funktíonen im Funktionen cache vorliege
+log(rIf(1 == 1, 1 == 1), xIf(1 == 1, 1 == 1));

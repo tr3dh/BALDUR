@@ -50,12 +50,17 @@ int main(){
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
-        "If([1, 2 == 1, 3]){ log(\"If Statement wird ausgeführt\"); };",
-        "else If(0 == 1){ log(\"Else If Statement wird ausgeführt\"); };",
-        "else{ log(\"Else Statement wird ausgeführt\"); };",
 
-        "rIf(1 == 1, 1 == 2){ log(\"If Statement wird ausgeführt\"); };"
-        "else{ log(\"Else Statement wird ausgeführt\"); };"
+        // "int a = 4;",
+
+        "nIf([1, 2 == 1, 2]){ log(\"If Statement wird ausgeführt\"); };",
+        "else If(1 == 1){ log(\"Else If Statement wird ausgeführt\"); If(1 == 1){ log(\"HERE\");};};",
+        "else{ int a = 2; int b = 3; log(\"Else Statement wird ausgeführt\", b); };",
+
+        "xIf(1 == 1, 1 == 1){ log(\"2. If Statement wird ausgeführt\"); };",
+        "else{ log(\"2. Else Statement wird ausgeführt\"); };",
+
+        "log(\"...\");"
     };
 
     //

@@ -273,12 +273,10 @@ void emplaceStdOperations(){
             PREPARE_RETURNS;
 
             // Returns
-            for(const auto& param : inputs){
-                param->getVariableRef().getData()->print();
-                LOG << " ";
+            for(size_t paramIdx = 0; paramIdx < inputs.size(); paramIdx++){
+                inputs[paramIdx]->getVariableRef().getData()->print();
+                LOG << (paramIdx == inputs.size() - 1 ? "\n" : " ");
             }
-
-            LOG << endl;
     },
     {});
 }

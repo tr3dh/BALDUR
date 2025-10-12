@@ -108,12 +108,18 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
                 EvalResultVec vec = evaluateExpression(node.children[childIdx], scope, context);
 
                 if(vec.size() == 1 && vec[0].getTypeIndex() == types::BOOL::typeIndex &&
-                   static_cast<types::BOOL*>(vec[0].getVariableRef().getData())->getMember() &&
-                   childIdx < node.children.size() - 1 &&
-                   node.children[childIdx + 1].children.size() > 0 &&
-                   node.children[childIdx + 1].children[0].argument == "else"){
+                   static_cast<types::BOOL*>(vec[0].getVariableRef().getData())->getMember()){
 
-                   childIdx++;
+                    size_t offset = 1;
+
+                    while(childIdx < node.children.size() - offset &&
+                            node.children[childIdx + offset].children.size() > 0 &&
+                            node.children[childIdx + offset].children[0].argument == "else"){
+                        
+                        offset++;
+                    }
+
+                   childIdx += offset - 1;
                 }
 
                 // //
@@ -293,12 +299,19 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
 
                 //
                 if(executeSection){
-                    evaluateExpression(section, scope, context);
+
+                    Scope childScope;
+                    childScope.parent = &scope;
+
+                    evaluateExpression(section, childScope, context);
                 }
             }
             else if(RawElse){
                 
-                evaluateExpression(node.children[1], scope, context);
+                Scope childScope;
+                childScope.parent = &scope;
+
+                evaluateExpression(node.children[1], childScope, context);
             }
             else if(IsFunctionCall){
 
