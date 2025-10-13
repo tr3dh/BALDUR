@@ -215,7 +215,7 @@ extern std::ofstream g_logFile;
 #define LOG std::cout << LOG_ORANGE
 #define _ERROR std::cerr << LOG_RED << "!! ERROR !! --> "
 
-#define ENDL "\n" << LOG_RESET 
+#define ENDL "\n" << LOG_RESET << std::flush;
 
 #endif
 

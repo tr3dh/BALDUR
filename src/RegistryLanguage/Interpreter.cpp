@@ -59,21 +59,37 @@ int executeScript(const std::string& scriptPath){
     std::string line;
     while (std::getline(file, line)) {
 
+        //
+        std::string lineStr;
+
         if(string::contains(line, "//")){
             
             if(line.find_first_of("//") == line.find_first_not_of(" \t")){
                 
-                continue;
+                lineStr = "";
             }
             else{
                 
-                src.scriptContent += line.substr(0, line.find_first_of("//"));
-                src.scriptContent += "\n";
-                continue;
+                lineStr = line.substr(0, line.find_first_of("//"));
             }
         }
+        else{
 
-        src.scriptContent += line;
+            lineStr = line;
+        }
+
+        if(lineStr.find_first_not_of(" \t;") == lineStr.npos){
+            
+        }
+        else if(lineStr[lineStr.find_last_not_of(" \t")] != ';'){
+            
+            lineStr += ";";
+        }
+        else{
+
+        }
+
+        src.scriptContent += lineStr;
         src.scriptContent += "\n";
     }
 
@@ -96,6 +112,7 @@ int executeScript(const std::string& scriptPath){
                 "x|", "!x|", "x|=", "!x|=",
                 "==", "!=", ">=", "<=", ">", "<",
                 "+", "-", "*", "/", "^",
+                "++", "--",
                 "!",
                 "->",
                 KOMMA,});                                  

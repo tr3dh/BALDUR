@@ -777,6 +777,23 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("sleep", {DOUBLE::typeIndex},
+            [__functionLabel__ = "sleep", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_ARG(DOUBLE, 0);
+
+                // schreiben in returns
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(arg0->getMember() * 1000)));
+        },
+        {});
+
         return true;
     }
 };

@@ -52,13 +52,36 @@ int main(){
     std::vector<std::string> scriptLines = {
 
         // "int a = 4;",
+        // "for(int i = 0, i < 20, i++){",
+        // "",
+        // "}",
+        "for(int i = 0, i < 20, i++){",
+        "   sleep(int(1))",
+        "   log(\"I : \", i)"
+        "}",
+        "int i = 0",
+        "while(i < 20){",
+        "   sleep(1)",
+        "   log(\"while loop : frame\", i)",
+        "   i++",
+        "}",
+        "nIf([1, 2 == 1, 2]){",
+        "   ",
+        "   log(\"If Statement wird ausgeführt\")",
+        "}",
+        "else If(1 == 1){",
+        "   log(\"Else If Statement wird ausgeführt\")",
+        "   If(1 == 1){",
+        "       log(\"HERE\")",
+        "   }",
+        "}",
+        "else{",
+        "   int a = 2; int b = 3;"
+        "   log(\"Else Statement wird ausgeführt\", b)",
+        "};",
 
-        "nIf([1, 2 == 1, 2]){ log(\"If Statement wird ausgeführt\"); };",
-        "else If(1 == 1){ log(\"Else If Statement wird ausgeführt\"); If(1 == 1){ log(\"HERE\");};};",
-        "else{ int a = 2; int b = 3; log(\"Else Statement wird ausgeführt\", b); };",
-
-        "xIf(1 == 1, 1 == 1){ log(\"2. If Statement wird ausgeführt\"); };",
-        "else{ log(\"2. Else Statement wird ausgeführt\"); };",
+        "xIf(1 == 1, 1 == 1){ log(\"2. If Statement wird ausgeführt\") };",
+        "else{ log(\"2. Else Statement wird ausgeführt\") };",
 
         "log(\"...\");"
     };

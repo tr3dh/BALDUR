@@ -272,14 +272,99 @@ EvalResultVec evaluateExpression(const ASTNode& node, Scope& scope, Context cont
             bool IsListingConstruction = node.children[0].Relation == TkType::Argument && node.children[node.children.size() - 1].Relation == TkType::Listing;
 
             bool IsIfStatement = (node.children[0].Relation == TkType::Argument) &&
-                                 (node.children[node.children.size() - 2].Relation == TkType::Params) &&
+                                 (node.children[node.children.size() - 2].Relation == TkType::Params ||
+                                 node.children[node.children.size() - 2].Relation == TkType::Listing) &&
                                  (node.children[node.children.size() - 1].Relation == TkType::Section);
 
             bool RawElse = (node.children[0].Relation == TkType::Argument) &&
                            (node.children[0].argument == "else") &&
                            (node.children[1].Relation == TkType::Section);
 
-            if(IsIfStatement){
+            bool IsForLoop = node.children[0].argument == "for";
+            bool IsWhileLoop = node.children[0].argument == "while";
+
+            if(IsForLoop){
+
+                RETURNING_ASSERT(node.children[1].Relation == TkType::Params, "",{});
+                RETURNING_ASSERT(node.children[2].Relation == TkType::Section, "",{});
+
+                const ASTNode& paramSection = node.children[1];
+
+                RETURNING_ASSERT(paramSection.children.size() == 3, "", {});
+
+                const ASTNode& initialValues = paramSection.children[0];
+                const ASTNode& breakCondition = paramSection.children[1];
+                const ASTNode& increment = paramSection.children[2];
+
+                const ASTNode& executableSection = node.children[2];
+
+                Scope loopScope;
+                loopScope.parent = &scope;
+
+                evaluateExpression(initialValues, loopScope, context);
+
+                EvalResultVec breakConditionRes;
+                bool stayInLoop = true;
+
+                while(true){
+
+                    // Abbruchbedingung checken
+                    breakConditionRes = evaluateExpression(breakCondition, loopScope, context);
+
+                    RETURNING_ASSERT(breakConditionRes.size() == 1, "", {});
+                    RETURNING_ASSERT(breakConditionRes[0].getTypeIndex() == types::BOOL::typeIndex, "", {});
+
+                    stayInLoop = static_cast<types::BOOL*>(breakConditionRes[0].getData())->getMember();
+
+                    // abbrechen wenn erforderlich
+                    if(!stayInLoop){
+                        break;
+                    }
+
+                    // Schleifen Sektion ausfürhen
+                    evaluateExpression(executableSection, loopScope, context);
+
+                    // inkrement aufrufen
+                    evaluateExpression(increment, loopScope, context);
+                }
+            }
+            else if(IsWhileLoop){
+
+                RETURNING_ASSERT(node.children[1].Relation == TkType::Params, "",{});
+                RETURNING_ASSERT(node.children[2].Relation == TkType::Section, "",{});
+
+                const ASTNode& paramSection = node.children[1];
+
+                RETURNING_ASSERT(paramSection.children.size() == 1, "", {});
+
+                const ASTNode& executableSection = node.children[2];
+
+                Scope loopScope;
+                loopScope.parent = &scope;
+
+                EvalResultVec breakConditionRes;
+                bool stayInLoop = true;
+
+                while(true){
+
+                    // Abbruchbedingung checken
+                    breakConditionRes = evaluateExpression(paramSection, loopScope, context);
+
+                    RETURNING_ASSERT(breakConditionRes.size() == 1, "", {});
+                    RETURNING_ASSERT(breakConditionRes[0].getTypeIndex() == types::BOOL::typeIndex, "", {});
+
+                    stayInLoop = static_cast<types::BOOL*>(breakConditionRes[0].getData())->getMember();
+
+                    // abbrechen wenn erforderlich
+                    if(!stayInLoop){
+                        break;
+                    }
+
+                    // Schleifen Sektion ausfürhen
+                    evaluateExpression(executableSection, loopScope, context);
+                }
+            }
+            else if(IsIfStatement){
 
                 //
                 const ASTNode& paramSection = node.children[node.children.size() - 2];

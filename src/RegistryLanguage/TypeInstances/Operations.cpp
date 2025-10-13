@@ -4,7 +4,9 @@
 std::map<std::string, std::string> g_OneArgOperations{
 
     {"!", "__negate__"},
-    {"-", "__negate__"}
+    {"-", "__negate__"},
+    {"++", "__increment__"},
+    {"--", "__decrement__"},
 };
 
 // Map der Form Operator | Funktionslabel
@@ -274,8 +276,9 @@ void emplaceStdOperations(){
 
             // Returns
             for(size_t paramIdx = 0; paramIdx < inputs.size(); paramIdx++){
+                
                 inputs[paramIdx]->getVariableRef().getData()->print();
-                LOG << (paramIdx == inputs.size() - 1 ? "\n" : " ");
+                LOG << (paramIdx == inputs.size() - 1 ? "\n" : " ") << std::flush;
             }
     },
     {});
