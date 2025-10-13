@@ -37,6 +37,8 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"!&=", "__nandAssign__"},
     {"!|=", "__norAssign__"},
     {"!x|=", "__nxorAssign__"},
+
+    {"%", "__modulo__"},
 };
 
 // Map der Form Operator | (Funktionslabel, verknüpfende Operation)

@@ -150,11 +150,11 @@ std::vector<Token> lexExpression(const std::string& expression){
                 exprIdx += argLen;
             }
         }
-        else if(std::isalpha(exprChar)){
+        else if(std::isalpha(exprChar) || exprChar == '_'){
 
             argLen = 0;
             while(exprIdx + argLen < expression.size() &&
-                (std::isalpha(expression[exprIdx + argLen]) || std::isdigit(expression[exprIdx + argLen]))){
+                (std::isalpha(expression[exprIdx + argLen]) || expression[exprIdx + argLen] == '_' || std::isdigit(expression[exprIdx + argLen]))){
                 argLen++;
             }
 

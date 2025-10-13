@@ -314,6 +314,28 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("__modulo__", {INT::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__modulo__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                // PREPARE_RETURNS;
+
+                // Returns | Inputs
+                returns.emplace_back();
+                returns[returns.size() - 1].constructRValueByObject(constructRegisteredType(functionReturnTypes[0]));
+
+                // Returns | Inputs
+                INT* ret0 = static_cast<INT*>(returns[returns.size()-1].getVariableRef().getData());
+                GET_ARG(INT, 0); GET_ARG(INT, 1);
+
+                // schreiben in returns
+                ret0->getMember() = arg0->getMember() % arg1->getMember();
+        },
+        {INT::typeIndex});
+
         return true;
     }
 };

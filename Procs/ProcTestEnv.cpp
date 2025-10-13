@@ -51,10 +51,12 @@ int main(){
     // Bspl Skript
     std::vector<std::string> scriptLines = {
 
-        // "int a = 4;",
-        // "for(int i = 0, i < 20, i++){",
-        // "",
-        // "}",
+        "int a;",
+        "for({}, a < 20, {}){",
+        "   log(a)",
+        "   a++",
+        "}",
+        "log([4,6,8 % 3,5,6])",
         "for(int i = 0, i < 20, i++){",
         "   sleep(int(1))",
         "   log(\"I : \", i)"
