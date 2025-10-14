@@ -1,7 +1,7 @@
 // Src
 int [x,y,z] = 1,2,3
 int ref[xr,yr,zr] << x,y,z
-
+
 // Standard If Konjunktion >> erwartet 1 zurückgegebenes EvalResult
 If(x != xr){
     
@@ -36,4 +36,12 @@ If(1 == 1 && 2 == 2){ log("If") }
 else{
     
     log("Else")
+}
+
+//
+for(int i = 0, i < 20, i++){
+
+    //
+    sleep(0.1)
+    log("Value :", i, "Gerade :", i % 2 == 0)
 }

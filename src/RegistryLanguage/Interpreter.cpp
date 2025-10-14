@@ -142,14 +142,5 @@ int executeScript(const std::string& scriptPath){
 
     LOG << "Skript Outcome:" << endl;
 
-    if(r.empty()){
-
-        LOG << "empty return" << endl;
-    }
-    else{
-
-        LOG << r[0] << endl;
-    }
-
     return 0;
 }

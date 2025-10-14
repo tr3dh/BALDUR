@@ -51,30 +51,34 @@ int main(){
     // Bspl Skript
     std::vector<std::string> scriptLines = {
 
-        "int a;",
+        "int ii; int ref yy",
+        "int a = 40",
+        "yy << a",
         "for({}, a < 20, {}){",
+        "   ii = a",
         "   log(a)",
         "   a++",
         "}",
         "log([4,6,8 % 3,5,6])",
         "for(int i = 0, i < 20, i++){",
-        "   sleep(int(1))",
-        "   log(\"I : \", i)"
+        "   static{int ref iii << i}",
+        "   log(\"I : \", iii)",
         "}",
+        "yy << a;"
         "int i = 0",
         "while(i < 20){",
-        "   sleep(1)",
+        "   sleep(0.1)",
         "   log(\"while loop : frame\", i)",
         "   i++",
         "}",
-        "nIf([1, 2 == 1, 2]){",
+        "nIf([1, 3 == 1, 2]){",
         "   ",
         "   log(\"If Statement wird ausgeführt\")",
         "}",
         "else If(1 == 1){",
         "   log(\"Else If Statement wird ausgeführt\")",
         "   If(1 == 1){",
-        "       log(\"HERE\")",
+        "       log(\"Verschachteltes If Statement ausgeführt\")",
         "   }",
         "}",
         "else{",
@@ -101,6 +105,12 @@ int main(){
     }
 
     outfile.close();
+
+    //
+    executeScript("../bin/temp.proc");
+
+    //
+    return 0;
 
     std::string cmd = ".\\ProcLang_d execute ../bin/temp.proc";
 
