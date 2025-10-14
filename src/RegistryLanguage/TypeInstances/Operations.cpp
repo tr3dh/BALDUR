@@ -1,6 +1,23 @@
 #include "Operations.h"
 
 //
+std::vector<std::string> g_UsedOperators = {
+    COLON,
+    "=", "<<", "<>", "<-",
+    "+=", "-=", "*=", "/=", "^=",
+    "&&", "&&=", "||", "||=",
+    "&", "|", "!&", "!|", "&=", "|=", "!&=", "!|=",
+    "x|", "!x|", "x|=", "!x|=",
+    "==", "!=", ">=", "<=", ">", "<",
+    "+", "-", "*", "/", "^",
+    "%",
+    "++", "--",
+    "!",
+    "->",
+    KOMMA,
+};
+
+//
 std::map<std::string, std::string> g_OneArgOperations{
 
     {"!", "__negate__"},
@@ -17,6 +34,7 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"=", "__assign__"},
     {"<<", "__reference__"},
     {"<>", "__swap__"},
+    {"<-", "__move__"},
 
     {"+=", "__addAssign__"},
     {"-=", "__subAssign__"},
@@ -154,6 +172,38 @@ void emplaceStdOperations(){
             }
 
             recipient.getVariableRef().reference(source.getVariableRef());
+    },
+    {});
+
+    //
+    registerFunction("__move__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__move__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            EvalResult& recipient = *inputs[0];
+            EvalResult& source = *inputs[1];
+
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
+
+            //
+            RETURNING_ASSERT(!recipientIsRValue, "Bei Mov sind rvalues mit im Spiel ",);
+
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                    "narrowing conversion");
+
+            if(source.getVariableRef().isReference()){
+
+                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz",);
+            }
+
+            recipient.getVariableRef().move(source.getVariableRef());
     },
     {});
 

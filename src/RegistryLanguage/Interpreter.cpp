@@ -47,6 +47,9 @@ int executeScript(const std::string& scriptPath){
     setUpTypes();
 
     //
+    START_TIMER;
+
+    //
     std::ifstream file(scriptPath);
     if (!file) {
         _ERROR << "kein Script " << scriptPath << " gefunden" << ENDL;
@@ -104,19 +107,7 @@ int executeScript(const std::string& scriptPath){
     // LOG << src.lineBreaks << endl;
 
     //
-    SetUpLexer({COLON,
-                "=", "<<", "<>",
-                "+=", "-=", "*=", "/=", "^=",
-                "&&", "&&=", "||", "||=",
-                "&", "|", "!&", "!|", "&=", "|=", "!&=", "!|=",
-                "x|", "!x|", "x|=", "!x|=",
-                "==", "!=", ">=", "<=", ">", "<",
-                "+", "-", "*", "/", "^",
-                "%",
-                "++", "--",
-                "!",
-                "->",
-                KOMMA,});                                  
+    SetUpLexer(g_UsedOperators);                              
 
     auto tokens = lexExpression(src.scriptContent);
     LOG << tokens << endl;
@@ -127,6 +118,9 @@ int executeScript(const std::string& scriptPath){
     convertTokensToAST(Expr, tokens, src.scriptContent);
     LOG << Expr << endl;
 
+    //
+    LOG_TIMER;
+
     LOG << g_TypeRegister << endl;
     LOG << g_FunctionRegister << endl;
 
@@ -134,6 +128,9 @@ int executeScript(const std::string& scriptPath){
 
     Scope nullScope = {};
     auto r = evaluateExpression(Expr, nullScope, Context::NONE);
+
+    //
+    LOG_TIMER;
 
     LOG << endl;
 

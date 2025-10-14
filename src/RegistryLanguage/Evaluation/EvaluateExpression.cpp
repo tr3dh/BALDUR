@@ -89,11 +89,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
         else{
 
             // default verhalten für Zuweisung als Wert und alle anderen Fälle
-            if(!scope.containsVariable(node.argument)){
-
-                Variable* variablePtr = scope.constructAndReturnVariable(node.argument);
-                variablePtr->constructByObject(constructRegisteredType(types::VOID::typeIndex));
-            }
+            if(!scope.containsVariable(node.argument)){ constructVariable(node.argument, scope, types::VOID::typeIndex, false); }
             
             //
             prcResult.evalResults.emplace_back();
@@ -108,10 +104,12 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
 
         if(Operator == COLON){
 
+            ProcessingResult res;
+
             for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
 
                 //
-                ProcessingResult res = evaluateExpression(node.children[childIdx], scope, context);
+                res = evaluateExpression(node.children[childIdx], scope, context);
                 // LOG << "HERE" << endl;
 
                 if(res.evalResults.size() == 1 && res.evalResults[0].getTypeIndex() == types::BOOL::typeIndex &&

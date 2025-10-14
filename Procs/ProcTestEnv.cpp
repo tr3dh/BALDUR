@@ -48,9 +48,14 @@
 
 int main(){
 
+    LOG << "ProcTestEnv exec Skript" << endl;
+
     // Bspl Skript
     std::vector<std::string> scriptLines = {
 
+        "enva, envb, envc",
+        "int[mv1, mv2, mv3] = 1,2,3",
+        "mv <- mv1",
         "int ii; int ref yy",
         "int a = 40",
         "yy << a",
@@ -60,14 +65,13 @@ int main(){
         "   a++",
         "}",
         "log([4,6,8 % 3,5,6])",
-        "for(int i = 0, i < 20, i++){",
-        "   static{int ref iii << i}",
-        "   log(\"I : \", iii)",
+        "for(int i = 0, i < 1000000, i++){",
+        "   {}",
         "}",
         "yy << a;"
         "int i = 0",
         "while(i < 20){",
-        "   sleep(0.1)",
+        "   //sleep(0.1)",
         "   log(\"while loop : frame\", i)",
         "   i++",
         "}",
