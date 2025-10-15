@@ -3,7 +3,40 @@ int [x,y,z] = 1,2,3
 int ref[xr,yr,zr] << x,y,z
 
 //
-for(int i = 0, i < 2000000, i++){
+double[a,b,c] = 4.2,5.2,6.2
 
-    {}
+// Hallo das ist ein string
+string[stra, strb, strc] = "Alabaster", "Gertrud", "Gießkanne"
+
+string ref[straR] << stra;
+
+//
+[ba,bb,bc] = true, false, true
+
+//
+log("Hallo Welt")
+
+//
+log("Hallo", "Welt", x, y, z, a, b, c, stra, strb, strc, ba, bb, bc)
+
+log(xr)
+
+//
+for(int i = 0, i < 20, i++){
+
+    static{ref r;}
+    r << i
+    log(r)
 }
+
+int i = 0
+
+while(true){
+
+    i+=1
+            
+    sleep(0.1)
+    log("Frame :", i)
+}
+
+log("Passed")

@@ -19,7 +19,7 @@
 #include "CleanUp/ClearCaches.h"
 #include "RegistryLanguage/Interpreter.h"
 
-// Precompiles
-#include "bin/EigenPrecompiles.h"
-#include "bin/StringProcessingPreCompiles.h"
-#include "bin/UIPrecompiles.h"
+// // Precompiles
+// #include "bin/EigenPrecompiles.h"
+// #include "bin/StringProcessingPreCompiles.h"
+// #include "bin/UIPrecompiles.h"
