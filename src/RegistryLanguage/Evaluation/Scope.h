@@ -11,20 +11,11 @@ struct Scope {
     VariableTable variableTable = {};
 
     //
-    ~Scope(){
-        
-        // for(auto& [label, var] : variableTable){
+    Scope* parent = nullptr;
+    std::vector<Scope> children;
 
-        //     if(!var.isReference()){
-
-        //         try{ var.getUniqueData()->reset(nullptr); }
-        //         catch(...){
-        //             _ERROR << "Bei Scope Löschung führt extern " << label <<
-        //                 " referenzierte Variable zu Interpreter Crash" << endl; 
-        //         }
-        //     }
-        // }
-    }
+    //
+    ~Scope();
 
     //
     void constructVariable(const std::string& variableName, const std::string& typeKeyword){
@@ -81,6 +72,15 @@ struct Scope {
     }
 
     //
+    bool containsVariable(Variable* variablePtr);
+
+    //
+    std::pair<bool, Variable*> containsVariableReference(Variable* variablePtr);
+
+    //
+    std::pair<bool, Variable*> containsDataReference(IObject* dataPtr);
+
+    //
     Variable* getVariable(const std::string& variableName){
 
         //
@@ -95,10 +95,6 @@ struct Scope {
 
         return nullptr;
     }
-
-    //
-    Scope* parent = nullptr;
-    std::vector<Scope> children;
 
     //
     friend std::ostream& operator<<(std::ostream& os, const Scope& scope){

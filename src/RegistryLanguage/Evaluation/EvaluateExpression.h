@@ -79,4 +79,4 @@ EvalResultPtrVec convertEvalResultsToPtrVec(EvalResultVec& resVec);
 Variable* constructVariable(const std::string& variableName, Scope& scope, TypeIndex typeIndex, bool constructAsReference);
 
 //
-ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context context);
+ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& returnToScope, Context context);

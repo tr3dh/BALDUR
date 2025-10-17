@@ -156,7 +156,7 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
     nullScope.setVariable("__args__", new types::STRING("--execute"));
 
     //
-    auto scriptReturn = evaluateExpression(Expr, nullScope, Context::NONE);
+    auto scriptReturn = evaluateExpression(Expr, nullScope, nullScope, Context::NONE);
 
     //
     // LOG_TIMER;

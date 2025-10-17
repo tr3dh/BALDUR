@@ -53,16 +53,24 @@ int main(){
     // Bspl Skript
     std::vector<std::string> scriptLines = {
 
+        "// Beispielhaftes Skript",
+        "int[a,b,c,d] = 0,1,2,3",
+        "int ref[ar, br, cr, dr] << a, b, c, d",
+        "",
         "if(__ScriptCalledAs__ == __MainProc__){",
         "   ",
         "   // Section wird ausgeführt wenn Skript mit argument execute aufgerufen wird",
         "   log(\"Starte Skript :\", __script__, \" mit Args : [\", __args__, \"]\")",
         "   ",
-        "   int[a,b,c,d] = 0,1,2,3",
-        "   int ref[ar, br, cr, dr] << a, b, c, d",
-        "   ",
-        "   ",
-        "   return [(a + 1,b + c,d + 1)]",
+        "   if(true){",
+        "       int x = 0",
+        "       ar << x",
+        "   }",
+        "   if(true){",
+        "       if(true){",
+        "           return ar",
+        "       }",
+        "   }",
         "}",
     };
 
