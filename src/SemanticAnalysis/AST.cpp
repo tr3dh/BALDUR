@@ -328,6 +328,11 @@ void convertTokensToAST(ASTNode& Expr, const std::vector<Token>& tokens, const s
         }
         else if(Expr.Relation == TkType::Params || Expr.Relation == TkType::Listing || Expr.Relation == TkType::Section){
 
+            // Leere Listings, Sections werden sonst mit dem CLBracket Token befüllt
+            if(Expr.end - Expr.begin <= 1){
+                return;
+            }
+
             //
             Expr.children.emplace_back();
 
@@ -345,6 +350,20 @@ void convertTokensToAST(ASTNode& Expr, const std::vector<Token>& tokens, const s
     //
     for(auto& child : Expr.children){
         convertTokensToAST(child, tokens, expressionStr);
+    }
+
+    if(/* Expr.Relation == TkType::Params || */ Expr.Relation == TkType::Listing || Expr.Relation == TkType::Section){
+
+        // Leere Listings, Sections werden sonst mit dem CLBracket Token befüllt
+        if(Expr.children.size() != 1){
+            return;
+        }
+
+        const ASTNode node = Expr.children.back();
+        
+        if(node.Relation == TkType::Operator && node.Operator == g_numLexerOperators){
+            Expr.children.clear();
+        }
     }
 
     return;

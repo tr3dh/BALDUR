@@ -81,7 +81,7 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
             lineStr = line;
         }
 
-        if(lineStr.find_first_not_of(" \t;") == lineStr.npos){
+        if(lineStr.find_first_not_of(" \t;{") == lineStr.npos){
             
         }
         else if(lineStr[lineStr.find_last_not_of(" \t")] != ';'){
