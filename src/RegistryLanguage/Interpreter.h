@@ -3,4 +3,4 @@
 #include "Evaluation/EvaluateExpression.h"
 #include "TypeInstances/gatheredInstances.h"
 
-int executeScript(const std::string& scriptPath);
+std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPath);

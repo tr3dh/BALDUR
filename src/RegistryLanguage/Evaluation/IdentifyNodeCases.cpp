@@ -1,7 +1,7 @@
 #include "IdentifyNodeCases.h"
 
 //
-const std::vector<std::string> g_ifKonjunctions = {"If", "nIf", "rIf", "xIf"};
+const std::vector<std::string> g_ifKonjunctions = {"if", "If", "nIf", "rIf", "xIf"};
 
 //
 bool IsIfStatement(const ASTNode& node){

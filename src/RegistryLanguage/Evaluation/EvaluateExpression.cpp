@@ -1,6 +1,20 @@
 #include "EvaluateExpression.h"
 
 //
+std::map<std::string, ExitCase> g_ExitCasesByKeyword{
+    {"break", ExitCase::Break},
+    {"continue", ExitCase::Continue},
+    {"return", ExitCase::Return}
+};
+
+//
+std::ostream& operator<<(std::ostream& os, ExitCase exit){
+    
+    os << magic_enum::enum_name(exit);
+    return os;
+}
+
+//
 EvalResultPtrVec convertEvalResultsToPtrVec(EvalResultVec& resVec){
 
     //
@@ -73,7 +87,11 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
     }
     case(TkType::Argument):{
 
-        if(valueForKeywordExists(node.argument)){
+        if(g_ExitCasesByKeyword.contains(node.argument)){
+
+            prcResult.exit = g_ExitCasesByKeyword[node.argument];
+        }
+        else if(valueForKeywordExists(node.argument)){
 
             prcResult.evalResults.emplace_back(constructFromKeyword(node.argument));
         }
@@ -110,9 +128,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
 
                 //
                 res = evaluateExpression(node.children[childIdx], scope, context);
-                // LOG << "HERE" << endl;
+                
+                //
+                if(res.exit != ExitCase::None){
 
-                if(res.evalResults.size() == 1 && res.evalResults[0].getTypeIndex() == types::BOOL::typeIndex &&
+                    prcResult.append(res);
+                    break;
+                }
+                else if(res.evalResults.size() == 1 && res.evalResults[0].getTypeIndex() == types::BOOL::typeIndex &&
                    static_cast<types::BOOL*>(res.evalResults[0].getVariableRef().getData())->getMember()){
 
                     size_t offset = 1;
@@ -131,18 +154,18 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
         else if(Operator == KOMMA){
 
             //
-            EvalResultVec paramResults;
+            ProcessingResult paramResults;
 
             // Wie Params
             for(size_t childIdx = 0; childIdx < node.children.size(); childIdx++){
 
                 //
                 const ASTNode& child = node.children[childIdx];
-                paramResults = evaluateExpression(child, scope, context).evalResults;
+                paramResults = evaluateExpression(child, scope, context);
 
-                RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
+                RETURNING_ASSERT(paramResults.evalResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
 
-                moveAppendVector(prcResult.evalResults, paramResults);
+                prcResult.append(paramResults);
             }
         }
         else if(Operator == "->"){
@@ -155,21 +178,21 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             const ASTNode& memberFunc = node.children[1].children[0];
             const ASTNode& paramsNd = node.children[1].children[1];
 
-            EvalResultVec res = evaluateExpression(member, scope, context).evalResults;
-            EvalResultVec params = evaluateExpression(paramsNd, scope, context).evalResults;
+            ProcessingResult res = evaluateExpression(member, scope, context);
+            ProcessingResult params = evaluateExpression(paramsNd, scope, context);
 
-            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params), &res[0]);
+            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &res.evalResults[0]);
         }
         else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
 
-            EvalResultVec res;
-            prcResult.evalResults = evaluateExpression(node.children[0], scope, context).evalResults;
+            ProcessingResult res;
+            prcResult = evaluateExpression(node.children[0], scope, context);
 
             //
             for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
 
                 //
-                callFunction(g_OneArgOperations[Operator], res, {&prcResult.evalResults[resIdx]});
+                callFunction(g_OneArgOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx]});
             }
         }
         else if(g_TwoArgOperations.contains(Operator)){
@@ -177,18 +200,19 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             RETURNING_ASSERT(node.children.size() == 2,
                 "Verknüpfung über zweiseitige Operatoren von ungleich 2 child nodes nicht möglich", {});
 
-            auto leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE).evalResults;
-            RETURNING_ASSERT(!leftSide.empty(), "Linke Seite der Zuweisung ist leer", {});
+            ProcessingResult leftSide = evaluateExpression(node.children[0], scope, Context::ASSIGN_LEFTSIDE);
+            RETURNING_ASSERT(!leftSide.evalResults.empty(), "Linke Seite der Zuweisung ist leer", {});
 
-            auto rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE).evalResults;
-            RETURNING_ASSERT(!rightSide.empty(), "Rechte Seite der Zuweisung ist leer", {});
+            ProcessingResult rightSide = evaluateExpression(node.children[1], scope, Context::ASSIGN_RIGHTSIDE);
+            RETURNING_ASSERT(!rightSide.evalResults.empty(), "Rechte Seite der Zuweisung ist leer", {});
 
-            if(leftSide.size() == rightSide.size()){
+            if(leftSide.evalResults.size() == rightSide.evalResults.size()){
 
                 //
-                for(size_t childIdx = 0; childIdx < leftSide.size(); childIdx++){
+                for(size_t childIdx = 0; childIdx < leftSide.evalResults.size(); childIdx++){
 
-                    callFunction(g_TwoArgOperations[Operator], prcResult.evalResults, { &leftSide[childIdx], &rightSide[childIdx] });
+                    callFunction(g_TwoArgOperations[Operator], prcResult.evalResults,
+                        { &leftSide.evalResults[childIdx], &rightSide.evalResults[childIdx] });
                 }
             }
             // Problematisch da rvalue aus evalresult beim assign weggemovt wird und dann nur noch als
@@ -217,8 +241,8 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             RETURNING_ASSERT(node.children.size() > 1, "Zu wenig childs", {});
 
             //
-            EvalResultVec res, tmpRes;
-            prcResult.evalResults = evaluateExpression(node.children[0], scope, context).evalResults;
+            ProcessingResult res, tmpRes;
+            prcResult = evaluateExpression(node.children[0], scope, context);
 
             //
             for(auto& evr : prcResult.evalResults){
@@ -230,14 +254,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             for(size_t childIdx = 1; childIdx < node.children.size(); childIdx++){
 
                 //
-                tmpRes = evaluateExpression(node.children[childIdx], scope, context).evalResults;
-                RETURNING_ASSERT(prcResult.evalResults.size() == tmpRes.size(), "Ungleiche Größen in Seiten beim 2 s ops",{});
+                tmpRes = evaluateExpression(node.children[childIdx], scope, context);
+                RETURNING_ASSERT(prcResult.evalResults.size() == tmpRes.evalResults.size(), "Ungleiche Größen in Seiten beim 2 s ops",{});
                 
                 //
                 for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
 
                     //
-                    callFunction(g_ArgChainOperations[Operator], res, {&prcResult.evalResults[resIdx], &tmpRes[resIdx]});
+                    callFunction(g_ArgChainOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx], &tmpRes.evalResults[resIdx]});
                 }
             }
         }
@@ -259,26 +283,44 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
 
             evaluateExpression(initialValues, loopScope, context);
 
-            EvalResultVec breakConditionRes;
+            ProcessingResult breakConditionRes, SectionRes;
             bool stayInLoop = true;
             bool firstFrame = true;
 
             while(true){
 
                 // Abbruchbedingung checken
-                breakConditionRes = evaluateExpression(breakCondition, loopScope, context).evalResults;
+                breakConditionRes = evaluateExpression(breakCondition, loopScope, context);
 
-                RETURNING_ASSERT(breakConditionRes.size() == 1, "", {});
-                RETURNING_ASSERT(breakConditionRes[0].getTypeIndex() == types::BOOL::typeIndex, "", {});
+                RETURNING_ASSERT(breakConditionRes.evalResults.size() == 1, "", {});
+                RETURNING_ASSERT(breakConditionRes.evalResults[0].getTypeIndex() == types::BOOL::typeIndex, "", {});
 
-                stayInLoop = static_cast<types::BOOL*>(breakConditionRes[0].getData())->getMember();
+                //
+                stayInLoop = static_cast<types::BOOL*>(breakConditionRes.evalResults[0].getData())->getMember();
 
                 // abbrechen wenn erforderlich
                 if(!stayInLoop){ break; }
 
                 // Schleifen Sektion ausfürhen
-                evaluateExpression(executableSection, loopScope, !firstFrame ? context : Context::FIRST_LOOP_FRAME);
+                SectionRes = evaluateExpression(executableSection, loopScope, !firstFrame ? context : Context::FIRST_LOOP_FRAME);
                 if(firstFrame){ firstFrame = false; }
+
+                //
+                switch(SectionRes.exit){
+                    
+                    case(ExitCase::Break):{
+                        
+                        stayInLoop = false;
+                        break;
+                    }
+                    default:{
+
+                        break;
+                    }
+                }
+
+                // abbrechen wenn erforderlich
+                if(!stayInLoop){ break; }
 
                 // inkrement aufrufen
                 evaluateExpression(increment, loopScope, context);
@@ -290,27 +332,32 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             RETURNING_ASSERT(node.children[2].Relation == TkType::Section, "",{});
 
             const ASTNode& paramSection = node.children[1];
+            RETURNING_ASSERT(paramSection.children.size() >= 1, "", {});
 
-            RETURNING_ASSERT(paramSection.children.size() == 1, "", {});
+            const ASTNode& breakCondition = paramSection.children[paramSection.children.size() - 1];
 
             const ASTNode& executableSection = node.children[2];
 
             Scope loopScope;
             loopScope.parent = &scope;
 
-            EvalResultVec breakConditionRes;
+            ProcessingResult breakConditionRes, SectionRes;
             bool stayInLoop = true;
             bool firstFrame = true;
 
+            // initialize
+            evaluateExpression(paramSection, loopScope, context);
+
+            //
             while(true){
 
                 // Abbruchbedingung checken
-                breakConditionRes = evaluateExpression(paramSection, loopScope, context).evalResults;
+                breakConditionRes = evaluateExpression(breakCondition, loopScope, context);
 
-                RETURNING_ASSERT(breakConditionRes.size() == 1, "", {});
-                RETURNING_ASSERT(breakConditionRes[0].getTypeIndex() == types::BOOL::typeIndex, "", {});
+                RETURNING_ASSERT(breakConditionRes.evalResults.size() == 1, "", {});
+                RETURNING_ASSERT(breakConditionRes.evalResults[0].getTypeIndex() == types::BOOL::typeIndex, "", {});
 
-                stayInLoop = static_cast<types::BOOL*>(breakConditionRes[0].getData())->getMember();
+                stayInLoop = static_cast<types::BOOL*>(breakConditionRes.evalResults[0].getData())->getMember();
 
                 // abbrechen wenn erforderlich
                 if(!stayInLoop){
@@ -318,14 +365,25 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
                 }
 
                 // Schleifen Sektion ausfürhen
-                evaluateExpression(executableSection, loopScope, !firstFrame ? context : Context::FIRST_LOOP_FRAME);
+                SectionRes = evaluateExpression(executableSection, loopScope, !firstFrame ? context : Context::FIRST_LOOP_FRAME);
                 if(firstFrame){ firstFrame = false; }
-            }
-        }
-        else if(IsStaticSection(node)){
-            
-            if(context == Context::FIRST_LOOP_FRAME){
-                evaluateExpression(node.children[1], scope, context);
+
+                //
+                switch(SectionRes.exit){
+                    
+                    case(ExitCase::Break):{
+                        
+                        stayInLoop = false;
+                        break;
+                    }
+                    default:{
+
+                        break;
+                    }
+                }
+
+                // abbrechen wenn erforderlich
+                if(!stayInLoop){ break; }
             }
         }
         else if(IsIfStatement(node)){
@@ -336,15 +394,17 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             const ASTNode& section = node.children[node.children.size() - 1];
 
             //
-            EvalResultVec paramResults = evaluateExpression(paramSection, scope, context).evalResults;
+            ProcessingResult paramResults = evaluateExpression(paramSection, scope, context);
 
             //
-            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(paramResults));
+            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(paramResults.evalResults));
 
             RETURNING_ASSERT(prcResult.evalResults.size() == 1, "If Statement gibt mehr als ein return zurück",{});
 
             //
             bool executeSection = static_cast<types::BOOL*>(prcResult.evalResults[0].getVariableRef().getData())->getMember();
+
+            ProcessingResult SectionRes;
 
             //
             if(executeSection){
@@ -352,15 +412,41 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
                 Scope childScope;
                 childScope.parent = &scope;
 
-                evaluateExpression(section, childScope, context);
+                SectionRes = evaluateExpression(section, childScope, context);
+            }
+
+            if(SectionRes.exit != ExitCase::None){
+
+                prcResult.append(SectionRes);
             }
         }
         else if(IsElseSection(node)){
             
+            ProcessingResult SectionRes;
+
             Scope childScope;
             childScope.parent = &scope;
 
-            evaluateExpression(node.children[1], childScope, context);
+            SectionRes = evaluateExpression(node.children[1], childScope, context);
+
+            if(SectionRes.exit != ExitCase::None){
+
+                prcResult.append(SectionRes);
+            }
+        }
+        else if(IsStaticSection(node)){
+            
+            if(context != Context::FIRST_LOOP_FRAME){
+
+                return {};
+            }
+
+            ProcessingResult SectionRes = evaluateExpression(node.children[1], scope, context);
+
+            if(SectionRes.exit != ExitCase::None){
+
+                prcResult.append(SectionRes);
+            }
         }
         else if(IsFunctionCall(node)){
 
@@ -368,14 +454,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
             const std::string& functionLabel = node.children[0].argument;
 
             //
-            EvalResultVec params = evaluateExpression(node.children[1], scope, context).evalResults;
+            ProcessingResult params = evaluateExpression(node.children[1], scope, context);
 
             //
             // RETURNING_ASSERT(node.children[1].children.size() == params.size(),
             // "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
             //
-            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(params));
+            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults));
         }
         else if(IsConstructionCall(node)){
 
@@ -434,9 +520,16 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
                 }
             }
         }
+        else if(node.children.size() == 2 && node.children[0].argument == "return"){
+
+            // return des zweiten childs
+            prcResult = evaluateExpression(node.children[1], scope, context);
+            prcResult.exit = ExitCase::Return;
+        }
         else{
             
             _ERROR << "Invalid Chain Template" << endl;
+            LOG << node << endl;
         }
 
         break;
@@ -453,11 +546,11 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Context c
 
             //
             const ASTNode& child = node.children[childIdx];
-            EvalResultVec paramResults = evaluateExpression(child, scope, context).evalResults;
+            ProcessingResult paramResults = evaluateExpression(child, scope, context);
 
             // RETURNING_ASSERT(paramResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
             
-            moveAppendVector(prcResult.evalResults, paramResults);
+            prcResult.append(paramResults);
         }
 
         break;

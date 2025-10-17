@@ -53,47 +53,17 @@ int main(){
     // Bspl Skript
     std::vector<std::string> scriptLines = {
 
-        "enva, envb, envc",
-        "int[mv1, mv2, mv3] = 1,2,3",
-        "mv <- mv1",
-        "int ii; int ref yy",
-        "int a = 40",
-        "yy << a",
-        "for({}, a < 20, {}){",
-        "   ii = a",
-        "   log(a)",
-        "   a++",
-        "}",
-        "log([4,6,8 % 3,5,6])",
-        "for(int i = 0, i < 1000000, i++){",
-        "   {}",
-        "}",
-        "yy << a;"
-        "int i = 0",
-        "while(i < 20){",
-        "   //sleep(0.1)",
-        "   log(\"while loop : frame\", i)",
-        "   i++",
-        "}",
-        "nIf([1, 3 == 1, 2]){",
+        "if(__ScriptCalledAs__ == __MainProc__){",
         "   ",
-        "   log(\"If Statement wird ausgeführt\")",
+        "   // Section wird ausgeführt wenn Skript mit argument execute aufgerufen wird",
+        "   log(\"Starte Skript :\", __script__, \" mit Args : [\", __args__, \"]\")",
+        "   ",
+        "   int[a,b,c,d] = 0,1,2,3",
+        "   int ref[ar, br, cr, dr] << a, b, c, d",
+        "   ",
+        "   ",
+        "   return [(a + 1,b + c,d + 1)]",
         "}",
-        "else If(1 == 1){",
-        "   log(\"Else If Statement wird ausgeführt\")",
-        "   If(1 == 1){",
-        "       log(\"Verschachteltes If Statement ausgeführt\")",
-        "   }",
-        "}",
-        "else{",
-        "   int a = 2; int b = 3;"
-        "   log(\"Else Statement wird ausgeführt\", b)",
-        "};",
-
-        "xIf(1 == 1, 1 == 1){ log(\"2. If Statement wird ausgeführt\") };",
-        "else{ log(\"2. Else Statement wird ausgeführt\") };",
-
-        "log(\"...\");"
     };
 
     //
@@ -111,7 +81,11 @@ int main(){
     outfile.close();
 
     //
-    executeScript("../bin/temp.proc");
+    auto results = executeScript("../bin/temp.proc");
+    
+    //
+    LOG << "Skript Returns: " << endl;
+    LOG << results << endl;
 
     //
     return 0;

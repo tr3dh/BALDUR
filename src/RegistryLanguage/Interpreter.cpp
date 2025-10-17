@@ -40,20 +40,20 @@ struct Script{
     }
 };
 
-int executeScript(const std::string& scriptPath){
+std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPath){
 
     // Aufsetzen der mitgelieferten Standard Typen
     // weitere eigene Typen können bspl. in der eigenen main aufgerufen werden
     setUpTypes();
 
     //
-    START_TIMER;
+    // START_TIMER;
 
     //
     std::ifstream file(scriptPath);
     if (!file) {
         _ERROR << "kein Script " << scriptPath << " gefunden" << ENDL;
-        return 1;
+        return {};
     }
 
     Script src;
@@ -119,18 +119,47 @@ int executeScript(const std::string& scriptPath){
     LOG << Expr << endl;
 
     //
-    LOG_TIMER;
+    // LOG_TIMER;
 
     LOG << g_TypeRegister << endl;
     LOG << g_FunctionRegister << endl;
 
     LOG << "Writing into Scope ...\n" << endl;
 
+    // Scope aufsetzen
     Scope nullScope = {};
-    auto r = evaluateExpression(Expr, nullScope, Context::NONE);
+
+    // Scope befüllen
+    nullScope.constructVariable("__ScriptCalledAs__", types::INT::typeIndex);
 
     //
-    LOG_TIMER;
+    nullScope.constructVariable("__MainProc__", types::INT::typeIndex);
+    nullScope.setVariable("__MainProc__", new types::INT(0));
+
+    //
+    nullScope.constructVariable("__CoProc__", types::INT::typeIndex);
+    nullScope.setVariable("__CoProc__", new types::INT(1));
+
+    //
+    nullScope.constructVariable("__Include__", types::INT::typeIndex);
+    nullScope.setVariable("__Include__", new types::INT(2));
+
+    // Hier wird Skript als auszuführendes MainProc aufgerufen
+    nullScope.setVariable("__ScriptCalledAs__", new types::INT(0));
+
+    //
+    nullScope.constructVariable("__script__", types::STRING::typeIndex);
+    nullScope.setVariable("__script__", new types::STRING(std::filesystem::absolute(scriptPath).string()));
+
+    //
+    nullScope.constructVariable("__args__", types::STRING::typeIndex);
+    nullScope.setVariable("__args__", new types::STRING("--execute"));
+
+    //
+    auto scriptReturn = evaluateExpression(Expr, nullScope, Context::NONE);
+
+    //
+    // LOG_TIMER;
 
     LOG << endl;
 
@@ -138,6 +167,14 @@ int executeScript(const std::string& scriptPath){
     LOG << nullScope << endl;
 
     LOG << "Skript Outcome:" << endl;
+    LOG << scriptReturn.evalResults << endl;
 
-    return 0;
+    std::vector<std::unique_ptr<IObject>> isolatedObjects;
+    isolatedObjects.reserve(scriptReturn.evalResults.size());
+
+    for(auto& obj : scriptReturn.evalResults){
+        isolatedObjects.emplace_back(obj.getVariableRef().getData()->clone());
+    }
+
+    return isolatedObjects;
 }

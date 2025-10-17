@@ -113,7 +113,7 @@ int main(int argc, char* argv[]){
         LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
         LOG << "Start Unpacking and Simulating " << path << ENDL;
 
-        int result = executeScript(path);
+        auto result = executeScript(path);
     }
 
     // Programm ohne args gestartet

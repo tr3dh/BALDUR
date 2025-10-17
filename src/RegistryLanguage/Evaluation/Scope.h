@@ -11,6 +11,22 @@ struct Scope {
     VariableTable variableTable = {};
 
     //
+    ~Scope(){
+        
+        // for(auto& [label, var] : variableTable){
+
+        //     if(!var.isReference()){
+
+        //         try{ var.getUniqueData()->reset(nullptr); }
+        //         catch(...){
+        //             _ERROR << "Bei Scope Löschung führt extern " << label <<
+        //                 " referenzierte Variable zu Interpreter Crash" << endl; 
+        //         }
+        //     }
+        // }
+    }
+
+    //
     void constructVariable(const std::string& variableName, const std::string& typeKeyword){
 
         if(getVariable(variableName) != nullptr){

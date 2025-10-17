@@ -81,7 +81,7 @@ extern std::string g_env;
 
 //
 template<typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec) {
+std::ostream& operator<<(std::ostream& os, std::vector<T>& vec) {
 
     os << "Vector with " << vec.size() << " elements" << endl; 
     for(size_t idx = 0; idx < vec.size(); idx++){

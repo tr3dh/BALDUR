@@ -14,22 +14,6 @@ enum class Context : uint8_t{
     FIRST_LOOP_FRAME,
 };
 
-enum class ExitCase : uint8_t{
-
-    None,
-    Continue,
-    Break,
-    Return,
-};
-
-struct ProcessingResult{
-
-    EvalResultVec evalResults;
-    ExitCase exit;
-
-    ProcessingResult() = default;
-};
-
 // Alles auf vector<EvalResult> ummünzen 
 template<typename T>
 void moveAppendVector(std::vector<T>& recipient, std::vector<T>& source){
@@ -40,6 +24,53 @@ void moveAppendVector(std::vector<T>& recipient, std::vector<T>& source){
     // alle elemente verschieben
     std::move(source.begin(), source.end(), std::back_inserter(recipient));
 }
+
+enum class ExitCase : uint8_t{
+
+    None,
+    Continue,
+    Break,
+    Return,
+};
+
+//
+std::ostream& operator<<(std::ostream& os, ExitCase exit);
+
+//
+extern std::map<std::string, ExitCase> g_ExitCasesByKeyword;
+
+struct ProcessingResult{
+
+    EvalResultVec evalResults = {};
+    ExitCase exit = ExitCase::None;
+
+    ProcessingResult() = default;
+
+    void append(ProcessingResult& other){
+
+        //
+        switch(other.exit){
+
+            case(ExitCase::None):{
+
+                break;
+            }
+            default:{
+
+                //
+                exit = other.exit;
+
+                //
+                evalResults.clear();
+                break;
+            }
+        }
+
+        // Im Standardfall werden einfach die evalResults gemovt
+        // für den Fall Return oder Break oder Continue spezifische Verhalten
+        moveAppendVector(evalResults, other.evalResults);
+    }
+};
 
 //
 EvalResultPtrVec convertEvalResultsToPtrVec(EvalResultVec& resVec);
