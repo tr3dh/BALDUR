@@ -16,8 +16,29 @@ typedef EvalResult* TypeMember;
 //    z.B  : <"add" , {0,0}> | 0 TypeIndex IntegerObject 
 typedef std::pair<std::string, std::vector<TypeIndex>> FunctionRegisterKey;
 
+struct Scope;
+
+#define FREG_DEFAULT_CALLARGS \
+    FunctionReturns returns, FunctionParams functionParams, Scope* returnToScope
+
+#define FREG_CALLARGS \
+    FunctionReturns returns, FunctionParams functionParams, Scope* returnToScope
+
+#define FREG_DEFAULT_CALLARGS_WITH_MEMBER \
+    FREG_DEFAULT_CALLARGS, TypeMember member = nullptr
+
+#define FREG_CALLARGS_WITH_MEMBER \
+    FREG_CALLARGS, TypeMember member
+
+#define FREG_ARGS \
+    FunctionReturns returns, FunctionParams inputs, Scope* returnToScope, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member
+
+//
+#define FREG_ARG_TYPES \
+    FunctionReturns, FunctionParams, Scope*, const std::vector<TypeIndex>&, TypeMember
+
 // Parameter : void({outputs}, {inputs}, MemberRef)
-typedef std::function<void(FunctionReturns, FunctionParams, const std::vector<TypeIndex>&, TypeMember)> IObjectFunction;
+typedef std::function<void(FREG_ARG_TYPES)> IObjectFunction;
 
 //
 typedef std::pair<IObjectFunction, std::vector<TypeIndex>> FunctionRegisterValue;
@@ -88,13 +109,13 @@ public:
         return types;
     }
 
-    void callFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams, TypeMember member = nullptr) {
+    void callFunction(const std::string& functionLabel, FREG_DEFAULT_CALLARGS_WITH_MEMBER) {
 
         auto fIt = functions.find({functionLabel, getArgTypes(functionParams)});
 
         if(fIt != functions.end()){
 
-            fIt->second.first(returns, functionParams, fIt->second.second, member);
+            fIt->second.first(returns, functionParams, returnToScope, fIt->second.second, member);
             return;
         }
         
@@ -102,7 +123,7 @@ public:
 
         if(nullfIt != functions.end()){
 
-            nullfIt->second.first(returns, functionParams, nullfIt->second.second, member);
+            nullfIt->second.first(returns, functionParams, returnToScope, nullfIt->second.second, member);
             return;
         }
 
@@ -110,7 +131,7 @@ public:
 
         if(argfIt != functions.end()){
 
-            argfIt->second.first(returns, functionParams, argfIt->second.second, member);
+            argfIt->second.first(returns, functionParams, returnToScope, argfIt->second.second, member);
             return;
         }
 

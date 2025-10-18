@@ -48,32 +48,36 @@
 
 int main(){
 
+    //
     LOG << "ProcTestEnv exec Skript" << endl;
 
     // Bspl Skript
     std::vector<std::string> scriptLines = {
 
         "// Beispielhaftes Skript",
+        "",
         "int[a,b,c,d] = 0,1,2,3",
         "int ref[ar, br, cr, dr] << a, b, c, d",
         "",
-        "fdecl multiply(){",
-        "",
+        "decl func(int ref inta, int ref intb){",
+        "   ",
+        "   inta += 10 + intb",
+        "   return [0,1,2]",
         "}",
-        "if(__ScriptCalledAs__ == __MainProc__){",
+        "",
+        "decl main(){",
+        "   ",
+        "   aa, bb, cc = func(a,b)",
+        "   log(a, aa, bb, cc)",
+        "   return 0",
+        "}",
+        "",
+        "if(calledAs(__MainProc__)){",
         "   ",
         "   // Section wird ausgeführt wenn Skript mit argument execute aufgerufen wird",
         "   log(\"Starte Skript :\", __script__, \" mit Args : [\", __args__, \"]\")",
         "   ",
-        "   if(true){",
-        "       int x = 0",
-        "       ar << x",
-        "   }",
-        "   if(true){",
-        "       if(true){",
-        "           return ar",
-        "       }",
-        "   }",
+        "   return [main()]",
         "}",
     };
 

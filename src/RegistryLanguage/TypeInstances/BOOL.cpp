@@ -13,7 +13,7 @@ namespace types{
 
         // Konstruktoren
         registerFunction("bool", {},
-            [__functionLabel__ = "bool", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "bool", __numArgs__ = 0](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -30,7 +30,7 @@ namespace types{
 
         // Konstruktoren
         registerFunction("bool", {BOOL::typeIndex},
-            [__functionLabel__ = "bool", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "bool", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -48,7 +48,7 @@ namespace types{
 
         // Operatoren
         registerFunction("__equal__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__equal__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__equal__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -70,7 +70,7 @@ namespace types{
 
         // Operatoren
         registerFunction("__notEqual__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__notEqual__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__notEqual__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -92,7 +92,7 @@ namespace types{
 
         // Operatoren
         registerFunction("__andAssign__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__andAssign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__andAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -109,7 +109,7 @@ namespace types{
 
         //
         registerFunction("__orAssign__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__orAssign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__orAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -126,7 +126,7 @@ namespace types{
 
         //
         registerFunction("__xorAssign__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__xorAssign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__xorAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -143,7 +143,7 @@ namespace types{
 
         //
         registerFunction("__nandAssign__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__nandAssign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__nandAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -160,7 +160,7 @@ namespace types{
 
         //
         registerFunction("__norAssign__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__norAssign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__norAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -177,7 +177,7 @@ namespace types{
 
         //
         registerFunction("__nxorAssign__", {BOOL::typeIndex, BOOL::typeIndex},
-            [__functionLabel__ = "__nxorAssign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__nxorAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -194,7 +194,7 @@ namespace types{
 
         //
         registerFunction("__negate__", {BOOL::typeIndex},
-            [__functionLabel__ = "__negate__", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__negate__", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -211,7 +211,7 @@ namespace types{
 
         //
         registerFunction("if", {IObject::ARGS_TYPE},
-            [__functionLabel__ = "if", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "if", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -230,7 +230,7 @@ namespace types{
 
         //
         registerFunction("If", {IObject::ARGS_TYPE},
-            [__functionLabel__ = "If", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "If", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -249,7 +249,7 @@ namespace types{
 
         //
         registerFunction("nIf", {IObject::ARGS_TYPE},
-            [__functionLabel__ = "nIf", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "nIf", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -275,7 +275,7 @@ namespace types{
 
         //
         registerFunction("rIf", {IObject::ARGS_TYPE},
-            [__functionLabel__ = "rIf", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "rIf", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -301,7 +301,7 @@ namespace types{
 
         //
         registerFunction("xIf", {IObject::ARGS_TYPE},
-            [__functionLabel__ = "xIf", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "xIf", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;

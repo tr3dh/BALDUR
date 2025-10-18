@@ -98,7 +98,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
         else if(context == Context::ASSIGN_RIGHTSIDE){
 
             // ist Object das einem anderen als Wert zugewiesen wird
-            RETURNING_ASSERT(scope.containsVariable(node.argument), "Variable, die zugewiesen werden soll ist nicht im scope vorhanden", {});
+            RETURNING_ASSERT(scope.containsVariable(node.argument), "Variable : '" + node.argument + "', die zugewiesen werden soll ist nicht im scope vorhanden", {});
 
             //
             prcResult.evalResults.emplace_back();
@@ -181,18 +181,18 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             ProcessingResult res = evaluateExpression(member, scope, returnToScope, context);
             ProcessingResult params = evaluateExpression(paramsNd, scope, returnToScope, context);
 
-            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &res.evalResults[0]);
+            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &scope, &res.evalResults[0]);
         }
         else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
 
             ProcessingResult res;
-            prcResult = evaluateExpression(node.children[0], scope, returnToScope, context);
+            prcResult = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
 
             //
             for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
 
                 //
-                callFunction(g_OneArgOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx]});
+                callFunction(g_OneArgOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx]}, &scope);
             }
         }
         else if(g_TwoArgOperations.contains(Operator)){
@@ -212,7 +212,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 for(size_t childIdx = 0; childIdx < leftSide.evalResults.size(); childIdx++){
 
                     callFunction(g_TwoArgOperations[Operator], prcResult.evalResults,
-                        { &leftSide.evalResults[childIdx], &rightSide.evalResults[childIdx] });
+                        { &leftSide.evalResults[childIdx], &rightSide.evalResults[childIdx] }, &scope);
                 }
             }
             // Problematisch da rvalue aus evalresult beim assign weggemovt wird und dann nur noch als
@@ -254,14 +254,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             for(size_t childIdx = 1; childIdx < node.children.size(); childIdx++){
 
                 //
-                tmpRes = evaluateExpression(node.children[childIdx], scope, returnToScope, context);
+                tmpRes = evaluateExpression(node.children[childIdx], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
                 RETURNING_ASSERT(prcResult.evalResults.size() == tmpRes.evalResults.size(), "Ungleiche Größen in Seiten beim 2 s ops",{});
                 
                 //
                 for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
 
                     //
-                    callFunction(g_ArgChainOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx], &tmpRes.evalResults[resIdx]});
+                    callFunction(g_ArgChainOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx], &tmpRes.evalResults[resIdx]}, &scope);
                 }
             }
         }
@@ -394,10 +394,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             const ASTNode& section = node.children[node.children.size() - 1];
 
             //
-            ProcessingResult paramResults = evaluateExpression(paramSection, scope, returnToScope, context);
+            ProcessingResult paramResults = evaluateExpression(paramSection, scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
 
             //
-            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(paramResults.evalResults));
+            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(paramResults.evalResults), &scope);
 
             RETURNING_ASSERT(prcResult.evalResults.size() == 1, "If Statement gibt mehr als ein return zurück",{});
 
@@ -454,14 +454,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             const std::string& functionLabel = node.children[0].argument;
 
             //
-            ProcessingResult params = evaluateExpression(node.children[1], scope, returnToScope, context);
+            ProcessingResult params = evaluateExpression(node.children[1], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
 
             //
             // RETURNING_ASSERT(node.children[1].children.size() == params.size(),
             // "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
             //
-            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults));
+            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &scope);
         }
         else if(IsConstructionCall(node)){
 
@@ -532,14 +532,110 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 // check ob lvalues im parent Scope des Scopes als Variablen bekannt
                 // >> ansonsten clone nötig
 
-                if(res.isRValue()){ continue; }
+                // für rvalue variablen >> continue
+                if(res.isRValue() && !res.getVariableRef().isReference()){
 
-                if(returnToScope.containsVariable(&res.getVariableRef())){
                     continue;
                 }
 
+                // Wenn Scope Variable // reference enthält
+                if(returnToScope.containsVariable(&res.getVariableRef())){
+
+                    continue;
+                }
+                // Wenn Scope Variable (Referenz) NICHT enthält aber referenzierte Variable
+                else if(res.getVariableRef().isReference() && returnToScope.containsDataReference(res.getData()).first){
+                    
+                    if(res.isRValue()){ continue; }
+
+                    // finden der Referenzierten Variable und rvalue referenz zurückgeben
+                    res.variable = Variable();
+                    res.variable.reference(*res.variablePtr);
+                    res.variablePtr = nullptr;
+                    
+                    continue;
+                }
+                // Wenn Scope Variable (rvalue, Referenz) NICHT enthält und auch NICHT referenzierte Variable
+                else if(res.isRValue() && res.getVariableRef().isReference()){
+
+                    //
+                    res.variable.ownedObject = res.variable.referencedObject->get()->clone();
+                    res.variable.referencedObject = nullptr;
+
+                    continue;
+                }
+
+                // result ist rvalue variable >> clone
                 res.constructRValueByContainedLValue();
             }
+        }
+        else if(node.children.size() == 4 && node.children[0].argument == "decl"){
+
+            //
+            const std::string& functionLabel = node.children[1].argument;
+
+            //
+            const ASTNode& params = node.children[2];
+            const ASTNode& section = node.children[3];
+
+            //
+            std::vector<TypeIndex> argIndices = {};
+            argIndices.reserve(params.children.size());
+
+            //
+            for(auto& arg : params.children){
+
+                // >> nur argname
+                if(arg.children.size() == 0){
+
+                    argIndices.emplace_back(IObject::ARBITATRY_TYPE);
+                }
+                else{
+
+                    argIndices.emplace_back(getTypeIndexByKeyword(arg.children[0].argument));
+                }
+            }
+
+            // Konstruktoren
+            registerFunction(functionLabel, argIndices,
+                [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
+                 __argIndices__ = argIndices, params, section
+                ](FREG_ARGS){
+
+                    // Asserts
+                    ASSERT_IS_NO_MEMBER_FUNCTION;
+                    ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                    //
+                    Scope functionScope;
+                    functionScope.parent = returnToScope;
+
+                    // mit params befüllen
+                    ProcessingResult paramRes = evaluateExpression(params, functionScope, *returnToScope, Context::NONE);
+
+                    RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
+
+                    //
+                    for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
+
+                        //
+                        EvalResult& inputN = *inputs[paramIdx];
+                        EvalResult& paramVarN = paramRes.evalResults[paramIdx];
+
+                        //
+                        if(paramVarN.getVariableRef().isReference()){
+
+                            paramVarN.getVariableRef().reference(inputN.getVariableRef());
+                        }
+                        else{
+
+                            paramVarN.getVariableRef().constructByUniquePtr(inputN.getVariableRef().getData()->clone());
+                        }
+                    }
+
+                    returns = evaluateExpression(section, functionScope, *returnToScope, Context::NONE).evalResults;
+            },
+            {IObject::ARGS_TYPE});
         }
         else{
             

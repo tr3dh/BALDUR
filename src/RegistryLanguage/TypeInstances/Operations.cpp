@@ -95,7 +95,7 @@ std::map<std::string, std::string> g_ArgChainOperations = {
 void emplaceStdOperations(){
 
     registerFunction("__assign__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "__assign__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "__assign__", __numArgs__ = 2](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -142,7 +142,7 @@ void emplaceStdOperations(){
     {});
 
     registerFunction("__reference__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "__reference__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "__reference__", __numArgs__ = 2](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -176,7 +176,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("__move__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "__move__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "__move__", __numArgs__ = 2](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -207,7 +207,7 @@ void emplaceStdOperations(){
     {});
 
     registerFunction("__swap__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "__swap__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "__swap__", __numArgs__ = 2](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -233,7 +233,7 @@ void emplaceStdOperations(){
     {});
 
     registerFunction("countArgs", {IObject::ARGS_TYPE},
-        [__functionLabel__ = "countArgs", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "countArgs", __numArgs__ = 0](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -250,7 +250,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("sizeof", {IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "countArgs", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "countArgs", __numArgs__ = 1](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -267,7 +267,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("typeid", {IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "countArgs", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "countArgs", __numArgs__ = 1](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -284,7 +284,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("typename", {IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "typename", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "typename", __numArgs__ = 1](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -301,7 +301,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("timeStamp", {},
-        [__functionLabel__ = "typename", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -318,7 +318,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("log", {IObject::ARGS_TYPE},
-        [__functionLabel__ = "typename", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -333,4 +333,46 @@ void emplaceStdOperations(){
             }
     },
     {});
+
+    //
+    registerFunction("copy", {IObject::ARGS_TYPE},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            returns.reserve(inputs.size());
+
+            // Returns
+            for(size_t paramIdx = 0; paramIdx < inputs.size(); paramIdx++){
+                
+                ASSERT(inputs[paramIdx]->isLValue() || inputs[paramIdx]->getVariableRef().isReference(),
+                        "copy ist redundant für rvalue variable");
+
+                returns.emplace_back();
+                returns.back().variable.constructByUniquePtr(inputs[paramIdx]->getVariableRef().getData()->clone());
+            }
+    },
+    {IObject::ARGS_TYPE});
+
+    //
+    registerFunction("reference", {IObject::ARGS_TYPE},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            returns.reserve(inputs.size());
+
+            // Returns
+            for(size_t paramIdx = 0; paramIdx < inputs.size(); paramIdx++){
+                
+                RETURNING_ASSERT(inputs[paramIdx]->isLValue() || inputs[paramIdx]->getVariableRef().isReference(),
+                                    "Referenzierung von nicht hinterlegtem rvalue variable",);
+
+                returns.emplace_back();
+                returns.back().variable.reference(inputs[paramIdx]->getVariableRef());
+            }
+    },
+    {IObject::ARGS_TYPE});
 }

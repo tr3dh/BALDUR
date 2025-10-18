@@ -13,7 +13,7 @@ namespace types{
         //
         // Konstruktoren
         registerFunction("string", {},
-            [__functionLabel__ = "string", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "string", __numArgs__ = 0](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -30,7 +30,7 @@ namespace types{
 
         // Konstruktoren
         registerFunction("string", {STRING::typeIndex},
-            [__functionLabel__ = "string", __numArgs__ = 1](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "string", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -48,7 +48,7 @@ namespace types{
 
         // Member
         registerMemberFunction(STRING::typeIndex, "size", {},
-            [__functionLabel__ = "size", __numArgs__ = 0](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "size", __numArgs__ = 0](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_MEMBER_FUNCTION;
@@ -66,7 +66,7 @@ namespace types{
 
         // Operatoren
         registerFunction("__equal__", {STRING::typeIndex, STRING::typeIndex},
-            [__functionLabel__ = "__equal__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__equal__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -87,7 +87,7 @@ namespace types{
 
         // Operatoren
         registerFunction("__notEqual__", {STRING::typeIndex, STRING::typeIndex},
-            [__functionLabel__ = "__notEqual__", __numArgs__ = 2](FunctionReturns returns, FunctionParams inputs, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member){
+            [__functionLabel__ = "__notEqual__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;

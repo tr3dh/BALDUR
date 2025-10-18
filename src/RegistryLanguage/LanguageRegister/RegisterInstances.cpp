@@ -41,12 +41,12 @@ void registerStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, c
 }
 
 // Call Funktionen
-void callFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams){
+void callFunction(const std::string& functionLabel, FREG_CALLARGS){
 
-    g_FunctionRegister.callFunction(functionLabel, returns, functionParams, nullptr);
+    g_FunctionRegister.callFunction(functionLabel, returns, functionParams, returnToScope, nullptr);
 }
 
-void callMemberFunction(const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams, TypeMember member){
+void callMemberFunction(const std::string& functionLabel, FREG_CALLARGS_WITH_MEMBER){
 
     TypeIndex tpIdx = member->getVariableRef().getData()->getTypeIndex();
     RETURNING_ASSERT(tpIdx != INVALID_TYPE_INDEX, "Übergebener TypeIndex ist invalide",);
@@ -54,25 +54,25 @@ void callMemberFunction(const std::string& functionLabel, FunctionReturns return
     RETURNING_ASSERT(g_MemberFunctionRegisters.contains(tpIdx),
         "Memberfunktionen Register Map enthält keinen Eintrag für ID " + std::to_string(tpIdx),);
 
-    g_MemberFunctionRegisters[tpIdx].callFunction(functionLabel, returns, functionParams, member);
+    g_MemberFunctionRegisters[tpIdx].callFunction(functionLabel, returns, functionParams, returnToScope, member);
 }
 
-void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams){
+void callStaticFunction(const std::string& typeLabel, const std::string& functionLabel, FREG_CALLARGS){
 
     RETURNING_ASSERT(g_TypeRegister.typeIndices.contains(typeLabel), "TypeRegister enthält keinen Typ für keyword " + typeLabel,);
 
     TypeIndex tpIdx = g_TypeRegister.typeIndices[typeLabel];
-    callStaticFunction(tpIdx, functionLabel, returns, functionParams);
+    callStaticFunction(tpIdx, functionLabel, returns, functionParams, returnToScope);
 }
 
-void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, FunctionReturns returns, FunctionParams functionParams){
+void callStaticFunction(TypeIndex tpIdx, const std::string& functionLabel, FREG_CALLARGS){
 
     RETURNING_ASSERT(tpIdx != INVALID_TYPE_INDEX, "Übergebener TypeIndex ist invalide",);
     
     RETURNING_ASSERT(g_StaticFunctionRegisters.contains(tpIdx),
         "Statische funktionen Register Map enthält keinen Eintrag für ID " + std::to_string(tpIdx),);
     
-    g_StaticFunctionRegisters[tpIdx].callFunction(functionLabel, returns, functionParams, nullptr);
+    g_StaticFunctionRegisters[tpIdx].callFunction(functionLabel, returns, functionParams, returnToScope, nullptr);
 }
 
 //
