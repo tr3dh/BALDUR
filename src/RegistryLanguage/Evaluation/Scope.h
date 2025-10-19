@@ -88,6 +88,9 @@ struct Scope {
     std::pair<bool, Variable*> containsDataReference(IObject* dataPtr);
 
     //
+    std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr);
+
+    //
     Variable* getVariable(const std::string& variableName){
 
         //

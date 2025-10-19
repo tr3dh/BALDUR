@@ -183,6 +183,58 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
             callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &scope, &res.evalResults[0]);
         }
+        else if(Operator == "return"){
+
+            //
+            RETURNING_ASSERT(node.children.size() == 1, "",{});
+
+            // return des zweiten childs
+            prcResult = evaluateExpression(node.children[0], scope, returnToScope, context);
+            prcResult.exit = ExitCase::Return;
+
+            //
+            for(auto& res : prcResult.evalResults){
+
+                // check ob lvalues im parent Scope des Scopes als Variablen bekannt
+                // >> ansonsten clone nötig
+
+                // für rvalue variablen >> continue
+                if(res.isRValue() && !res.getVariableRef().isReference()){
+
+                    continue;
+                }
+                // Wenn Scope Variable // reference enthält
+                else if(returnToScope.containsVariable(&res.getVariableRef())){
+
+                    continue;
+                }
+                // Wenn Scope Variable (Referenz) NICHT enthält aber referenzierte Variable
+                else if(res.getVariableRef().isReference() && returnToScope.containsDataVariableOrReference(res.getData()).first){
+                    
+                    if(res.isRValue()){ continue; }
+
+                    // finden der Referenzierten Variable und rvalue referenz zurückgeben
+                    res.variable = Variable();
+                    res.variable.reference(*res.variablePtr);
+                    res.variablePtr = nullptr;
+                    
+                    continue;
+                }
+                // Wenn Scope Variable (rvalue, Referenz) NICHT enthält und auch NICHT referenzierte Variable
+                else if(res.isRValue() && res.getVariableRef().isReference()){
+
+                    //
+                    res.variable.ownedObject = res.variable.referencedObject->get()->clone();
+                    res.variable.referencedObject = nullptr;
+
+                    //
+                    continue;
+                }
+
+                // result ist rvalue variable >> clone
+                res.constructRValueByContainedLValue();
+            }
+        }
         else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
 
             ProcessingResult res;
@@ -518,55 +570,6 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     prcResult.evalResults[childIdx].setLValue(
                         constructVariable(varNode.argument, scope, constructType, constructReference));
                 }
-            }
-        }
-        else if(node.children.size() == 2 && node.children[0].argument == "return"){
-
-            // return des zweiten childs
-            prcResult = evaluateExpression(node.children[1], scope, returnToScope, context);
-            prcResult.exit = ExitCase::Return;
-
-            //
-            for(auto& res : prcResult.evalResults){
-
-                // check ob lvalues im parent Scope des Scopes als Variablen bekannt
-                // >> ansonsten clone nötig
-
-                // für rvalue variablen >> continue
-                if(res.isRValue() && !res.getVariableRef().isReference()){
-
-                    continue;
-                }
-
-                // Wenn Scope Variable // reference enthält
-                if(returnToScope.containsVariable(&res.getVariableRef())){
-
-                    continue;
-                }
-                // Wenn Scope Variable (Referenz) NICHT enthält aber referenzierte Variable
-                else if(res.getVariableRef().isReference() && returnToScope.containsDataReference(res.getData()).first){
-                    
-                    if(res.isRValue()){ continue; }
-
-                    // finden der Referenzierten Variable und rvalue referenz zurückgeben
-                    res.variable = Variable();
-                    res.variable.reference(*res.variablePtr);
-                    res.variablePtr = nullptr;
-                    
-                    continue;
-                }
-                // Wenn Scope Variable (rvalue, Referenz) NICHT enthält und auch NICHT referenzierte Variable
-                else if(res.isRValue() && res.getVariableRef().isReference()){
-
-                    //
-                    res.variable.ownedObject = res.variable.referencedObject->get()->clone();
-                    res.variable.referencedObject = nullptr;
-
-                    continue;
-                }
-
-                // result ist rvalue variable >> clone
-                res.constructRValueByContainedLValue();
             }
         }
         else if(node.children.size() == 4 && node.children[0].argument == "decl"){

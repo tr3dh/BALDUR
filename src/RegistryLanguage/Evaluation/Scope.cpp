@@ -78,3 +78,22 @@ std::pair<bool, Variable*> Scope::containsDataReference(IObject* dataPtr){
 
     return std::make_pair(false, nullptr);
 }
+
+//
+std::pair<bool, Variable*> Scope::containsDataVariableOrReference(IObject* dataPtr){
+
+    //
+    for(auto& [lb, var] : variableTable){
+
+        if(var.getData() == dataPtr){
+            return std::make_pair(true, &var);
+        }
+    }
+
+    if(parent != nullptr){
+
+        return parent->containsDataVariableOrReference(dataPtr);
+    }
+
+    return std::make_pair(false, nullptr);
+}
