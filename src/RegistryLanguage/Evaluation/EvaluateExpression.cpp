@@ -33,7 +33,7 @@ EvalResultPtrVec convertEvalResultsToPtrVec(EvalResultVec& resVec){
 Variable* constructVariable(const std::string& variableName, Scope& scope, TypeIndex typeIndex, bool constructAsReference){
 
     //
-    RETURNING_ASSERT(!scope.containsVariable(variableName),
+    RETURNING_ASSERT(!scope.containsVariableInline(variableName),
         "Variable " + variableName + " existiert bereits im Scope", nullptr);
 
     // initialisierung der leeren Variable unter dem entsprechenden namen

@@ -32,7 +32,7 @@ struct Scope {
     //
     void constructVariable(const std::string& variableName, TypeIndex typeIndex){
 
-        if(getVariable(variableName) != nullptr){
+        if(variableTable.contains(variableName)){
 
             _ERROR << "Variable " << variableName << " ist bereits im Scope vorhanden" << endl;
         }
@@ -43,7 +43,7 @@ struct Scope {
 
     Variable* constructAndReturnVariable(const std::string& variableName){
 
-        if(getVariable(variableName) != nullptr){
+        if(variableTable.contains(variableName)){
 
             _ERROR << "Variable " << variableName << " ist bereits im Scope vorhanden" << endl;
         }
@@ -70,6 +70,13 @@ struct Scope {
 
         return getVariable(variableName) != nullptr;
     }
+
+        //
+    bool containsVariableInline(const std::string& variableName){
+
+        return variableTable.contains(variableName);
+    }
+
 
     //
     bool containsVariable(Variable* variablePtr);
