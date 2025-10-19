@@ -590,6 +590,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                     argIndices.emplace_back(IObject::ARBITATRY_TYPE);
                 }
+                else if(arg.children[0].argument == "ref"){
+
+                    argIndices.emplace_back(IObject::ARBITATRY_TYPE);
+                }
                 else{
 
                     argIndices.emplace_back(getTypeIndexByKeyword(arg.children[0].argument));
@@ -623,12 +627,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                         //
-                        if(paramVarN.getVariableRef().isReference()){
+                        if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
 
+                            // Reference
                             paramVarN.getVariableRef().reference(inputN.getVariableRef());
                         }
                         else{
 
+                            // Copy
                             paramVarN.getVariableRef().constructByUniquePtr(inputN.getVariableRef().getData()->clone());
                         }
                     }
