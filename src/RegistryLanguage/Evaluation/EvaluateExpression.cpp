@@ -603,7 +603,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             // Konstruktoren
             registerFunction(functionLabel, argIndices,
                 [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
-                 __argIndices__ = argIndices, params, section
+                 __argIndices__ = argIndices, params, section, &scope
                 ](FREG_ARGS){
 
                     // Asserts
@@ -612,7 +612,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                     //
                     Scope functionScope;
-                    functionScope.parent = returnToScope;
+                    functionScope.parent = &scope;
 
                     // mit params befüllen
                     ProcessingResult paramRes = evaluateExpression(params, functionScope, *returnToScope, Context::NONE);
