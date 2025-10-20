@@ -3,7 +3,7 @@
 //
 std::vector<std::string> g_UsedOperators = {
     COLON,
-    "return",
+    // "return",
     "=", "<<", "<>", "<-",
     "+=", "-=", "*=", "/=", "^=",
     "&=", "!&=", "|=", "!|=", "x|=", "!x|=",
@@ -330,6 +330,23 @@ void emplaceStdOperations(){
                 
                 inputs[paramIdx]->getVariableRef().getData()->print();
                 LOG << (paramIdx == inputs.size() - 1 ? "\n" : " ") << std::flush;
+            }
+    },
+    {});
+
+    //
+    registerFunction("logRes", {IObject::ARGS_TYPE},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            // Returns
+            for(size_t paramIdx = 0; paramIdx < inputs.size(); paramIdx++){
+                
+                LOG << *inputs[paramIdx] << endl;
             }
     },
     {});

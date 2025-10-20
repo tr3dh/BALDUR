@@ -1,6 +1,9 @@
 #include "EvaluateExpression.h"
 
 //
+TypeIndex& DeclaringStructByIndex = g_TypeRegister.typeCounter;
+
+//
 std::map<std::string, ExitCase> g_ExitCasesByKeyword{
     {"break", ExitCase::Break},
     {"continue", ExitCase::Continue},
@@ -181,15 +184,114 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             ProcessingResult res = evaluateExpression(member, scope, returnToScope, context);
             ProcessingResult params = evaluateExpression(paramsNd, scope, returnToScope, context);
 
-            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &scope, &res.evalResults[0]);
+            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), scope, &res.evalResults[0]);
         }
-        else if(Operator == "return"){
+        else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
+
+            ProcessingResult res;
+            prcResult = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
 
             //
-            RETURNING_ASSERT(node.children.size() == 1, "",{});
+            for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
+
+                //
+                callFunction(g_OneArgOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx]}, scope);
+            }
+        }
+        else if(g_TwoArgOperations.contains(Operator)){
+            
+            RETURNING_ASSERT(node.children.size() == 2,
+                "Verknüpfung über zweiseitige Operatoren von ungleich 2 child nodes nicht möglich", {});
+
+            ProcessingResult leftSide = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_LEFTSIDE);
+            RETURNING_ASSERT(!leftSide.evalResults.empty(), "Linke Seite der Zuweisung ist leer", {});
+
+            ProcessingResult rightSide = evaluateExpression(node.children[1], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
+            RETURNING_ASSERT(!rightSide.evalResults.empty(), "Rechte Seite der Zuweisung ist leer", {});
+
+            if(leftSide.evalResults.size() == rightSide.evalResults.size()){
+
+                //
+                for(size_t childIdx = 0; childIdx < leftSide.evalResults.size(); childIdx++){
+
+                    callFunction(g_TwoArgOperations[Operator], prcResult.evalResults,
+                        { &leftSide.evalResults[childIdx], &rightSide.evalResults[childIdx] }, scope);
+                }
+            }
+            // Problematisch da rvalue aus evalresult beim assign weggemovt wird und dann nur noch als
+            // invalide Variable zur Verfügung steht
+            //
+            // else if(rightSide.size() == 1){
+
+            //     //
+            //     for(size_t childIdx = 0; childIdx < leftSide.size(); childIdx++){
+
+            //         callFunction(g_TwoArgOperations[Operator], prcResult.evalResults, { &leftSide[childIdx], &rightSide[0] });
+            //     }
+            // }
+            else{
+
+                RETURNING_ASSERT(TRIGGER_ASSERT, "ungleiche Seitengrößen bei two side operator Funktion", {});
+            }
+        }
+        // argChainOperators enthält den Operator der Operation die mehrere Argumente verknüpft und die Funktion
+        // über die diese jeweils zwei argumente verknüpft
+        // für lange Operationsketten so im Gegensatz zum klassichen AST etwas effizient
+        // Aufgrund nur einer eventuellen Kopie und sonst immer beaufschlagung mit __...assign__
+        else if(g_ArgChainOperations.contains(Operator)){
+
+            //
+            RETURNING_ASSERT(node.children.size() > 1, "Zu wenig childs", {});
+
+            //
+            ProcessingResult res, tmpRes;
+            prcResult = evaluateExpression(node.children[0], scope, returnToScope, context);
+
+            //
+            ProcessingResult rvarRefs;
+            rvarRefs.evalResults.resize(prcResult.evalResults.size());
+
+            //
+            for(size_t idx = 0; idx < prcResult.evalResults.size(); idx++){
+
+                prcResult.evalResults[idx].constructRValueByContainedLValue();
+                rvarRefs.evalResults[idx].setLValue(&prcResult.evalResults[idx].getVariableRef());
+            }
+
+            //
+            for(size_t childIdx = 1; childIdx < node.children.size(); childIdx++){
+
+                //
+                tmpRes = evaluateExpression(node.children[childIdx], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
+                RETURNING_ASSERT(prcResult.evalResults.size() == tmpRes.evalResults.size(), "Ungleiche Größen in Seiten beim 2 s ops",{});
+                
+                //
+                for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
+
+                    //
+                    // if(prcResult.evalResults[resIdx].isLValue()){
+
+                    //     prcResult.evalResults[resIdx].constructRValueByContainedLValue();
+                    // }
+
+                    //
+                    callFunction(g_ArgChainOperations[Operator], res.evalResults, {&rvarRefs.evalResults[resIdx], &tmpRes.evalResults[resIdx]}, scope);
+                    RETURNING_ASSERT(res.evalResults.empty(), "Verkettende Funktion bearbeitet nur übergebene member und darf nichts zurückgeben",{});
+                }
+            }
+        }
+
+        break;
+    }
+    case TkType::Chain:{
+
+        if(node.children.size() > 0 && node.children[0].argument == "return"){
+
+            //
+            RETURNING_ASSERT(node.children.size() == 2, "",{});
 
             // return des zweiten childs
-            prcResult = evaluateExpression(node.children[0], scope, returnToScope, context);
+            prcResult = evaluateExpression(node.children[1], scope, returnToScope, context);
             prcResult.exit = ExitCase::Return;
 
             //
@@ -235,94 +337,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 res.constructRValueByContainedLValue();
             }
         }
-        else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
-
-            ProcessingResult res;
-            prcResult = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
-
-            //
-            for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
-
-                //
-                callFunction(g_OneArgOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx]}, &scope);
-            }
-        }
-        else if(g_TwoArgOperations.contains(Operator)){
-            
-            RETURNING_ASSERT(node.children.size() == 2,
-                "Verknüpfung über zweiseitige Operatoren von ungleich 2 child nodes nicht möglich", {});
-
-            ProcessingResult leftSide = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_LEFTSIDE);
-            RETURNING_ASSERT(!leftSide.evalResults.empty(), "Linke Seite der Zuweisung ist leer", {});
-
-            ProcessingResult rightSide = evaluateExpression(node.children[1], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
-            RETURNING_ASSERT(!rightSide.evalResults.empty(), "Rechte Seite der Zuweisung ist leer", {});
-
-            if(leftSide.evalResults.size() == rightSide.evalResults.size()){
-
-                //
-                for(size_t childIdx = 0; childIdx < leftSide.evalResults.size(); childIdx++){
-
-                    callFunction(g_TwoArgOperations[Operator], prcResult.evalResults,
-                        { &leftSide.evalResults[childIdx], &rightSide.evalResults[childIdx] }, &scope);
-                }
-            }
-            // Problematisch da rvalue aus evalresult beim assign weggemovt wird und dann nur noch als
-            // invalide Variable zur Verfügung steht
-            //
-            // else if(rightSide.size() == 1){
-
-            //     //
-            //     for(size_t childIdx = 0; childIdx < leftSide.size(); childIdx++){
-
-            //         callFunction(g_TwoArgOperations[Operator], prcResult.evalResults, { &leftSide[childIdx], &rightSide[0] });
-            //     }
-            // }
-            else{
-
-                RETURNING_ASSERT(TRIGGER_ASSERT, "ungleiche Seitengrößen bei two side operator Funktion", {});
-            }
-        }
-        // argChainOperators enthält den Operator der Operation die mehrere Argumente verknüpft und die Funktion
-        // über die diese jeweils zwei argumente verknüpft
-        // für lange Operationsketten so im Gegensatz zum klassichen AST etwas effizient
-        // Aufgrund nur einer eventuellen Kopie und sonst immer beaufschlagung mit __...assign__
-        else if(g_ArgChainOperations.contains(Operator)){
-
-            //
-            RETURNING_ASSERT(node.children.size() > 1, "Zu wenig childs", {});
-
-            //
-            ProcessingResult res, tmpRes;
-            prcResult = evaluateExpression(node.children[0], scope, returnToScope, context);
-
-            //
-            for(auto& evr : prcResult.evalResults){
-
-                evr.constructRValueByContainedLValue();
-            }
-
-            //
-            for(size_t childIdx = 1; childIdx < node.children.size(); childIdx++){
-
-                //
-                tmpRes = evaluateExpression(node.children[childIdx], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
-                RETURNING_ASSERT(prcResult.evalResults.size() == tmpRes.evalResults.size(), "Ungleiche Größen in Seiten beim 2 s ops",{});
-                
-                //
-                for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
-
-                    //
-                    callFunction(g_ArgChainOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx], &tmpRes.evalResults[resIdx]}, &scope);
-                }
-            }
-        }
-
-        break;
-    }
-    case TkType::Chain:{
-
-        if(IsForLoop(node)){
+        else if(IsForLoop(node)){
 
             const ASTNode& paramSection = node.children[1];
             const ASTNode& initialValues = paramSection.children[0],
@@ -449,7 +464,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             ProcessingResult paramResults = evaluateExpression(paramSection, scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
 
             //
-            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(paramResults.evalResults), &scope);
+            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(paramResults.evalResults), scope);
 
             RETURNING_ASSERT(prcResult.evalResults.size() == 1, "If Statement gibt mehr als ein return zurück",{});
 
@@ -513,7 +528,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             // "In Funktion Call enthaltene Argumentanzahl stimmt nicht mit Rückgabeargumentanzahl der Paramsection überein", {});
 
             //
-            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), &scope);
+            callFunction(functionLabel, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), scope);
         }
         else if(IsConstructionCall(node)){
 
@@ -618,7 +633,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     functionScope.parent = &scope;
 
                     // mit params befüllen
-                    ProcessingResult paramRes = evaluateExpression(params, functionScope, *returnToScope, Context::NONE);
+                    ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
 
                     RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
 
@@ -642,9 +657,27 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         }
                     }
 
-                    returns = evaluateExpression(section, functionScope, *returnToScope, Context::NONE).evalResults;
+                    returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
             },
             {IObject::ARGS_TYPE});
+        }
+        else if(node.children.size() == 3 && node.children[0].argument == "struct" &&
+                node.children[1].Relation == TkType::Argument && node.children[2].Relation == TkType::Section){
+
+            //
+            const std::string& structName = node.children[1].argument;
+
+            //
+            LOG << "Registriere struct " << structName << endl;
+
+            Scope structScope;
+            structScope.parent = &scope;
+
+            //
+            evaluateExpression(node.children[2], structScope, scope, Context::DECL_STRUCT);
+
+            //
+            LOG << structScope << endl;
         }
         else{
             

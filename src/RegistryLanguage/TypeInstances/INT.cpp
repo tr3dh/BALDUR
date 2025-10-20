@@ -347,7 +347,7 @@ namespace types{
                 //
                 GET_RETURN(BOOL, 0);
                 GET_ARG(INT, 0);
-                INT* calledAs = static_cast<INT*>(returnToScope->getVariable("__ScriptCalledAs__")->getData());
+                INT* calledAs = static_cast<INT*>(returnToScope.getVariable("__ScriptCalledAs__")->getData());
 
                 RETURNING_ASSERT(calledAs != nullptr, "Variable __ScriptCalledAs__ wurde im Scope nicht gefunde",);
 

@@ -5,6 +5,7 @@
 #include "Scope.h"
 #include "../TypeInstances/gatheredInstances.h"
 #include "IdentifyNodeCases.h"
+#include "../TypeInstances/STRUCT.h"
 
 enum class Context : uint8_t{
 
@@ -12,6 +13,7 @@ enum class Context : uint8_t{
     ASSIGN_LEFTSIDE,
     ASSIGN_RIGHTSIDE,
     FIRST_LOOP_FRAME,
+    DECL_STRUCT,
 };
 
 // Alles auf vector<EvalResult> ummünzen 
