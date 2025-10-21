@@ -503,17 +503,32 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
         }
         else if(IsStaticSection(node)){
             
-            if(context != Context::FIRST_LOOP_FRAME){
+            if(context == Context::FIRST_LOOP_FRAME){
+
+                ProcessingResult SectionRes = evaluateExpression(node.children[1], scope, returnToScope, context);
+
+                if(SectionRes.exit != ExitCase::None){
+
+                    prcResult.append(SectionRes);
+                }
+            }
+            else if(context == Context::DECL_STRUCT){
+
+                // attribute in Static Section sollen in den static Scope der struct Decls konstruiert werden
+                // static scope ist *scope.parent || STRUCT::staticScopes[DeclareStructByIndex]
+                ProcessingResult SectionRes = evaluateExpression(node.children[1], *scope.parent, returnToScope, Context::DECL_STRUCT_STATIC);
+
+                if(SectionRes.exit != ExitCase::None){
+
+                    prcResult.append(SectionRes);
+                }
+            }
+            else{
 
                 return {};
             }
 
-            ProcessingResult SectionRes = evaluateExpression(node.children[1], scope, returnToScope, context);
 
-            if(SectionRes.exit != ExitCase::None){
-
-                prcResult.append(SectionRes);
-            }
         }
         else if(IsFunctionCall(node)){
 
@@ -670,14 +685,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             //
             LOG << "Registriere struct " << structName << endl;
 
-            Scope structScope;
-            structScope.parent = &scope;
+            Scope& attribScope = STRUCT::emplaceScopes(DeclaringStructByIndex, scope);
 
             //
-            evaluateExpression(node.children[2], structScope, scope, Context::DECL_STRUCT);
+            evaluateExpression(node.children[2], attribScope, scope, Context::DECL_STRUCT);
 
             //
-            LOG << structScope << endl;
+            STRUCT::registerStruct(structName, DeclaringStructByIndex);
         }
         else{
             

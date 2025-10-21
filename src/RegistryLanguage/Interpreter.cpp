@@ -121,9 +121,6 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
     //
     // LOG_TIMER;
 
-    LOG << g_TypeRegister << endl;
-    LOG << g_FunctionRegister << endl;
-
     LOG << "Writing into Scope ...\n" << endl;
 
     // Scope aufsetzen
@@ -163,11 +160,10 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
 
     LOG << endl;
 
-    LOG << "Scope:" << endl;
-    LOG << nullScope << endl;
-
     LOG << "Skript Outcome:" << endl;
     LOG << scriptReturn.evalResults << endl;
+
+    LOG << g_TypeRegister << endl;
 
     std::vector<std::unique_ptr<IObject>> isolatedObjects;
     isolatedObjects.reserve(scriptReturn.evalResults.size());
@@ -175,6 +171,12 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
     for(auto& obj : scriptReturn.evalResults){
         isolatedObjects.emplace_back(obj.getVariableRef().getData()->clone());
     }
+
+    // Löschen der pointer auf die nullScope
+    STRUCT::cleanUp();
+
+    // nullScope wird geläscht ...
+    // --- ab hier sind alle ptrs auf die nullScope ungültig 
 
     return isolatedObjects;
 }

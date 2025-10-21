@@ -18,6 +18,9 @@ struct Scope {
     ~Scope();
 
     //
+    void copyFrom(Scope& other);
+
+    //
     void constructVariable(const std::string& variableName, const std::string& typeKeyword){
 
         if(getVariable(variableName) != nullptr){
@@ -76,7 +79,6 @@ struct Scope {
 
         return variableTable.contains(variableName);
     }
-
 
     //
     bool containsVariable(Variable* variablePtr);

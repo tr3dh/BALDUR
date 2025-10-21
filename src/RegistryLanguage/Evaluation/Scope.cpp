@@ -30,6 +30,23 @@ Scope::~Scope(){
 }
 
 //
+void Scope::copyFrom(Scope& other){
+
+    //
+    for(auto& [label, var] : other.variableTable){
+
+        //
+        RETURNING_ASSERT(var.isValid(), "Invalide Variable in Scope der kopiert werden soll",);
+
+        //
+        variableTable.try_emplace(label);
+
+        if(var.isReference()){ variableTable[label].reference(var); }
+        else{ variableTable[label].clone(var); }
+    }
+}
+
+//
 bool Scope::containsVariable(Variable* variablePtr){
 
     for(auto& [name, var] : variableTable){

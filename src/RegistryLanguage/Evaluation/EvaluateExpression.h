@@ -14,6 +14,7 @@ enum class Context : uint8_t{
     ASSIGN_RIGHTSIDE,
     FIRST_LOOP_FRAME,
     DECL_STRUCT,
+    DECL_STRUCT_STATIC
 };
 
 // Alles auf vector<EvalResult> ummünzen 
