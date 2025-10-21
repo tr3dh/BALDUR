@@ -29,6 +29,17 @@ public:
     virtual std::unique_ptr<IObject> clone() = 0;
 
     virtual Variable* getAttrib(const std::string& attribLabel){ return nullptr; }
+
+    virtual bool containsVariable(Variable* variablePtr){ return false; }
+    virtual std::pair<bool, Variable*> containsDataReference(IObject* dataPtr){
+
+        return std::make_pair(false, nullptr);
+    }
+
+    virtual std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr){
+
+        return std::make_pair(false, nullptr);
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, IObject* obj);

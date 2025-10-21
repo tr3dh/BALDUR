@@ -5,6 +5,8 @@
 
 typedef std::map<std::string, Variable> VariableTable;
 
+extern std::map<TypeIndex, Scope> g_staticScopes;
+
 struct Scope {
 
     //

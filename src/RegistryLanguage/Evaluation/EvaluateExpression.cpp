@@ -77,6 +77,41 @@ Variable* getStaticAttrib(const ASTNode& cls, const ASTNode& attrib){
     return &g_staticScopes[tpIdx].variableTable[attrib.argument];
 }
 
+bool ActiveScopesContainingVariable(Variable* variablePtr, Scope& currentScope){
+
+    bool res;
+    res = currentScope.containsVariable(variablePtr);
+
+    if(res){ res; }
+
+    for(auto& [idx, scope] : g_staticScopes){
+
+        res = scope.containsVariable(variablePtr);
+
+        if(res){ return res; }
+    }
+
+    return false;
+}
+
+//
+std::pair<bool, Variable*> ActiveScopesContainingDataVariableOrReference(IObject* dataPtr, Scope& currentScope){
+
+    std::pair<bool, Variable*> pair;
+    pair = currentScope.containsDataVariableOrReference(dataPtr);
+
+    if(pair.first){ return pair; }
+
+    for(auto& [idx, scope] : g_staticScopes){
+
+        pair = scope.containsDataVariableOrReference(dataPtr);
+
+        if(pair.first){ return pair; }
+    }
+
+    return std::make_pair(false, nullptr);
+}
+
 //
 ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& returnToScope, Context context){
 
@@ -393,12 +428,12 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     continue;
                 }
                 // Wenn Scope Variable // reference enthält
-                else if(returnToScope.containsVariable(&res.getVariableRef())){
+                else if(ActiveScopesContainingVariable(&res.getVariableRef(), returnToScope)){  // returnToScope.containsVariable(&res.getVariableRef())){
 
                     continue;
                 }
                 // Wenn Scope Variable (Referenz) NICHT enthält aber referenzierte Variable
-                else if(res.getVariableRef().isReference() && returnToScope.containsDataVariableOrReference(res.getData()).first){
+                else if(res.getVariableRef().isReference() && ActiveScopesContainingDataVariableOrReference(res.getData(), returnToScope).first){ // returnToScope.containsDataVariableOrReference(res.getData()).first){
                     
                     if(res.isRValue()){ continue; }
 

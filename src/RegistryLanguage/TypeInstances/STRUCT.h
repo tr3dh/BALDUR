@@ -119,25 +119,18 @@ public:
         return &attribScope.variableTable[attribLabel];
     }
 
-    //
-    // static bool init(const std::string& keyword, const std::function<IObject*()>& initConstructor){
+    bool containsVariable(Variable* variablePtr) override {
 
-    //     typeIndex = registerType(keyword, initConstructor);
+        return attribScope.containsVariable(variablePtr);
+    }
 
-    //     if(typeIndex == INVALID_TYPE_INDEX){
-            
-    //         _ERROR << "Type Registrierung von Type '" <<  keyword << "' fehlgeschlagen" << endl;
-    //         return false;
-    //     }
+    std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override {
 
-    //     // Plätze in statics und memberfunktionsregistermaps anlegen
-    //     g_StaticFunctionRegisters.emplace(typeIndex, FunctionRegister());
-    //     g_MemberFunctionRegisters.emplace(typeIndex, FunctionRegister());
-        
-    //     //
-    //     g_nullRefs.emplace(typeIndex, std::make_unique<Tag>());
+        return attribScope.containsDataReference(dataPtr);
+    }
 
-    //     //
-    //     return true;
-    // }
+    std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override {
+
+        return attribScope.containsDataVariableOrReference(dataPtr);
+    }
 };

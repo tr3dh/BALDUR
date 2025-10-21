@@ -25,6 +25,24 @@ Scope::~Scope(){
         }
     }
 
+    for(auto& [idx, scope] : g_staticScopes){
+
+        for(auto& [label, var] : scope.variableTable){
+        
+            if(var.isReference()){ continue; }
+
+            std::tie(refExists, refPtr) = parent->containsVariableReference(&var);
+        
+            if(refExists){
+
+                refPtr->reference(&g_nullRefs[refPtr->getData()->getTypeIndex()]);
+
+                _ERROR << "Bei Scope Löschung existiert externe Referenz lokaler Variable " << label << endl;
+                _ERROR << "entsprechende Referenz wird dereferenziert" << endl;
+            }
+        }
+    }
+
     // Löschung nach return dieser Funktion
     // ...
 }
@@ -55,6 +73,10 @@ bool Scope::containsVariable(Variable* variablePtr){
     for(auto& [name, var] : variableTable){
 
         if(variablePtr == &var){
+            return true;
+        }
+
+        if(var.getData()->containsVariable(variablePtr)){
             return true;
         }
     }
@@ -89,6 +111,11 @@ std::pair<bool, Variable*> Scope::containsDataReference(IObject* dataPtr){
         if(var.getData() == dataPtr){
             return std::make_pair(true, &var);
         }
+
+        auto pair = var.getData()->containsDataReference(dataPtr);
+        if(pair.first){
+            return pair;
+        }
     }
 
     if(parent != nullptr){
@@ -107,6 +134,11 @@ std::pair<bool, Variable*> Scope::containsDataVariableOrReference(IObject* dataP
 
         if(var.getData() == dataPtr){
             return std::make_pair(true, &var);
+        }
+
+        auto pair = var.getData()->containsDataVariableOrReference(dataPtr);
+        if(pair.first){
+            return pair;
         }
     }
 
