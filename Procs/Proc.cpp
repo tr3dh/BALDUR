@@ -86,8 +86,39 @@ int main(void)
     LOG << "llvm wird genutzt" << ENDL;
     #endif
 
+    putenv("GLFW_USE_HYBRID_HPG=1");                       // Nutzt High Performance GPU (bei Laptops)
+
+    putenv("__GL_THREADED_OPTIMIZATIONS=0");              // Threaded Optimierung AUS – gut bei Flickering
+    putenv("__GL_SYNC_TO_VBLANK=1");                      // VSync AN – reduziert Tearing
+    putenv("__GL_SHADER_DISK_CACHE=1");                   // Shader Cache AN
+    putenv("__GL_LOG_ERRORS=1");                          // Fehler Logging
+    putenv("__GL_GPU_DISALLOW_SYNC_OBJECTS=1");           // Sync Objekte deaktivieren
+
+    // erweitertes Gl logging
+    // putenv("__GL_LOG_ERRORS=1");
+    // putenv("__GL_DEBUG=verbose");
+    // putenv("__GL_DUMP_SHADERS=1");
+
     //
-    putenv("GLFW_USE_HYBRID_HPG=1");
+    putenv("__GL_ALLOW_UNOFFICIAL_PROTOCOL=1");           // Erlaubt inoffizielle Protokolle – gut bei Problemen mit älteren Anwendungen
+    putenv("__GL_YIELD=USLEEP");                          // Setzt Yield-Modus auf usleep – verbessert Synchronisation
+    putenv("__GL_MaxFramesAllowed=1");                    // Reduziert Triple-Buffering – reduziert Input-Lag (Standard ist 2 oder 3)
+    putenv("__GL_SINGLE_THREADED=1");                     // Setzt OpenGL in Single Thread Modus (Legacy-Kompatibilität)
+    putenv("__GL_NO_SHADER_STORAGE_CACHE=1");             // Deaktiviert Shader Storage Cache (testen bei Grafikfehlern)
+    putenv("__GL_DUMP_SHADERS=1");                        // Dump Shader Binärdaten – Debugging
+    putenv("__GL_VRR_ALLOWED=0");                         // Variable Refresh Rate deaktivieren – bei Flickern auf G-Sync/FreeSync
+    putenv("__GL_FORCE_DIRECT_RENDERING=1");              // Erzwingt Direct Rendering – nützlich bei Remote-Desktops oder VM
+    putenv("__GL_IGNORE_BLACKLIST=1");                    // Erzwingt volle GPU-Nutzung, selbst wenn inkompatibel markiert
+    putenv("__GL_LOG_MAX_ANISO=1");                       // Loggt Anisotrope Filter Nutzung
+    putenv("__GL_SHOW_GRAPHICS_OSD=1");                   // Zeigt NVIDIA Overlay an (wenn aktivierbar) – Performance Debugging
+    putenv("__GL_DEFAULT_LOG_LEVEL=2");                   // Logging-Level erhöhen (0 = none, 1 = error, 2 = warn, 3 = info)
+
+    // konkret für Quadro karten
+    putenv("__GL_WORKSTATION_MODE=1");                    // Aktiviert Optimierungen speziell für Quadro/Workstation-Treiber
+
+    // experimentell 
+    // putenv("__GL_SYNC_DISPLAY_DEVICE=\\.\DISPLAY1");      // Synchronisiert auf bestimmten Monitor
+    // putenv("__GL_DEBUG=verbose");                         // Verbose Debug-Ausgabe
 
     //
     mkdir("../bin");
@@ -616,7 +647,7 @@ int main(void)
 
         ImVec2 cursorPos = ImGui::GetCursorPos();
 
-        const float fileManagerWidth = 0.0f;
+        static float fileManagerWidth = 0.0f;
 
         if(fileManagerWidth > 0){
             // Tabbar über Editor
@@ -632,7 +663,7 @@ int main(void)
 
         cursorPos.x += fileManagerWidth;
 
-        const float terminalHeight = 250.0f;
+        static float terminalHeight = 250.0f;
         float tabBarHeight = ImGui::GetTextLineHeightWithSpacing() * 2.2f;
 
         // // Tabbar über Editor
@@ -651,14 +682,49 @@ int main(void)
         // }
         // ImGui::End();
 
+        static float splitterHeight = 5;
+        ImVec2 editorPos = {fileManagerWidth, cursorPos.y - ImGui::GetStyle().WindowPadding.y};
+        ImVec2 editorSize =
+            {winSize.x - fileManagerWidth, winSize.y - cursorPos.y - terminalHeight + ImGui::GetStyle().WindowPadding.y - splitterHeight};
+
         // editor
-        editor.render(
-            {fileManagerWidth, cursorPos.y - ImGui::GetStyle().WindowPadding.y},
-            {winSize.x - fileManagerWidth, winSize.y - cursorPos.y - terminalHeight + ImGui::GetStyle().WindowPadding.y}
+        editor.render(editorPos, editorSize);
+
+        // Splitter-Leiste zeichnen
+        
+        ImGui::SetNextWindowPos(ImVec2(0, GetScreenHeight() - terminalHeight - 2 * splitterHeight), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(GetScreenWidth(), 4 * splitterHeight), ImGuiCond_Always);
+
+        ImGui::Begin("Splitter", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground
         );
 
+        // Unsichtbares Drag-Element, um die Höhe zu ändern
+        ImGui::InvisibleButton("##SplitterGrab", ImVec2(winSize.x, 8));
+
+        static bool IsDraggingSplitter = false;
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left) && !IsDraggingSplitter){
+            
+            IsDraggingSplitter = true;
+        }
+
+        if(IsDraggingSplitter && ImGui::IsMouseReleased(ImGuiMouseButton_Left)){
+            
+            IsDraggingSplitter = false;
+        }
+
+        if(IsDraggingSplitter){
+
+            terminalHeight -= ImGui::GetIO().MouseDelta.y;
+            std::clamp(terminalHeight, 20.0f, 50.0f);
+        }
+
+        // 
+
+        ImGui::End();
+
         // Tabbar über Terminal
-        ImVec2 terminalPos = {fileManagerWidth, winSize.y - terminalHeight};
+        ImVec2 terminalPos = {fileManagerWidth, winSize.y - terminalHeight + splitterHeight};
         ImGui::SetNextWindowPos(terminalPos);
         ImGui::SetNextWindowSize(ImVec2(winSize.x - fileManagerWidth, tabBarHeight));
         ImGui::Begin("##terminal_tabbar", nullptr,

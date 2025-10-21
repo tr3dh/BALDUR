@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "stdlib.h"
 #include <cmath>
+#include <cstdlib>
 
 //
 extern "C" {
@@ -11,6 +12,13 @@ int main() {
 
     //
     putenv("GLFW_USE_HYBRID_HPG=1");
+
+    // NVIDIA OpenGL Treiber Flags
+    putenv(" __GL_THREADED_OPTIMIZATIONS=0");           // Multithreading optimierungen AUS >> kann Flackern reduzieren
+    putenv(" __GL_SYNC_TO_VBLANK=1");                   // VSync AN >> Tearing verhindern
+    putenv(" __GL_SHADER_DISK_CACHE=1");                // Shader Caching AN >> verbessert Performance
+    putenv(" __GL_LOG_ERRORS=1");                       // OpenGL Fehler Logging AN >> debugging
+    putenv(" __GL_GPU_DISALLOW_SYNC_OBJECTS=1");        // Sync Objekte deaktivieren >> kann Wackeln fixen
 
     //
     SetConfigFlags(FLAG_VSYNC_HINT);
