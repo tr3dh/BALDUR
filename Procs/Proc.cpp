@@ -4,6 +4,10 @@
 #include "templateDecls.h"
 #include "Libaries/Libaries.h"
 
+extern "C" {
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
+
 const std::string g_programsConfigCache = "../bin/example.CONFIG_CACHE";
 std::string g_fileBrowserCWD = fs::current_path().string() + "/../Import/";
 
@@ -81,6 +85,9 @@ int main(void)
     #ifdef USE_LLVM
     LOG << "llvm wird genutzt" << ENDL;
     #endif
+
+    //
+    putenv("GLFW_USE_HYBRID_HPG=1");
 
     //
     mkdir("../bin");
