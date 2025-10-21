@@ -168,12 +168,21 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
     std::vector<std::unique_ptr<IObject>> isolatedObjects;
     isolatedObjects.reserve(scriptReturn.evalResults.size());
 
+    // hier evtl mov und nicht clone
+    // >> clean up für Structs, sodass keine invaliden parent ptrs überbleiben
     for(auto& obj : scriptReturn.evalResults){
         isolatedObjects.emplace_back(obj.getVariableRef().getData()->clone());
     }
 
+    //
+    LOG << "Cleaning up Scopes" << endl;
+
     // Löschen der pointer auf die nullScope
     STRUCT::cleanUp();
+    // g_staticScopes.clear();
+
+    // nicht einfach löschen da sonst die parent ptrs in den attrib scopes sonst ungültig werden
+    for(auto& [idx, scope] : g_staticScopes){ scope.parent = nullptr; }
 
     // nullScope wird geläscht ...
     // --- ab hier sind alle ptrs auf die nullScope ungültig 

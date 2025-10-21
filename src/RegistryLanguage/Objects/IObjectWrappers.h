@@ -98,7 +98,7 @@ public:
     }
 
     //
-    std::unique_ptr<IObject> clone() const override {
+    std::unique_ptr<IObject> clone() override {
 
         if constexpr (!is_problematic_container<T>::value) {
 

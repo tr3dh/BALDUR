@@ -6,24 +6,28 @@ class STRUCT : public IObject{
 
 public:
 
-    static std::map<TypeIndex, Scope> staticScopes;
     static std::map<TypeIndex, Scope> attribScopes;
 
     static void cleanUp(){
 
-        staticScopes.clear();
         attribScopes.clear();
     }
 
     static Scope& emplaceScopes(TypeIndex tpIdx, Scope& scope){
         
-        staticScopes.try_emplace(tpIdx);
-        Scope& staticScope = staticScopes[tpIdx];
+        g_staticScopes.try_emplace(tpIdx);
+        Scope& staticScope = g_staticScopes[tpIdx];
         staticScope.parent = &scope;
 
         STRUCT::attribScopes.try_emplace(tpIdx);
         Scope& attribScope = attribScopes[tpIdx];
         attribScope.parent = &staticScope;
+
+        g_StaticFunctionRegisters.try_emplace(tpIdx);
+        g_MemberFunctionRegisters.try_emplace(tpIdx);
+
+        g_StaticFunctionRegisters[tpIdx] = FunctionRegister();
+        g_MemberFunctionRegisters[tpIdx] = FunctionRegister();
 
         return attribScope;
     }
@@ -31,7 +35,7 @@ public:
     static void registerStruct(const std::string& keyword, TypeIndex tpIdx){
 
         //
-        RETURNING_ASSERT(staticScopes.contains(tpIdx) && attribScopes.contains(tpIdx),
+        RETURNING_ASSERT(g_staticScopes.contains(tpIdx) && attribScopes.contains(tpIdx),
             "für TypeIndex hat noch kein Scope emplace stattgefunden",);
 
         //
@@ -42,6 +46,7 @@ public:
 
             // attribScope in member kopieren
             member->typeIndex = tpIdx;
+            member->tpInf = &g_TypeRegister.typeInfos[tpIdx];
             member->attribScope.copyFrom(attribScopes[tpIdx]);
             
             //
@@ -63,7 +68,17 @@ public:
     Scope attribScope;
 
     // auf eintrag in static map umstellen
-    std::string keyword;
+    TypeInfo* tpInf = nullptr;
+
+    STRUCT() = default;
+
+    STRUCT(STRUCT& other){
+
+        typeIndex = other.typeIndex;
+        tpInf = other.tpInf;
+
+        attribScope.copyFrom(other.attribScope);
+    }
 
     TypeIndex getTypeIndex() const override{
 
@@ -72,7 +87,7 @@ public:
 
     const std::string& getTypeKeyword() const override{
         
-        return keyword; 
+        return tpInf->keyword; 
     };
 
     size_t getSize() const override{
@@ -86,14 +101,22 @@ public:
         auto it = &g_TypeRegister.typeInfos[typeIndex];
 
         //
-        LOG << "STRUCT Object : '" << it->keyword << "' | TypeIdx : <" << typeIndex << "> | Attribs : " << attribScope;
+        LOG << "STRUCT Object : '" << it->keyword << "' | TypeIdx : <" << typeIndex << "> | Attribs : {" << attribScope << "}";
     }
 
     //
-    std::unique_ptr<IObject> clone() const override {
+    std::unique_ptr<IObject> clone() override {
 
-        // Standard
-        return std::make_unique<types::VOID>(); 
+        return std::make_unique<STRUCT>(*this); 
+    }
+
+    Variable* getAttrib(const std::string& attribLabel) override{
+
+        //
+        RETURNING_ASSERT(attribScope.containsVariableInline(attribLabel),
+            "Struct " + tpInf->keyword + " stellt kein Attrib " + attribLabel+ " bereit", nullptr);
+
+        return &attribScope.variableTable[attribLabel];
     }
 
     //

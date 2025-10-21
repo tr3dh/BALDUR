@@ -33,6 +33,9 @@ Scope::~Scope(){
 void Scope::copyFrom(Scope& other){
 
     //
+    parent = other.parent;
+
+    //
     for(auto& [label, var] : other.variableTable){
 
         //

@@ -50,6 +50,34 @@ Variable* constructVariable(const std::string& variableName, Scope& scope, TypeI
 }
 
 //
+void getAttrib(EvalResult& res, const ASTNode& attrib){
+
+    //
+    RETURNING_ASSERT(res.isLValue(), "Attrib Recip ist ken lvalue",);
+    Variable* attribPtr = res.getVariableRef().getData()->getAttrib(attrib.argument);
+
+    RETURNING_ASSERT(attribPtr != nullptr, "Attribute " + attrib.argument + " ist nicht auffindbar",);
+    res.setLValue(attribPtr);
+}
+
+//
+Variable* getStaticAttrib(const ASTNode& cls, const ASTNode& attrib){
+
+    //
+    RETURNING_ASSERT(typeForKeywordExists(cls.argument), "",nullptr);
+
+    //
+    TypeIndex tpIdx = getTypeIndexByKeyword(cls.argument);
+    RETURNING_ASSERT(g_staticScopes.contains(tpIdx), "",nullptr);
+
+    //
+    RETURNING_ASSERT(g_staticScopes[tpIdx].containsVariableInline(attrib.argument), "",nullptr);
+
+    //
+    return &g_staticScopes[tpIdx].variableTable[attrib.argument];
+}
+
+//
 ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& returnToScope, Context context){
 
     //
@@ -171,20 +199,79 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 prcResult.append(paramResults);
             }
         }
+        // else if(Operator == "->"){
+
+        //     RETURNING_ASSERT(node.children.size() == 2, "",{});
+        //     RETURNING_ASSERT(node.children[0].Relation == TkType::Argument, "",{});
+        //     RETURNING_ASSERT(node.children[1].Relation == TkType::Chain, "", {});
+            
+        //     const ASTNode& member = node.children[0];
+        //     const ASTNode& memberFunc = node.children[1].children[0];
+        //     const ASTNode& paramsNd = node.children[1].children[1];
+
+        //     ProcessingResult res = evaluateExpression(member, scope, returnToScope, context);
+        //     ProcessingResult params = evaluateExpression(paramsNd, scope, returnToScope, context);
+
+        //     callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), scope, &res.evalResults[0]);
+        // }
         else if(Operator == "->"){
 
-            RETURNING_ASSERT(node.children.size() == 2, "",{});
-            RETURNING_ASSERT(node.children[0].Relation == TkType::Argument, "",{});
-            RETURNING_ASSERT(node.children[1].Relation == TkType::Chain, "", {});
+            prcResult = evaluateExpression(node.children[0], scope, scope, context);
+
+            RETURNING_ASSERT(prcResult.evalResults.size() == 1, "Attrib Acessors sind nicht für Mult Syntax ausgelegt",{});
+            EvalResult& baseMember = prcResult.evalResults[0];
+
+            for(size_t argIdx = 1; argIdx < node.children.size(); argIdx++){
+               
+                //
+                const ASTNode& child = node.children[argIdx];
+
+                // getMember
+                if(child.Relation == TkType::Argument){ getAttrib(baseMember, child); }
+                // exec MemberFunc
+                else if(child.children.size() == 2){
+
+                    // functionLabel : node.argument
+                    const std::string& functionLabel = child.children[0].argument;
+                    const ASTNode& params = child.children[1];
+
+                    //
+                    ProcessingResult paramRes = evaluateExpression(params, scope, returnToScope, context);
+
+                    //
+                    ProcessingResult res;
+                    callMemberFunction(functionLabel, res.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope, &baseMember);
+                    
+                    prcResult.evalResults.clear();
+                    prcResult.append(res);
+                }
+                else{ RETURNING_ASSERT(TRIGGER_ASSERT, "Invalid Attrib Acessor template",{}); };
+            }
+        }
+        else if(Operator == ">>"){
+
+            RETURNING_ASSERT(node.children.size() == 2, "", {});
+            RETURNING_ASSERT(node.children[0].Relation == TkType::Argument, "", {});
             
-            const ASTNode& member = node.children[0];
-            const ASTNode& memberFunc = node.children[1].children[0];
-            const ASTNode& paramsNd = node.children[1].children[1];
+            bool isFunctionCall = node.children[1].children.size() == 2;
 
-            ProcessingResult res = evaluateExpression(member, scope, returnToScope, context);
-            ProcessingResult params = evaluateExpression(paramsNd, scope, returnToScope, context);
+            if(!isFunctionCall){
 
-            callMemberFunction(memberFunc.argument, prcResult.evalResults, convertEvalResultsToPtrVec(params.evalResults), scope, &res.evalResults[0]);
+                prcResult.evalResults.emplace_back();
+
+                Variable* varPtr = getStaticAttrib(node.children[0], node.children[1]);
+                RETURNING_ASSERT(varPtr != nullptr, "", {});
+
+                prcResult.evalResults.back().setLValue(varPtr);
+            }
+            else{
+
+                const ASTNode& params = node.children[1].children[1];
+                ProcessingResult paramRes = evaluateExpression(params, scope, scope, context);
+
+                callStaticFunction(getTypeIndexByKeyword(node.children[0].argument), node.children[1].children[0].argument,
+                    prcResult.evalResults, convertEvalResultsToPtrVec(prcResult.evalResults), scope);
+            }
         }
         else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
 
@@ -633,48 +720,139 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 }
             }
 
-            // Konstruktoren
-            registerFunction(functionLabel, argIndices,
-                [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
-                 __argIndices__ = argIndices, params, section, &scope
-                ](FREG_ARGS){
+            // Member Func
+            if(context == Context::DECL_STRUCT){
 
-                    // Asserts
-                    ASSERT_IS_NO_MEMBER_FUNCTION;
-                    ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                registerMemberFunction(DeclaringStructByIndex, functionLabel, argIndices,
+                    [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
+                    __argIndices__ = argIndices, params, section, &scope
+                    ](FREG_ARGS){
 
-                    //
-                    Scope functionScope;
-                    functionScope.parent = &scope;
-
-                    // mit params befüllen
-                    ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
-
-                    RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
-
-                    //
-                    for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
+                        // Asserts
+                        ASSERT_IS_MEMBER_FUNCTION;
+                        ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
 
                         //
-                        EvalResult& inputN = *inputs[paramIdx];
-                        EvalResult& paramVarN = paramRes.evalResults[paramIdx];
+                        Scope functionScope;
+                        functionScope.parent = &static_cast<STRUCT*>(member->getVariableRef().getData())->attribScope;
+
+                        // mit params befüllen
+                        ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
+                        RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
 
                         //
-                        if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+                        for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
 
-                            // Reference
-                            paramVarN.getVariableRef().reference(inputN.getVariableRef());
+                            //
+                            EvalResult& inputN = *inputs[paramIdx];
+                            EvalResult& paramVarN = paramRes.evalResults[paramIdx];
+
+                            //
+                            if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+
+                                // Reference
+                                paramVarN.getVariableRef().reference(inputN.getVariableRef());
+                            }
+                            else{
+
+                                // Copy
+                                paramVarN.getVariableRef().constructByUniquePtr(inputN.getVariableRef().getData()->clone());
+                            }
                         }
-                        else{
 
-                            // Copy
-                            paramVarN.getVariableRef().constructByUniquePtr(inputN.getVariableRef().getData()->clone());
+                        returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
+                },
+                {IObject::ARGS_TYPE});
+
+            }
+            else if(context == Context::DECL_STRUCT_STATIC){
+                
+                registerStaticFunction(DeclaringStructByIndex, functionLabel, argIndices,
+                    [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
+                    __argIndices__ = argIndices, params, section, &scope
+                    ](FREG_ARGS){
+
+                        // Asserts
+                        ASSERT_IS_NO_MEMBER_FUNCTION;
+                        ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                        //
+                        Scope functionScope;
+                        functionScope.parent = &scope;
+
+                        // mit params befüllen
+                        ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
+                        RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
+
+                        //
+                        for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
+
+                            //
+                            EvalResult& inputN = *inputs[paramIdx];
+                            EvalResult& paramVarN = paramRes.evalResults[paramIdx];
+
+                            //
+                            if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+
+                                // Reference
+                                paramVarN.getVariableRef().reference(inputN.getVariableRef());
+                            }
+                            else{
+
+                                // Copy
+                                paramVarN.getVariableRef().constructByUniquePtr(inputN.getVariableRef().getData()->clone());
+                            }
                         }
-                    }
 
-                    returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
-            },
-            {IObject::ARGS_TYPE});
+                        returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
+                },
+                {IObject::ARGS_TYPE});
+            }
+            else{
+
+                // Konstruktoren
+                registerFunction(functionLabel, argIndices,
+                    [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
+                    __argIndices__ = argIndices, params, section, &scope
+                    ](FREG_ARGS){
+
+                        // Asserts
+                        ASSERT_IS_NO_MEMBER_FUNCTION;
+                        ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                        //
+                        Scope functionScope;
+                        functionScope.parent = &scope;
+
+                        // mit params befüllen
+                        ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
+
+                        RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
+
+                        //
+                        for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
+
+                            //
+                            EvalResult& inputN = *inputs[paramIdx];
+                            EvalResult& paramVarN = paramRes.evalResults[paramIdx];
+
+                            //
+                            if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+
+                                // Reference
+                                paramVarN.getVariableRef().reference(inputN.getVariableRef());
+                            }
+                            else{
+
+                                // Copy
+                                paramVarN.getVariableRef().constructByUniquePtr(inputN.getVariableRef().getData()->clone());
+                            }
+                        }
+
+                        returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
+                },
+                {IObject::ARGS_TYPE});
+            }
         }
         else if(node.children.size() == 3 && node.children[0].argument == "struct" &&
                 node.children[1].Relation == TkType::Argument && node.children[2].Relation == TkType::Section){

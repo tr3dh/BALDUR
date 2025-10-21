@@ -11,6 +11,9 @@ typedef uint16_t TypeIndex;
 
 constexpr TypeIndex INVALID_TYPE_INDEX = std::numeric_limits<uint16_t>::max();
 
+// fwddecl
+struct Variable;
+
 class IObject{
 
 public:
@@ -23,7 +26,9 @@ public:
     virtual TypeIndex getTypeIndex() const = 0;
     virtual const std::string& getTypeKeyword() const = 0;
     virtual size_t getSize() const = 0;
-    virtual std::unique_ptr<IObject> clone() const = 0;
+    virtual std::unique_ptr<IObject> clone() = 0;
+
+    virtual Variable* getAttrib(const std::string& attribLabel){ return nullptr; }
 };
 
 std::ostream& operator<<(std::ostream& os, IObject* obj);

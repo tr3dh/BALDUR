@@ -21,7 +21,7 @@ namespace types{
 
         VOID() = default;
 
-        std::unique_ptr<IObject> clone() const override{
+        std::unique_ptr<IObject> clone() override{
             return std::make_unique<VOID>();
         };
 

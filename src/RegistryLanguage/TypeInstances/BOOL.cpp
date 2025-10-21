@@ -11,6 +11,23 @@ namespace types{
         registerKeyword("true", new BOOL(true));
         registerKeyword("false", new BOOL(false));
 
+        //
+        registerStaticFunction(BOOL::typeIndex, "crInstance", {},
+            [__functionLabel__ = "crInstance", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(BOOL, 0);
+
+                // schreiben in returns
+                ret0->getMember() = false;
+        },
+        {BOOL::typeIndex});
+
         // Konstruktoren
         registerFunction("bool", {},
             [__functionLabel__ = "bool", __numArgs__ = 0](FREG_ARGS){
