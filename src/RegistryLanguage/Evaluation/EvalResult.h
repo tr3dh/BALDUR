@@ -20,6 +20,18 @@ struct EvalResult {
         variable.constructByUniquePtr(objectPtr->clone());
     }
 
+    void copy(EvalResult& other){
+
+        RETURNING_ASSERT(other.isValid(), "",);
+
+        if(other.isRValue()){
+            cloneIntoRValue(other.getVariableRef());
+        }
+        else if(other.isLValue()){
+            setLValue(&other.getVariableRef());
+        }
+    }
+
     //
     void moveIntoRValue(Variable& varIn){
 

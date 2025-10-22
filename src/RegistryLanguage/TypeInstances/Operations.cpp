@@ -12,8 +12,8 @@ std::vector<std::string> g_UsedOperators = {
     "+", "-", "*", "/", "^",
     "++", "--",
     "!",
-    "->", ">>",
     KOMMA,
+    "->", ">>",
 };
 
 //

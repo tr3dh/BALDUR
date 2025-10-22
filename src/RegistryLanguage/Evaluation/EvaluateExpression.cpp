@@ -71,7 +71,7 @@ Variable* getStaticAttrib(const ASTNode& cls, const ASTNode& attrib){
     RETURNING_ASSERT(g_staticScopes.contains(tpIdx), "",nullptr);
 
     //
-    RETURNING_ASSERT(g_staticScopes[tpIdx].containsVariableInline(attrib.argument), "",nullptr);
+    RETURNING_ASSERT(g_staticScopes[tpIdx].containsVariableInline(attrib.argument), "No Attrib : " + attrib.argument,nullptr);
 
     //
     return &g_staticScopes[tpIdx].variableTable[attrib.argument];
@@ -82,7 +82,7 @@ bool ActiveScopesContainingVariable(Variable* variablePtr, Scope& currentScope){
     bool res;
     res = currentScope.containsVariable(variablePtr);
 
-    if(res){ res; }
+    if(res){ return res; }
 
     for(auto& [idx, scope] : g_staticScopes){
 
@@ -262,7 +262,45 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 const ASTNode& child = node.children[argIdx];
 
                 // getMember
-                if(child.Relation == TkType::Argument){ getAttrib(baseMember, child); }
+                if(child.Relation == TkType::Listing){
+
+                    for(size_t listingArgIdx = 1; listingArgIdx < child.children[0].children.size(); listingArgIdx++){
+
+                        prcResult.evalResults.emplace_back();
+                        prcResult.evalResults.back().copy(baseMember);   
+                    }
+
+                    for(size_t listingArgIdx = 0; listingArgIdx < child.children[0].children.size(); listingArgIdx++){
+
+                        //
+                        const auto& listingArg = child.children[0].children[listingArgIdx];
+
+                        //
+                        if(listingArg.Relation == TkType::Argument){
+                            
+                            getAttrib(prcResult.evalResults[listingArgIdx], listingArg);
+                        }
+                        // exec MemberFunc
+                        else if(listingArg.children.size() == 2){
+
+                            // functionLabel : node.argument
+                            const std::string& functionLabel = listingArg.children[0].argument;
+                            const ASTNode& params = listingArg.children[1];
+
+                            //
+                            ProcessingResult paramRes = evaluateExpression(params, scope, returnToScope, context);
+
+                            //
+                            ProcessingResult res;
+                            callMemberFunction(functionLabel, res.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope, &baseMember);
+                            
+                            prcResult.evalResults[listingArgIdx] = std::move(res.evalResults[0]);
+                        }
+
+                    }
+                }
+                // getMember
+                else if(child.Relation == TkType::Argument){ getAttrib(baseMember, child); }
                 // exec MemberFunc
                 else if(child.children.size() == 2){
 
@@ -290,7 +328,39 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             
             bool isFunctionCall = node.children[1].children.size() == 2;
 
-            if(!isFunctionCall){
+            if(node.children[1].Relation == TkType::Listing){
+
+                for(size_t listingArgIdx = 0; listingArgIdx < node.children[1].children[0].children.size(); listingArgIdx++){
+
+                    //
+                    const auto& listingArg = node.children[1].children[0].children[listingArgIdx];
+
+                    //
+                    bool ListingArgIsFunctionCall = listingArg.children.size() == 2;
+
+                    if(!ListingArgIsFunctionCall){
+
+                        prcResult.evalResults.emplace_back();
+
+                        Variable* varPtr = getStaticAttrib(node.children[0], listingArg);
+                        RETURNING_ASSERT(varPtr != nullptr, "", {});
+
+                        prcResult.evalResults.back().setLValue(varPtr);
+                    }
+                    else{
+
+                        const ASTNode& params = listingArg.children[1];
+                        ProcessingResult paramRes = evaluateExpression(params, scope, scope, context);
+
+                        ProcessingResult tmpRes;
+                        callStaticFunction(getTypeIndexByKeyword(node.children[0].argument), listingArg.children[0].argument,
+                            tmpRes.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope);
+
+                        prcResult.append(tmpRes, true);
+                    }
+                }
+            }
+            else if(!isFunctionCall){
 
                 prcResult.evalResults.emplace_back();
 
@@ -410,8 +480,8 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
         if(node.children.size() > 0 && node.children[0].argument == "return"){
 
             //
-            RETURNING_ASSERT(node.children.size() == 2, "",{});
-
+            RETURNING_ASSERT(node.children.size() == 2, "return Statement hat ungleich zwei childs",{});
+            
             // return des zweiten childs
             prcResult = evaluateExpression(node.children[1], scope, returnToScope, context);
             prcResult.exit = ExitCase::Return;
@@ -429,7 +499,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 }
                 // Wenn Scope Variable // reference enthält
                 else if(ActiveScopesContainingVariable(&res.getVariableRef(), returnToScope)){  // returnToScope.containsVariable(&res.getVariableRef())){
-
+                    
                     continue;
                 }
                 // Wenn Scope Variable (Referenz) NICHT enthält aber referenzierte Variable

@@ -1,42 +1,55 @@
-// Src
-int [x,y,z] = 1,2,3
-int ref[xr,yr,zr] << x,y,z
-
-//
-double[a,b,c] = 4.2,5.2,6.2
-
-// Hallo das ist ein string
-string[stra, strb, strc] = "Alabaster", "Gertrud", "Gießkanne"
-
-string ref[straR] << stra;
-
-//
-[ba,bb,bc] = true, false, true
-
-//
-log("Hallo Welt")
-
-//
-log("Hallo", "Welt", x, y, z, a, b, c, stra, strb, strc, ba, bb, bc)
-
-log(xr)
-
-//
-for(int i = 0, i < 20, i++){
-
-    static{ref r;}
-    r << i
-    log(r)
+struct Vector3{
+    
+    static{
+    
+        int[a,b]
+        
+        decl printStatics(){
+            log(a, b)
+        }
+        
+        decl getA(){
+            return a
+        }
+        
+        decl getB(){
+            return b
+        }
+    }
+    
+    double[x,y,z]
+    
+    decl getX(){
+        return [x]
+    }
 }
 
-int i = 0
-
-while(true){
-
-    i+=1
-            
-    sleep(0.1)
-    log("Frame :", i)
+decl __addAssign__(Vector3 ref a, Vector3 ref b){
+    
+    //
+    a->[x,y,z] += b->[x,y,z]
 }
 
-log("Passed")
+int g_EnvVar = 5
+
+decl test(){
+    return g_EnvVar
+}
+
+//
+decl main(){
+    
+    Vector3 [vec, vec2]
+    
+    vec->[x, y, z] = 1.0, 2.0, 3.0
+    vec2->[x, y, z] = 1.0, 2.0, 3.0
+    Vector3 >> a, Vector3 >> b = 5, 6
+    
+    logRes(vec->getX())
+
+    return 0
+}
+
+if(calledAs(__MainProc__)){
+    return[main()]
+}

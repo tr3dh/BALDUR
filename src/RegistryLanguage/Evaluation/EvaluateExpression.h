@@ -49,7 +49,7 @@ struct ProcessingResult{
 
     ProcessingResult() = default;
 
-    void append(ProcessingResult& other){
+    void append(ProcessingResult& other, bool ignoreExit = false){
 
         //
         switch(other.exit){
@@ -60,11 +60,15 @@ struct ProcessingResult{
             }
             default:{
 
-                //
-                exit = other.exit;
+                if(!ignoreExit){
+                    
+                    //
+                    exit = other.exit;
 
-                //
-                evalResults.clear();
+                    //
+                    evalResults.clear();
+                }
+
                 break;
             }
         }
