@@ -23,6 +23,7 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"-", "__negate__"},
     {"++", "__increment__"},
     {"--", "__decrement__"},
+    {"<-", "__move__"},
 };
 
 // Map der Form Operator | Funktionslabel
@@ -205,6 +206,38 @@ void emplaceStdOperations(){
             recipient.getVariableRef().move(source.getVariableRef());
     },
     {});
+
+    //
+    registerFunction("__move__", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__move__", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            EvalResult& recipient = returns[0];
+            EvalResult& source = *inputs[0];
+
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
+
+            //
+            // RETURNING_ASSERT(!recipientIsRValue, "Bei Mov sind rvalues mit im Spiel ",);
+
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                    "narrowing conversion");
+
+            if(source.getVariableRef().isReference()){
+
+                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz",);
+            }
+
+            recipient.getVariableRef().move(source.getVariableRef());
+    },
+    {types::VOID::typeIndex});
 
     registerFunction("__swap__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
         [__functionLabel__ = "__swap__", __numArgs__ = 2](FREG_ARGS){

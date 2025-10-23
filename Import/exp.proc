@@ -4,24 +4,23 @@ struct Vector3{
     
         int[a,b]
         
-        decl printStatics(){
-            log(a, b)
-        }
+        decl printStatics(){ log(a, b) }
         
-        decl getA(){
-            return a
-        }
-        
-        decl getB(){
-            return b
-        }
+        decl getA(){ return a }
+        decl getB(){ return b }
     }
     
     double[x,y,z]
     
-    decl getX(){
-        return [x]
-    }
+    decl getX(){ return [x] }
+}
+
+decl Vector3(double ref [xIn, yIn, zIn]){
+    
+    Vector3 vec
+    vec->[x,y,z] = xIn, yIn, zIn
+    
+    return [<-vec]
 }
 
 decl __addAssign__(Vector3 ref a, Vector3 ref b){
@@ -30,22 +29,54 @@ decl __addAssign__(Vector3 ref a, Vector3 ref b){
     a->[x,y,z] += b->[x,y,z]
 }
 
-int g_EnvVar = 5
+int [g_fibonacciCalls, g_facultyCalls]
 
-decl test(){
-    return g_EnvVar
+decl faculty(int ref member){
+    
+    g_facultyCalls++
+    if(member == 0 || member == 1){ 
+        return 1 
+    }
+    return [member * faculty(member - 1)]
+}
+
+decl fibonacci(int ref member){
+    
+    g_fibonacciCalls++
+    if(member <= 1){ 
+        return member 
+    }
+    return [fibonacci(member - 1) + fibonacci(member - 2)]
 }
 
 //
 decl main(){
     
+    // Fakultäten
+    for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
+        log("Faculty(", i, ") =", faculty(i))
+    }
+
+    log(" ")
+    // Fibonacci
+    for([int [i, numFibonacci] = 0,20], i < numFibonacci, i++){
+        log("Fibonacci[", i, "] :", fibonacci(i))
+    }
+
+    log(" ")
+    log("faculty called :", g_facultyCalls, "times")
+    log("fibonacci called :", g_fibonacciCalls, "times")
+
     Vector3 [vec, vec2]
     
     vec->[x, y, z] = 1.0, 2.0, 3.0
     vec2->[x, y, z] = 1.0, 2.0, 3.0
-    Vector3 >> a, Vector3 >> b = 5, 6
+
+    logRes(vec + vec2)
     
-    logRes(vec->getX())
+    // void constVec = Vector3(4.0,2.0,3.0)
+    // logRes(constVec)
+    logRes(Vector3(4.0,2.0,3.0))
 
     return 0
 }

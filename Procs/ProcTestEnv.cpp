@@ -51,133 +51,31 @@ int main(){
     //
     LOG << "ProcTestEnv exec Skript" << endl;
 
-    // Bspl Skript
-    std::vector<std::string> scriptLines = {
+    // // Bspl Skript
+    // std::vector<std::string> scriptLines = {
 
-        "// Beispielhaftes Skript",
-        "",
-        "struct expObject{",
-        "",
-        "   static{",
-        "       int numInstances = 1",
-        "       decl ping(){ log(\"pinging static expObject ; numInst :\", numInstances) }",
-        "   }",
-        "   ",
-        "   int intMember = 15",
-        "   bool boolMember = true",
-        "   string stringMember = \"BaldurStrInstance\"",
-        "   int ref numInst << numInstances",
-        "   ",
-        "   decl increment(int amount){",
-        "   ",
-        "       intMember += amount",
-        "       numInstances += amount",
-        "   }",
-        "   ",
-        "   decl get(){return intMember }",
-        "}",
-        "",
-        "struct expWrapper{",
-        "",
-        "   expObject objMember",
-        "}",
-        "",
-        "decl returnRefX(int ref a, int ref b, int ref c, int chooseX){",
-        "   ",
-        "   if(chooseX == 1){return a}",
-        "   else if(chooseX == 2){return b}",
-        "   else if(chooseX == 3){return c}",
-        "}",
-        // Definition von Bool Addition
-        "decl __addAssign__(bool ref a, bool ref b){",
-        "   a x|= b",
-        "}",
-        "",
-        "int [g_fibonacciCalls, g_facultyCalls]",
-        "",
-        "decl faculty(int ref member){",
-        "   ",
-        "   g_facultyCalls++",
-        "   ",
-        "   ",
-        "   xIf(member == 0, member == 1){ return 1 }",
-        "   return [member * faculty(member - 1)]",
-        "}",
-        "",
-        "decl fibonacci(int ref member){",
-        "   ",
-        "   g_fibonacciCalls++",
-        "   ",
-        "   if(member <= 1){ return member }",
-        "   return [fibonacci(member - 1) + fibonacci(member - 2)]",
-        "}",
-        "   ",
-        "decl test(ref member){",
-        "   ",
-        "   return [member]",
-        "}",
-        "",
-        "decl main(){",
-        "   ",
-        "   // Fakultäten",
-        "   for([int [i, numFaculty] = 0,10], i < numFaculty, i++){",
-        "       //",
-        "       log(\"Faculty(\", i,\") =\", faculty(i))",
-        "   }",
-        "   ",
-        "   log(\" \")",
-        "   // Fibonacci",
-        "   for([int [i, numFibonacci] = 0,20], i < numFibonacci, i++){",
-        "       //",
-        "       log(\"Fibonacci[\", i,\"] :\", fibonacci(i))",
-        "   }",
-        "   ",
-        "   log(\" \")",
-        "   log(\"faculty called :\", g_facultyCalls, \"times\")",
-        "   log(\"fibonacci called :\", g_fibonacciCalls, \"times\")",
-        "   ",
-        // Testen von im Skript definierter Bool Addition
-        "   log(\" \")",
-        "   log(\"Bool Addition Result :\", true + true)",
-        //
-        // "   log(\" \")",
-        // "   int [a,b,c] = 0,1,2",
-        // "   log(\"Returned Ref :\"); logRes(returnRefX(a, b, c, 2))",
-        // "   ",
-        // "   expObject obj",
-        // "   log(obj->intMember, expObject >> numInstances)",
-        // "   obj->increment(2)",
-        // "   log(obj->intMember, expObject >> numInstances)",
-        // "   ",
-        // "   logRes(obj->get())",
-        "   m = expObject >> numInstances",
-        "   return [0, m]",
-        "}",
-        "if(calledAs(__MainProc__)){",
-        "   ",
-        "   // Section wird ausgeführt wenn Skript mit argument execute aufgerufen wird",
-        "   log(\"Starte Skript :\", __script__, \" mit Args : [\", __args__, \"]\")",
-        "   ",
-        "   return [expObject >> numInstances]",
-        "}",
-    };
+    //     "// Beispielhaftes Skript",
+    // };
+
+    // //
+    // std::ofstream outfile("../bin/temp.proc");
+    // if (!outfile) {
+    //     std::cerr << "Fehler: Datei konnte nicht erstellt werden!" << endl;
+    //     return 1;
+    // }
+
+    // // Zeilenweise in Datei schreiben
+    // for (const auto& line : scriptLines) {
+    //     outfile << line << "\n";
+    // }
+
+    // outfile.close();
 
     //
-    std::ofstream outfile("../bin/temp.proc");
-    if (!outfile) {
-        std::cerr << "Fehler: Datei konnte nicht erstellt werden!" << endl;
-        return 1;
-    }
-
-    // Zeilenweise in Datei schreiben
-    for (const auto& line : scriptLines) {
-        outfile << line << "\n";
-    }
-
-    outfile.close();
+    const std::string scriptPath = "../Import/exp.proc";
 
     //
-    auto results = executeScript("../bin/temp.proc");
+    auto results = executeScript(scriptPath);
     
     //
     LOG << "Skript Returns: " << endl;

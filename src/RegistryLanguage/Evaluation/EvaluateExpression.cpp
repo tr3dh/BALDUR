@@ -380,14 +380,15 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
         }
         else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
 
-            ProcessingResult res;
-            prcResult = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
+            ProcessingResult res = evaluateExpression(node.children[0], scope, returnToScope, Context::ASSIGN_RIGHTSIDE);
 
             //
-            for(size_t resIdx = 0; resIdx < prcResult.evalResults.size(); resIdx++){
+            for(size_t resIdx = 0; resIdx < res.evalResults.size(); resIdx++){
 
-                //
-                callFunction(g_OneArgOperations[Operator], res.evalResults, {&prcResult.evalResults[resIdx]}, scope);
+                ProcessingResult tmpRes;
+                callFunction(g_OneArgOperations[Operator], tmpRes.evalResults, {&res.evalResults[resIdx]}, scope);
+
+                prcResult.append(tmpRes);
             }
         }
         else if(g_TwoArgOperations.contains(Operator)){
@@ -808,22 +809,38 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             argIndices.reserve(params.children.size());
 
             //
-            for(auto& arg : params.children){
+            Scope paramScope;
 
-                // >> nur argname
-                if(arg.children.size() == 0){
+            //
+            ProcessingResult paramRes = evaluateExpression(params, paramScope, paramScope, Context::ASSIGN_LEFTSIDE);
+            argIndices.reserve(paramRes.evalResults.size());
 
-                    argIndices.emplace_back(IObject::ARBITATRY_TYPE);
-                }
-                else if(arg.children[0].argument == "ref"){
+            //
+            TypeIndex idx;
+            for(auto& arg : paramRes.evalResults){
 
-                    argIndices.emplace_back(IObject::ARBITATRY_TYPE);
-                }
-                else{
+                idx = arg.getVariableRef().getData()->getTypeIndex();
 
-                    argIndices.emplace_back(getTypeIndexByKeyword(arg.children[0].argument));
-                }
+                argIndices.emplace_back(idx == types::VOID::typeIndex ? IObject::ARBITATRY_TYPE : idx);
             }
+
+            // //
+            // for(auto& arg : params.children){
+
+                // // >> nur argname
+                // if(arg.children.size() == 0){
+
+                //     argIndices.emplace_back(IObject::ARBITATRY_TYPE);
+                // }
+                // else if(arg.children[0].argument == "ref"){
+
+                //     argIndices.emplace_back(IObject::ARBITATRY_TYPE);
+                // }
+                // else{
+
+                //     argIndices.emplace_back(getTypeIndexByKeyword(arg.children[0].argument));
+                // }
+            // }
 
             // Member Func
             if(context == Context::DECL_STRUCT){
