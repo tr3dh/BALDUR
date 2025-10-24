@@ -14,13 +14,16 @@ struct Scope {
 
     //
     Scope* parent = nullptr;
-    std::vector<Scope> children;
 
     //
     ~Scope();
 
     //
     void copyFrom(Scope& other);
+
+    //
+    bool IsRootScope();
+    Scope* getRootScope();
 
     //
     void constructVariable(const std::string& variableName, const std::string& typeKeyword){

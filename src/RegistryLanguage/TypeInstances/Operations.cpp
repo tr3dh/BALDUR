@@ -3,17 +3,17 @@
 //
 std::vector<std::string> g_UsedOperators = {
     COLON,
-    // "return",
-    "=", "<<", "<>", "<-",
-    "+=", "-=", "*=", "/=", "^=",
-    "&=", "!&=", "|=", "!|=", "x|=", "!x|=",
-    "&&", "!&", "||", "!|", "x|", "!x|",
-    "==", "!=", ">=", "<=", ">", "<", "%",
-    "+", "-", "*", "/", "^",
-    "++", "--",
-    "!",
-    KOMMA,
-    "->", ">>",
+    "=", "<<", "<>", "<-", "<+",                    // Memory Management Semantik
+    "+=", "-=", "*=", "/=", "^=",                   // Ops für 2 Arg Operationen
+    ".=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
+    "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen 
+    "&&", "!&", "||", "!|", "x|", "!x|",            // ...
+    "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
+    "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
+    ".", "..", ":", "\\x", "\\(x)", "\\(.)",        // für verkettung über Matrix ops
+    "++", "--", "!",                                // Single Argument Ops
+    KOMMA,                                          //
+    "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
 };
 
 //
@@ -24,6 +24,8 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"++", "__increment__"},
     {"--", "__decrement__"},
     {"<-", "__move__"},
+    {"<<", "__reference__"},
+    {"<+", "__copy__"},
 };
 
 // Map der Form Operator | Funktionslabel
@@ -35,6 +37,7 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"<<", "__reference__"},
     {"<>", "__swap__"},
     {"<-", "__move__"},
+    {"<+", "__copy__"},
 
     {"+=", "__addAssign__"},
     {"-=", "__subAssign__"},
@@ -204,6 +207,38 @@ void emplaceStdOperations(){
             }
 
             recipient.getVariableRef().move(source.getVariableRef());
+    },
+    {});
+
+    //
+    registerFunction("__copy__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__copy__", __numArgs__ = 2](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            EvalResult& recipient = *inputs[0];
+            EvalResult& source = *inputs[1];
+
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
+
+            //
+            RETURNING_ASSERT(!recipientIsRValue, "Bei Mov sind rvalues mit im Spiel ",);
+
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                    "narrowing conversion");
+
+            if(source.getVariableRef().isReference()){
+
+                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz",);
+            }
+
+            recipient.getVariableRef().clone(source.getVariableRef());
     },
     {});
 
@@ -385,6 +420,19 @@ void emplaceStdOperations(){
     {});
 
     //
+    registerFunction("__copy__", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__copy__", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            returns.back().variable.clone(inputs[0]->getVariableRef());
+    },
+    {types::VOID::typeIndex});
+
+    //
     registerFunction("copy", {IObject::ARGS_TYPE},
         [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
 
@@ -404,6 +452,19 @@ void emplaceStdOperations(){
             }
     },
     {IObject::ARGS_TYPE});
+
+    //
+    registerFunction("__reference__", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__reference__", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            returns.back().variable.reference(inputs[0]->getVariableRef());
+    },
+    {types::VOID::typeIndex});
 
     //
     registerFunction("reference", {IObject::ARGS_TYPE},

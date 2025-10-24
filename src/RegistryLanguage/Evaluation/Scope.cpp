@@ -47,6 +47,22 @@ Scope::~Scope(){
     // ...
 }
 
+bool Scope::IsRootScope(){
+   
+    return parent == nullptr;
+}
+
+Scope* Scope::getRootScope(){
+
+    // init ptr
+    Scope* root = this;
+
+    //
+    while(!root->IsRootScope()){ root = root->parent; }
+
+    return root;
+}
+
 //
 void Scope::copyFrom(Scope& other){
 

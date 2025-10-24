@@ -109,6 +109,9 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
     //
     SetUpLexer(g_UsedOperators);                              
 
+    //
+    LOG << g_FunctionRegister << endl;
+
     auto tokens = lexExpression(src.scriptContent);
     LOG << tokens << endl;
 

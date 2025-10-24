@@ -4,10 +4,10 @@ struct Vector3{
     
         int[a,b]
         
-        decl printStatics(){ log(a, b) }
-        
         decl getA(){ return a }
         decl getB(){ return b }
+
+        decl printStatics(){ log(a, b) }
     }
     
     double[x,y,z]
@@ -20,6 +20,9 @@ decl Vector3(double ref [xIn, yIn, zIn]){
     Vector3 vec
     vec->[x,y,z] = xIn, yIn, zIn
     
+    // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
+    // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
+    // ohne, dass es zu einem Kopiervorgang kommt
     return [<-vec]
 }
 
@@ -67,20 +70,18 @@ decl main(){
     log("faculty called :", g_facultyCalls, "times")
     log("fibonacci called :", g_fibonacciCalls, "times")
 
-    Vector3 [vec, vec2]
-    
-    vec->[x, y, z] = 1.0, 2.0, 3.0
-    vec2->[x, y, z] = 1.0, 2.0, 3.0
+    log(" ")
 
-    logRes(vec + vec2)
+    void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
+    void cpX <+ VecA->getX()
     
-    // void constVec = Vector3(4.0,2.0,3.0)
-    // logRes(constVec)
-    logRes(Vector3(4.0,2.0,3.0))
+    logRes(cpX)
 
     return 0
 }
 
+// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
 if(calledAs(__MainProc__)){
+
     return[main()]
 }
