@@ -14,10 +14,9 @@ struct TensorExpression{
     // Inhalt
     std::string label = NULLSTR;
     int tensorOrder = -1;
-    
 
     TensorExpression() = default;
-
+    
     TensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
 
     }
@@ -38,6 +37,7 @@ namespace types{
         static int setUpClass();
 
         TENSOR_EXPRESSION() = default;
+        TENSOR_EXPRESSION(TensorExpression* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die print bleibt überscheibbar
         void print() const override{

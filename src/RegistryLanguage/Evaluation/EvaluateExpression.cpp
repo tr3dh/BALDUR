@@ -993,6 +993,21 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             //
             STRUCT::registerStruct(structName, DeclaringStructByIndex);
         }
+        else if(node.children.size() > 2 && node.children[0].argument == "assert"){
+            
+            if(node.children[1].argument == "uniform"){
+
+                if(!returnToScope.getRootScope()->containsVariable(node.children[2].argument)){
+                    _ERROR << "Assertion failed : Uniform " << node.children[2].argument << " konnte nicht gefunden werden" << endl;
+                }
+            }
+            else{
+
+                callFunction("assert", prcResult.evalResults,
+                    {&evaluateExpression(node.children[1], scope, scope, context).evalResults[0],
+                        &evaluateExpression(node.children[2], scope, scope, context).evalResults[0]}, scope);
+            }
+        }
         else{
             
             _ERROR << "Invalid Chain Template" << endl;

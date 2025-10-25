@@ -5,31 +5,19 @@ int main(){
     //
     LOG << "ProcTestEnv exec Skript" << endl;
 
-    // // Bspl Skript
-    // std::vector<std::string> scriptLines = {
-
-    //     "// Beispielhaftes Skript",
-    // };
-
-    // //
-    // std::ofstream outfile("../bin/temp.proc");
-    // if (!outfile) {
-    //     std::cerr << "Fehler: Datei konnte nicht erstellt werden!" << endl;
-    //     return 1;
-    // }
-
-    // // Zeilenweise in Datei schreiben
-    // for (const auto& line : scriptLines) {
-    //     outfile << line << "\n";
-    // }
-
-    // outfile.close();
-
     //
     const std::string scriptPath = "../Import/exp.proc";
 
     //
-    auto results = executeScript(scriptPath);
+    Scope programCache;
+    
+    // std::string OSstring = "_WIN32";
+
+    // //
+    // auto env = programCache.constructAndReturnVariable("OS");
+    // env->constructByObject(new types::STRING(&OSstring));
+
+    auto results = executeScript(scriptPath, &programCache);
     
     //
     LOG << "Skript Returns: " << endl;

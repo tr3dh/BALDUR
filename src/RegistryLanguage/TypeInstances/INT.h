@@ -13,6 +13,7 @@ namespace types{
 
         INT() = default;
         INT(int i) : INativeObject(i){}
+        INT(int* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die print bleibt überscheibbar
         void print() const override{

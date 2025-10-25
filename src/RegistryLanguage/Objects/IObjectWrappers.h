@@ -75,6 +75,7 @@ public:
     template<typename U, std::size_t N>
     struct is_problematic_container<std::array<U, N>> : std::true_type {};
 
+    bool IsManagingMemory = true;
     T* member;
     
     INativeObject(){
@@ -85,8 +86,15 @@ public:
         member = new T(memberIn);
     }
 
+    INativeObject(T* memberPtrIn) : member(memberPtrIn){
+        IsManagingMemory = false;
+    }
+
     ~INativeObject(){
-        delete member;
+
+        if(IsManagingMemory){
+            delete member;
+        }
     }
 
     T& getMember(){ return  *member; }
@@ -109,8 +117,11 @@ public:
         if constexpr (!is_problematic_container<T>::value) {
 
             // Standard
-            INativeObject<Tag, T>* newObj = new INativeObject<Tag, T>(*this); // Klone das gesamte Objekt
-            newObj->member = new T(*member);  // Tiefenkopie des members
+            INativeObject<Tag, T>* newObj = new INativeObject<Tag, T>(*this);
+
+            newObj->IsManagingMemory = true;
+            newObj->member = new T(*member);
+
             return std::unique_ptr<IObject>(newObj);
         }
         else {

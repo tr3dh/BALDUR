@@ -1,3 +1,10 @@
+// Includes
+
+// Assert Uniforms >> sicherstellen dass bestimmte Referenzen vom Programm ans Skript übergeben werden
+// assert uniform OS
+// assert [OS == "_Win32"] "..."
+
+//
 struct Vector3{
     
     static{
@@ -70,13 +77,8 @@ decl main(){
     log("faculty called :", g_facultyCalls, "times")
     log("fibonacci called :", g_fibonacciCalls, "times")
 
-    log(" ")
-
     void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
     void VecC <+ VecA
-
-    VecA->x += 10
-    log(VecA, VecC)
 
     return 0
 }

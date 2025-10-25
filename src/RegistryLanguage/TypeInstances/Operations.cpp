@@ -420,6 +420,69 @@ void emplaceStdOperations(){
     {});
 
     //
+    registerFunction("logScope", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+            LOG << returnToScope << endl;
+    },
+    {});
+
+    //
+    registerFunction("logRootScope", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+            LOG << *returnToScope.getRootScope() << endl;
+    },
+    {});
+
+    //
+    registerFunction("assert", {types::BOOL::typeIndex, types::STRING::typeIndex},
+        [__functionLabel__ = "assert", __numArgs__ = 2](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            GET_ARG(types::BOOL, 0); GET_ARG(types::STRING, 1);
+
+            // Returns
+            if(!arg0->getMember()){
+                _ERROR << arg1->getMember() << endl;
+            }
+    },
+    {});
+
+    //
+    registerFunction("variableExists", {types::STRING::typeIndex},
+        [__functionLabel__ = "variableExists", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            GET_RETURN(types::BOOL, 0);
+            GET_ARG(types::STRING, 0);
+
+            // Returns
+            ret0->getMember() = returnToScope.containsVariable(arg0->getMember());
+    },
+    {types::BOOL::typeIndex});
+
+    //
     registerFunction("__copy__", {IObject::ARBITATRY_TYPE},
         [__functionLabel__ = "__copy__", __numArgs__ = 0](FREG_ARGS){
 

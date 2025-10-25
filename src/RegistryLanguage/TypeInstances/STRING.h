@@ -14,6 +14,7 @@ namespace types{
 
         STRING() = default;
         STRING(const std::string& str) : INativeObject(str){}
+        STRING(std::string* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die prdouble bleibt überscheibbar
         void print() const override{

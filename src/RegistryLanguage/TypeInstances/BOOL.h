@@ -12,6 +12,7 @@ namespace types{
 
         BOOL() = default;
         BOOL(bool b) : INativeObject(b){}
+        BOOL(bool* bPtr) : INativeObject(bPtr){}
 
         // virtual ist redundant, die print bleibt überscheibbar
         void print() const override{

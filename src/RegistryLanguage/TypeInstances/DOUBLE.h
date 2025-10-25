@@ -14,6 +14,7 @@ namespace types{
 
         DOUBLE() = default;
         DOUBLE(double i) : INativeObject(i){}
+        DOUBLE(double* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die prdouble bleibt überscheibbar
         void print() const override{

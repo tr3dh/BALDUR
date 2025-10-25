@@ -40,7 +40,7 @@ struct Script{
     }
 };
 
-std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPath){
+std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPath, Scope* parent){
 
     // Aufsetzen der mitgelieferten Standard Typen
     // weitere eigene Typen können bspl. in der eigenen main aufgerufen werden
@@ -128,6 +128,7 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
 
     // Scope aufsetzen
     Scope nullScope = {};
+    nullScope.parent = parent;
 
     // Scope befüllen
     nullScope.constructVariable("__ScriptCalledAs__", types::INT::typeIndex);
@@ -182,10 +183,10 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
 
     // Löschen der pointer auf die nullScope
     STRUCT::cleanUp();
-    // g_staticScopes.clear();
 
     // nicht einfach löschen da sonst die parent ptrs in den attrib scopes sonst ungültig werden
     for(auto& [idx, scope] : g_staticScopes){ scope.parent = nullptr; }
+    // g_staticScopes.clear();
 
     // nullScope wird geläscht ...
     // --- ab hier sind alle ptrs auf die nullScope ungültig 
