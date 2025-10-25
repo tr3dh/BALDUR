@@ -75,26 +75,32 @@ public:
     template<typename U, std::size_t N>
     struct is_problematic_container<std::array<U, N>> : std::true_type {};
 
-    T member;
+    T* member;
     
-    INativeObject() = default;
-
-    INativeObject(const T& memberIn) : member(memberIn){
-
+    INativeObject(){
+        member = new T();
     }
 
-    T& getMember(){ return  member; }
-    const T& getMember() const{ return member; }
+    INativeObject(const T& memberIn){
+        member = new T(memberIn);
+    }
+
+    ~INativeObject(){
+        delete member;
+    }
+
+    T& getMember(){ return  *member; }
+    const T& getMember() const{ return *member; }
 
     // virtual ist redundant, die print bleibt überscheibbar
     void print() const override{
 
-        LOG << member;
+        LOG << *member;
     }
 
     size_t getSize() const override{
 
-        return sizeof(member);
+        return sizeof(*member);
     }
 
     //
@@ -103,7 +109,9 @@ public:
         if constexpr (!is_problematic_container<T>::value) {
 
             // Standard
-            return std::make_unique<Tag>(static_cast<const Tag&>(*this));
+            INativeObject<Tag, T>* newObj = new INativeObject<Tag, T>(*this); // Klone das gesamte Objekt
+            newObj->member = new T(*member);  // Tiefenkopie des members
+            return std::unique_ptr<IObject>(newObj);
         }
         else {
             

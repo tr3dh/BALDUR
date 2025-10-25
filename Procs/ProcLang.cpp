@@ -80,9 +80,9 @@ int main(int argc, char* argv[]){
 
     else if(std::string(argv[1]) == "--license"){
         
-        std::ifstream file(exeDir + "/../LICENSE.txt");
+        std::ifstream file(exeDir + "/../LICENSE");
         if (!file) {
-            _ERROR << "keine gültige Lizenz gefunden an " << exeDir + "/../LICENSE.txt" << ENDL;
+            _ERROR << "keine gültige Lizenz gefunden an " << exeDir + "/../LICENSE" << ENDL;
             return 1;
         }
 

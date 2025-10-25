@@ -73,9 +73,10 @@ decl main(){
     log(" ")
 
     void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
-    void cpX <+ VecA->getX()
-    
-    logRes(cpX)
+    void VecC <+ VecA
+
+    VecA->x += 10
+    log(VecA, VecC)
 
     return 0
 }

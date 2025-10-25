@@ -7,6 +7,7 @@ void setUpTypes(){
     ASSERT(types::INT::setUpClass(), "Type INT konnte nicht aufgesetzt werden");
     ASSERT(types::DOUBLE::setUpClass(), "Type DOUBLE konnte nicht aufgesetzt werden");
     ASSERT(types::STRING::setUpClass(), "Type STRING konnte nicht aufgesetzt werden");
+    ASSERT(types::TENSOR_EXPRESSION::setUpClass(), "Type TENSOR_EXPRESSION konnte nicht aufgesetzt werden");
 
     emplaceStdOperations();
 }

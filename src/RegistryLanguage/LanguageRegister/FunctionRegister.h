@@ -217,9 +217,17 @@ public:
 
 // speichert sich Member des alten Inputs
 // rekonstruiert Input mit erforderlichem Typ und setzt Member über cast des gespeicherten vormaligen Members
+
+// für IObject, das Member und nicht Memberptr enthält
+//
+// #define RECAST_INPUT_INPLACE(CastToType, CastFromType, Position) \
+//     decltype(CastFromType::member) formerMb##Position = static_cast<CastFromType*>(inputs[Position]->getData())->getMember(); \
+//     inputs[Position]->getVariableRef().constructByObject(constructRegisteredType(CastToType::typeIndex)); \
+//     static_cast<CastToType*>(inputs[Position]->getData())->getMember() = static_cast<decltype(CastToType::member)>(formerMb##Position);
+
 #define RECAST_INPUT_INPLACE(CastToType, CastFromType, Position) \
-    decltype(CastFromType::member) formerMb##Position = static_cast<CastFromType*>(inputs[Position]->getData())->getMember(); \
+    auto formerMb##Position = static_cast<CastFromType*>(inputs[Position]->getData())->getMember(); \
     inputs[Position]->getVariableRef().constructByObject(constructRegisteredType(CastToType::typeIndex)); \
-    static_cast<CastToType*>(inputs[Position]->getData())->getMember() = static_cast<decltype(CastToType::member)>(formerMb##Position);
+    static_cast<CastToType*>(inputs[Position]->getData())->getMember() = formerMb##Position; \
 
 #define END_OF_FUNCTION_REG_FILE

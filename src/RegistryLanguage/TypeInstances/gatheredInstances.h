@@ -8,6 +8,7 @@
 #include "INT.h"
 #include "DOUBLE.h"
 #include "STRING.h"
+#include "TENSOR_EXPRESSION.h"
 
 #include "Operations.h"
 
