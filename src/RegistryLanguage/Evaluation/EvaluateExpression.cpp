@@ -993,7 +993,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             //
             STRUCT::registerStruct(structName, DeclaringStructByIndex);
         }
-        else if(node.children.size() > 2 && node.children[0].argument == "assert"){
+        else if(node.children.size() > 2 && node.children[0].argument == "requires"){
             
             if(node.children[1].argument == "uniform"){
 

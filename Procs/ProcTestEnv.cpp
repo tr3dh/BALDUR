@@ -6,7 +6,7 @@ int main(){
     LOG << "ProcTestEnv exec Skript" << endl;
 
     //
-    const std::string scriptPath = "../Import/exp.proc";
+    const std::string scriptPath = "../Import/exp.bld";
 
     //
     Scope programCache;
@@ -26,7 +26,7 @@ int main(){
     //
     return 0;
 
-    std::string cmd = ".\\ProcLang_d execute ../bin/temp.proc";
+    std::string cmd = ".\\ProcLang_d execute ../bin/temp.bld";
 
     LOG << "calling Interpreter" << endl;
     LOG << endl;

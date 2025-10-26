@@ -255,7 +255,7 @@ int main(void)
 
     //
     CodeEditor editor;
-    editor.openScript("../Import/exp.proc");
+    editor.openScript("../Import/exp.bld");
 
     Terminal terminal;
 
@@ -400,7 +400,7 @@ int main(void)
                 return;
             }
 
-            OpenFileDialog("Open Script", { ".proc" }, false, false, g_fileBrowserCWD, [&](const std::string& chosenFilePath) {
+            OpenFileDialog("Open Script", { ".bld" }, false, false, g_fileBrowserCWD, [&](const std::string& chosenFilePath) {
 
             if(!fs::is_regular_file(chosenFilePath)){
                 return;
@@ -423,7 +423,7 @@ int main(void)
                 return;
             }
 
-            OpenFileDialog("create Script", { ".proc" }, true, false, g_fileBrowserCWD, [&](const std::string& chosenFilePath) {
+            OpenFileDialog("create Script", { ".bld" }, true, false, g_fileBrowserCWD, [&](const std::string& chosenFilePath) {
 
             g_loadingScript = true;
             g_scriptPath = chosenFilePath;
@@ -867,8 +867,8 @@ int main(void)
 
                 if(!fs::exists(g_scriptPath)){
 
-                    if(!string::endsWith(g_scriptPath, ".proc")){
-                        g_scriptPath += ".proc";
+                    if(!string::endsWith(g_scriptPath, ".bld")){
+                        g_scriptPath += ".bld";
                     }
 
                     std::ofstream ofs(g_scriptPath);

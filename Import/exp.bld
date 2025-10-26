@@ -33,7 +33,7 @@ decl Vector3(double ref [xIn, yIn, zIn]){
     return [<-vec]
 }
 
-decl __addAssign__(Vector3 ref a, Vector3 ref b){
+decl __addAssign__(Vector3 ref [a, b]){
     
     //
     a->[x,y,z] += b->[x,y,z]
@@ -79,6 +79,14 @@ decl main(){
 
     void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
     void VecC <+ VecA
+    
+    log(VecC + VecB)
+
+    void tExp = TensorExpression("E", 2)
+    tExp .= TensorExpression("epsilon", 1)
+
+    log(" ")
+    log(tExp)
 
     return 0
 }
@@ -86,5 +94,5 @@ decl main(){
 // Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
 if(calledAs(__MainProc__)){
 
-    return[main()]
+    return [main()]
 }

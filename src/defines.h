@@ -77,6 +77,8 @@ static std::string githubRepositoryUrl = "https://github.com/tr3dh/ALF";
 
 static std::string g_encoderKey = "ALF";
 
+static std::string g_languageScriptSuffix = "bld";
+
 extern std::string g_env;
 
 //
