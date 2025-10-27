@@ -111,6 +111,11 @@ public:
         return sizeof(*member);
     }
 
+    bool isUniform() override {
+
+        return !IsManagingMemory;
+    }
+
     //
     std::unique_ptr<IObject> clone() override {
 

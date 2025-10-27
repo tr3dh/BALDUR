@@ -40,6 +40,8 @@ public:
 
         return std::make_pair(false, nullptr);
     }
+
+    virtual bool isUniform(){ return false; }
 };
 
 std::ostream& operator<<(std::ostream& os, IObject* obj);

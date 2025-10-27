@@ -130,6 +130,10 @@ std::vector<std::unique_ptr<IObject>> executeScript(const std::string& scriptPat
     Scope nullScope = {};
     nullScope.parent = parent;
 
+    //
+    std::string ExecMode = "DEBUG";
+    nullScope.constructAndReturnVariable("ExecMode")->constructByObject(new types::STRING(&ExecMode));
+
     // Scope befüllen
     nullScope.constructVariable("__ScriptCalledAs__", types::INT::typeIndex);
 

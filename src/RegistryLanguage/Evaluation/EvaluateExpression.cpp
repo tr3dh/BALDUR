@@ -997,8 +997,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             
             if(node.children[1].argument == "uniform"){
 
-                if(!returnToScope.getRootScope()->containsVariable(node.children[2].argument)){
-                    _ERROR << "Assertion failed : Uniform " << node.children[2].argument << " konnte nicht gefunden werden" << endl;
+                if(!returnToScope.containsVariable(node.children[2].argument) ||
+                    returnToScope.getVariable(node.children[2].argument)->getData()->isUniform() == false){
+
+                    _ERROR << "Assertion failed : Uniform " << node.children[2].argument << " konnte nicht gefunden werden\n" << endl;
                 }
             }
             else{
@@ -1006,6 +1008,8 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 callFunction("assert", prcResult.evalResults,
                     {&evaluateExpression(node.children[1], scope, scope, context).evalResults[0],
                         &evaluateExpression(node.children[2], scope, scope, context).evalResults[0]}, scope);
+                
+                LOG << "\n";
             }
         }
         else{

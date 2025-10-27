@@ -8,16 +8,7 @@ int main(){
     //
     const std::string scriptPath = "../Import/exp.bld";
 
-    //
-    Scope programCache;
-    
-    // std::string OSstring = "_WIN32";
-
-    // //
-    // auto env = programCache.constructAndReturnVariable("OS");
-    // env->constructByObject(new types::STRING(&OSstring));
-
-    auto results = executeScript(scriptPath, &programCache);
+    auto results = executeScript(scriptPath, nullptr);
     
     //
     LOG << "Skript Returns: " << endl;

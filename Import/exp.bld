@@ -1,8 +1,8 @@
 // Includes
 
 // Assert Uniforms >> sicherstellen dass bestimmte Referenzen vom Programm ans Skript übergeben werden
-// assert uniform OS
-// assert [OS == "_Win32"] "..."
+requires uniform ExecMode
+requires [ExecMode == "DEBUG"] "..."
 
 //
 struct Vector3{
