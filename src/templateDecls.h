@@ -15,7 +15,7 @@
 #include "Logging/Logging.h"
 #include "GUI/CodeEditor.h"
 #include "GUI/Terminal.h"
-#include "SemanticAnalysis/AST.h"
+#include "RegistryLanguage/SemanticAnalysis/AST.h"
 #include "CleanUp/ClearCaches.h"
 #include "RegistryLanguage/Interpreter.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SemanticAnalysis/AST.h"
+#include "../SemanticAnalysis/AST.h"
 #include "InstanceIncludes.h"
 #include "VOID.h"
 #include "BOOL.h"

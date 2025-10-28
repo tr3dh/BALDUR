@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SemanticAnalysis/AST.h"
+#include "../SemanticAnalysis/AST.h"
 #include "../LanguageRegister/RegisterInstances.h"
 #include "Scope.h"
 #include "../TypeInstances/gatheredInstances.h"
