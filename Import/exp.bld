@@ -50,6 +50,7 @@ decl faculty(int ref member){
     return [member * faculty(member - 1)]
 }
 
+//
 decl fibonacci(int ref member){
     
     g_fibonacciCalls++
@@ -82,9 +83,9 @@ decl main(){
     
     log(VecC + VecB)
 
-    void [A, B, C, D, E, F, G] = tExp("A", 5), tExp("B", 4), tExp("C", 3), tExp("D", 3), tExp("E", 2), tExp("F", 1), tExp("G", 0) 
+    void [A, B, C, D, E, F, G] = tExp("A", 5), tExp("B", 4), tExp("C", 3), tExp("D", 2), tExp("E", 2), tExp("F", 1), tExp("G", 0) 
 
-    log("(B . E) . (C . D) => |", ((G * B . F * (G + G)) + (C + D))->toString());
+    log("(C + D) \(x) D => |", ((D \x D \x C))->toString());
 
     return 0
 }

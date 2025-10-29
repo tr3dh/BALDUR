@@ -40,7 +40,10 @@ struct TensorExpression{
     TensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
 
         Relation = TkType::Argument;
+    }
 
+    void fillIndices(){
+        
         notatedIndices.reserve(tensorOrder);
 
         for(int i = 0; i < tensorOrder; i++){

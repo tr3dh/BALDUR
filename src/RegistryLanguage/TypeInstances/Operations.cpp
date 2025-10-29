@@ -64,8 +64,8 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {".=", "__dotProductAssign__"},
     {"..=", "__modulo__"},
     {":=", "__modulo__"},
-    {"\\x=", "__modulo__"},
-    {"\\(x)=", "__modulo__"},
+    {"\\x=", "__crossProductAssign__"},
+    {"\\(x)=", "__dyadProductAssign__"},
 };
 
 // Map der Form Operator | (Funktionslabel, verknüpfende Operation)
@@ -103,8 +103,8 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {".", "__dotProductAssign__"},
     {"..", "__modulo__"},
     {":", "__modulo__"},
-    {"\\x", "__modulo__"},
-    {"\\(x)", "__modulo__"},
+    {"\\x", "__crossProductAssign__"},
+    {"\\(x)", "__dyadProductAssign__"},
 };
 
 //

@@ -160,8 +160,13 @@ namespace types{
                 member0.children.emplace_back(member1);
 
                 //
-                TensorExpression& processedMember0 = member0.children[member0.children.size() - 2];
+                TensorExpression& processedMember0 =
+                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
                 TensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+                //
+                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
 
                 //
                 RETURNING_ASSERT(processedMember0.tensorOrder == processedMember1.tensorOrder,
@@ -224,8 +229,13 @@ namespace types{
                 member0.children.emplace_back(member1);
 
                 //
-                TensorExpression& processedMember0 = member0.children[member0.children.size() - 2];
+                TensorExpression& processedMember0 =
+                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
                 TensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+                //
+                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
 
                 //
                 RETURNING_ASSERT(processedMember0.tensorOrder == processedMember1.tensorOrder,
@@ -271,8 +281,13 @@ namespace types{
                 member0.children.emplace_back(member1);
 
                 //
-                TensorExpression& processedMember0 = member0.children[member0.children.size() - 2];
+                TensorExpression& processedMember0 =
+                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
                 TensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+                //
+                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
 
                 //
                 RETURNING_ASSERT(processedMember0.tensorOrder == 0 || processedMember1.tensorOrder == 0,
@@ -336,8 +351,13 @@ namespace types{
                 member0.children.emplace_back(member1);
 
                 // die hintersten beiden Childs sind die Operanden
-                TensorExpression& processedMember0 = member0.children[member0.children.size() - 2];
+                TensorExpression& processedMember0 =
+                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
                 TensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+                //
+                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
 
                 //
                 RETURNING_ASSERT(processedMember0.tensorOrder > 0 && processedMember1.tensorOrder > 0,
@@ -362,6 +382,151 @@ namespace types{
 
                 // Tensorstufe : m + n - 2
                 // freie Indices : [i_1 ... i_{m-1}, j_2 ... j_n] >> nur k wird summiert
+                member0.notatedIndices = member0.getUniqueChildIndices();
+                member0.tensorOrder = member0.notatedIndices.size();
+        },
+        {});
+
+        // Dyadisches Product
+        // Operanden können unterschiedliche TensorStufen haben
+        // lhs : Stufe m, rhs : Stufe n
+        // IndexNotation: A[i_1 ... i_m] (x) B[j_1 ... j_n] = C[i_1 ... i_m, j_1 ... j_n]
+        // Ergebnis:
+        // Tensorstufe : m + n
+        // freie Indices : [i_1 ... i_m, j_1 ... j_n] >> nichts wird summiert
+        registerFunction("__dyadProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__dyadProductAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
+
+                    moveSelfIntoFirstChild(arg0->getMember());
+
+                    //
+                    arg0->getMember().Relation = TkType::Operator;
+                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
+                }
+                
+                //
+                member0.children.emplace_back(member1);
+
+                // die hintersten beiden Childs sind die Operanden
+                TensorExpression& processedMember0 =
+                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
+                TensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+                //
+                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
+
+                //
+                RETURNING_ASSERT(processedMember0.tensorOrder > 0 && processedMember1.tensorOrder > 0,
+                    "Skalarproduktbildung mit skalaren Operanden funktioniert nicht", );
+                
+                // A[i_1 ... i_m] (x) B[j_1 ... j_n] = C[i_1 ... i_m, j_1 ... j_n]
+                // keine Änderung >> Indices bleiben unverändert >> alle singulär
+
+                // Aufgrund von Assoziaitivität
+                if(processedMember1.Relation == TkType::Operator &&
+                   processedMember1.Operator == IndexNotationOperator::Multiplication){
+
+                    TensorExpression tmp = std::move(processedMember1);
+                    member0.children.pop_back();
+
+                    member0.children.insert(
+                        member0.children.end(),
+                        std::make_move_iterator(tmp.children.begin()),
+                        std::make_move_iterator(tmp.children.end())
+                    );
+                }
+
+                // Tensorstufe : m + n
+                // freie Indices : [all]
+                member0.notatedIndices = member0.getUniqueChildIndices();
+                member0.tensorOrder = member0.notatedIndices.size();
+        },
+        {});
+
+        // Dyadisches Product
+        // Operanden können unterschiedliche TensorStufen haben
+        // lhs : Stufe m, rhs : Stufe n
+        // IndexNotation: A[i_1 ... i_m] (x) B[j_1 ... j_n] = C[i_1 ... i_m, j_1 ... j_n]
+        // Ergebnis:
+        // Tensorstufe : m + n
+        // freie Indices : [i_1 ... i_m, j_1 ... j_n] >> nichts wird summiert
+        registerFunction("__crossProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__crossProductAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
+
+                    moveSelfIntoFirstChild(arg0->getMember());
+
+                    //
+                    arg0->getMember().Relation = TkType::Operator;
+                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
+                }
+                
+                //
+                member0.children.emplace_back(member1);
+
+                // die hintersten beiden Childs sind die Operanden
+                TensorExpression& processedMember0 =
+                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
+                TensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+                //
+                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
+
+                //
+                RETURNING_ASSERT(processedMember0.tensorOrder > 0 && processedMember1.tensorOrder > 0,
+                    "Skalarproduktbildung mit skalaren Operanden funktioniert nicht", );
+                
+                // A[i_1 ... i_m] x B[j_1 ... j_n] x C[k_1 ... k_o] = e[z,i_n, j_n, k_n] A[i_1 ... i_m] B[j_1 ... j_n] C[k_1 ... k_o]
+                // Indices bleiben aber civitapermutation wird anmultipliziert
+                TensorExpression hodgeStar("epsilon", 3);
+                hodgeStar.notatedIndices.reserve(3);
+                hodgeStar.notatedIndices = {TensorExpression::NotationIndexCounter++, processedMember0.notatedIndices.back(), processedMember1.notatedIndices.back()};
+
+                member0.children.emplace_back(std::move(hodgeStar));
+
+                // Aufgrund von Assoziaitivität
+                if(processedMember1.Relation == TkType::Operator &&
+                   processedMember1.Operator == IndexNotationOperator::Multiplication){
+
+                    TensorExpression tmp = std::move(processedMember1);
+                    member0.children.pop_back();
+
+                    member0.children.insert(
+                        member0.children.end(),
+                        std::make_move_iterator(tmp.children.begin()),
+                        std::make_move_iterator(tmp.children.end())
+                    );
+                }
+
+                // Tensorstufe : m + n
+                // freie Indices : [all]
                 member0.notatedIndices = member0.getUniqueChildIndices();
                 member0.tensorOrder = member0.notatedIndices.size();
         },
