@@ -83,6 +83,29 @@ struct TensorExpression{
 
             result += "]";
         }
+        else if(Relation == TkType::Container){
+
+            result += "Container [";
+
+            for(size_t i = 0; i < notatedIndices.size(); i++){
+
+                result += std::to_string(notatedIndices[i]);
+                result += i < notatedIndices.size() - 1 ? "," : "";
+            }
+
+            result += "]";
+
+            result += "{ ";
+
+            for(size_t i = 0; i < children.size(); i++){
+
+                const TensorExpression& child = children[i];
+
+                result += child.toString(depth + 1);
+            }
+
+            result += " }";
+        }
         else if(Relation == TkType::Operator){
             
             RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator", "");

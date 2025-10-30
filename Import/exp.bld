@@ -83,9 +83,10 @@ decl main(){
     
     log(VecC + VecB)
 
-    void [A, B, C, D, E, F, G] = tExp("A", 5), tExp("B", 4), tExp("C", 3), tExp("D", 2), tExp("E", 2), tExp("F", 1), tExp("G", 0) 
+    void [A, B, C, D, E, F, G] = tExp("A", 5), tExp("B", 4), tExp("C", 3), tExp("D", 1), tExp("E", 2), tExp("F", 1), tExp("G", 0) 
 
-    log("(C + D) \(x) D => |", ((D \x D \x C))->toString());
+    log(((A .. C)')->toString());
+    log((A)->toString());
 
     return 0
 }

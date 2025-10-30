@@ -38,7 +38,8 @@ enum class TkType : uint8_t{
     Section,
     Params,
     Chain,
-    String
+    String,
+    Container,
 };
 
 //

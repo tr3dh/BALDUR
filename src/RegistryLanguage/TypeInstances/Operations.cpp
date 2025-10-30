@@ -13,6 +13,7 @@ std::vector<std::string> g_UsedOperators = {
     ".", "..", ":", "\\x", "\\(x)", "\\(.)",        // für verkettung über Matrix ops
     "++", "--", "!",                                // Single Argument Ops
     KOMMA,                                          //
+    "~", "'",                                       // Ops für Index Notation
     "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
 };
 
@@ -26,6 +27,8 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"<-", "__move__"},
     {"<<", "__reference__"},
     {"<+", "__copy__"},
+    {"~", "__trace__"},
+    {"'", "__transpose__"},
 };
 
 // Map der Form Operator | Funktionslabel
@@ -62,8 +65,8 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"%", "__modulo__"},
 
     {".=", "__dotProductAssign__"},
-    {"..=", "__modulo__"},
-    {":=", "__modulo__"},
+    {"..=", "__mirroringDoubleContractionAssign__"},
+    {":=", "__crossingDoubleContractionAssign__"},
     {"\\x=", "__crossProductAssign__"},
     {"\\(x)=", "__dyadProductAssign__"},
 };
@@ -101,8 +104,8 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {"nxor", "__nxorAssign__"},
 
     {".", "__dotProductAssign__"},
-    {"..", "__modulo__"},
-    {":", "__modulo__"},
+    {"..", "__mirroringDoubleContractionAssign__"},
+    {":", "__crossingDoubleContractionAssign__"},
     {"\\x", "__crossProductAssign__"},
     {"\\(x)", "__dyadProductAssign__"},
 };
