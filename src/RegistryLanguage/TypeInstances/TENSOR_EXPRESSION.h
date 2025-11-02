@@ -19,7 +19,42 @@ enum class IndexNotationOperator{
 
 extern std::map<IndexNotationOperator, std::string> IndexNotationOperatorStrings;
 
+enum class TensorExpressionOperator{
+    
+    Addition,
+    Subtraction,
+    DotProduct,
+    CrossProduct,
+    DyadicProduct,
+};
+
+extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
+
 struct TensorExpression{
+
+    //
+    TkType Relation;
+    TensorExpressionOperator Operator;
+
+    std::string label = NULLSTR;
+    int tensorOrder = -1;
+
+    std::vector<TensorExpression> children;
+
+    TensorExpression() = default;
+    
+    // Konstruktion einer Arg node
+    TensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
+
+        Relation = TkType::Argument;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const TensorExpression& expr);
+};
+
+void moveSelfIntoFirstChild(TensorExpression& node);
+
+struct IndexNotatedTensorExpression{
 
     //
     static NotationIndex NotationIndexCounter;
@@ -32,12 +67,12 @@ struct TensorExpression{
     //
     TkType Relation;
     IndexNotationOperator Operator;
-    std::vector<TensorExpression> children;
+    std::vector<IndexNotatedTensorExpression> children;
 
-    TensorExpression() = default;
+    IndexNotatedTensorExpression() = default;
     
     // Konstruktion einer Arg node
-    TensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
+    IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
 
         Relation = TkType::Argument;
     }
@@ -99,7 +134,7 @@ struct TensorExpression{
 
             for(size_t i = 0; i < children.size(); i++){
 
-                const TensorExpression& child = children[i];
+                const IndexNotatedTensorExpression& child = children[i];
 
                 result += child.toString(depth + 1);
             }
@@ -114,7 +149,7 @@ struct TensorExpression{
 
             for(size_t i = 0; i < children.size(); i++){
 
-                const TensorExpression& child = children[i];
+                const IndexNotatedTensorExpression& child = children[i];
 
                 result += (i > 0) ? " " + IndexNotationOperatorStrings[Operator] + " " : "";
                 result += child.toString(depth + 1);
@@ -182,10 +217,10 @@ struct TensorExpression{
         return label != NULLSTR && tensorOrder >= 0;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const TensorExpression& expr);
+    friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);
 };
 
-void moveSelfIntoFirstChild(TensorExpression& node);
+void moveSelfIntoFirstChild(IndexNotatedTensorExpression& node);
 
 namespace types{
 
@@ -197,6 +232,22 @@ namespace types{
 
         TENSOR_EXPRESSION() = default;
         TENSOR_EXPRESSION(TensorExpression* Ptr) : INativeObject(Ptr){}
+
+        // virtual ist redundant, die print bleibt überscheibbar
+        void print() const override{
+
+            LOG << getMember();
+        }
+    };
+
+    class INDEX_NOTATED_TENSOR_EXPRESSION : public INativeObject<INDEX_NOTATED_TENSOR_EXPRESSION, IndexNotatedTensorExpression>{
+
+    public:
+
+        static int setUpClass();
+
+        INDEX_NOTATED_TENSOR_EXPRESSION() = default;
+        INDEX_NOTATED_TENSOR_EXPRESSION(IndexNotatedTensorExpression* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die print bleibt überscheibbar
         void print() const override{
