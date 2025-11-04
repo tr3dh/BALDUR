@@ -21,11 +21,20 @@ extern std::map<IndexNotationOperator, std::string> IndexNotationOperatorStrings
 
 enum class TensorExpressionOperator{
     
+    None,
+
     Addition,
     Subtraction,
+    Multiplication,
+
     DotProduct,
     CrossProduct,
     DyadicProduct,
+    CrossingDoubleContraction,
+    MirroringDoubleContraction,
+    
+    Inversion,
+    Transposition,
 };
 
 extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
@@ -41,13 +50,28 @@ struct TensorExpression{
 
     std::vector<TensorExpression> children;
 
-    TensorExpression() = default;
+    TensorExpression();
     
     // Konstruktion einer Arg node
-    TensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
+    TensorExpression(const std::string& labelIn, int tensorOrderIn);
 
-        Relation = TkType::Argument;
-    }
+    //
+    void moveSelfIntoFirstChild();
+
+    // Operatoren
+    void addAssign(const TensorExpression& other);
+    void subAssign(const TensorExpression& other);
+    void mulAssign(const TensorExpression& other);
+    void dotProductAssign(const TensorExpression& other);
+    void crossProductAssign(const TensorExpression& other);
+    void dyadProductAssign(const TensorExpression& other);
+    void mirroringDoubleContractionAssign(const TensorExpression& other);
+    void crossingDoubleContractionAssign(const TensorExpression& other);
+    void transposeAssign();
+    void inverseAssign();
+
+    //
+    std::string toString(size_t depth = 0) const;
 
     friend std::ostream& operator<<(std::ostream& os, const TensorExpression& expr);
 };

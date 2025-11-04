@@ -13,7 +13,7 @@ std::vector<std::string> g_UsedOperators = {
     ".", "..", ":", "\\x", "\\(x)", "\\(.)",        // für verkettung über Matrix ops
     "++", "--", "!",                                // Single Argument Ops
     KOMMA,                                          //
-    "~", "'",                                       // Ops für Index Notation
+    "~", "'", "°"                                   // Ops für Index Notation
     "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
 };
 
@@ -27,8 +27,9 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"<-", "__move__"},
     {"<<", "__reference__"},
     {"<+", "__copy__"},
-    {"~", "__trace__"},
+    {"~", "__inverse__"},
     {"'", "__transpose__"},
+    {"°", "__trace__"},
 };
 
 // Map der Form Operator | Funktionslabel

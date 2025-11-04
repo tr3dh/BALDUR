@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/src",
                 "C:/msys64/mingw64/include",
-                "${workspaceFolder}/thirdParty"
+                "${workspaceFolder}/thirdParty",
+                "${workspaceFolder}/thirdParty/imgui"
             ],
             "defines": [
                 "NDEBUG",

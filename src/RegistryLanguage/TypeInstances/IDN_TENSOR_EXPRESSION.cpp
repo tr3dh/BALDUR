@@ -9,7 +9,6 @@ std::map<IndexNotationOperator, std::string> IndexNotationOperatorStrings = {
     {IndexNotationOperator::Multiplication, "*"},
 };
 
-
 std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr){
 
     os << "TensorExpr >> ";
@@ -67,14 +66,10 @@ std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& e
 
 void moveSelfIntoFirstChild(IndexNotatedTensorExpression& node)
 {
-    if (node.children.empty()){
-        node.children.emplace_back();
-    }
-
     IndexNotatedTensorExpression tmp = std::move(node);
 
     node = IndexNotatedTensorExpression();
-    node.children.push_back(std::move(tmp));
+    node.children.emplace_back(std::move(tmp));
 }
 
 namespace types{

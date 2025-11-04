@@ -1,10 +1,34 @@
+// Test Env für UI
+//
+// Absicherung gegen Grafikkarten/Treiber spezifische Probleme
+// Aufbau:
+// |_ ContentTexture   : um scaling Faktor größer als Fenster >> wird runter scaliert >> pseudo AA,
+// |                     >> glLineWidth(factor) setzen damit linie nicht zu dünn
+// |_ UITexture        : texture mit 1:1 auflösung für UI >> MUSS unbedingt 1:1 auflösung sein damit UI überhaupt gerendert wird
+// |_ Rendering        : rendering der Texturen hintereinander
+// 
+// Da das Rendering nun in eine Textur erfolgt und nicht mehr direkt auf den Bildschirm,
+// Vorteile :
+// . Postprocessing möglich (bspw. Bloom, ToneMapping, Farbkorrektur)
+// . Inhalt und UI direkt als Textur verfügbar >> unkompliziertes Speichern / weiterverarbeiten
+// 
+// Nachteile :
+// . Performance evtl. etwas schlechter
+// . kein direktes Antialiasing mehr möglich (MSAA)
+//
+// Maßnahmen :
+// . Pseudo Antialiasing :
+//   . ContentTexture umd bestimmten Faktor größer als Fenster
+//   . Runterskalieren beim Rendern
+//   . damit linien nicht zu dünn werden >> glLineWidth(factor) vorher setzen
+//   . danach über glLineWidth(1.0f) wieder zurücksetzen
+//
+// Ergebnis :
+// . UI sieht aus wie vorher
+// . Inhalt wirkt etwas weicher durch Pseudo AA
+// . Weniger anfällig für Treiber/Grafikkarten spezifische Probleme (agressive Quadro Treiber)
+
 #include "templateDecls.h"
-
-// git clone https://github.com/DanielChappuis/reactphysics3d.git
-// cd reactphysics3d
-// mkdir build && cd build
-// cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-
 
 int main()
 {
