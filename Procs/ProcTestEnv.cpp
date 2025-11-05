@@ -3,7 +3,7 @@
 int main(){
 
     //
-    TensorExpression A("A", 4), B("B", 4), sc("scalar",0), sc2("scalar",0), tmp("tmp", 4);
+    TensorExpression A("A", 4), B("B", 4), sc("scalar",0), sc2("scalar",0), tmp("tmp", 4), vec("v", 1), vec2("v", 1);
 
     tmp.subAssign(A);
     tmp.subAssign(B);
@@ -17,7 +17,17 @@ int main(){
     
     sc.mulAssign(sc2);
 
-    LOG << sc.toString() << endl;
+    A.crossingDoubleContractionAssign(B);
+    A.mirroringDoubleContractionAssign(A);
+    A.mirroringDoubleContractionAssign(B);
+
+    vec.crossProductAssign(vec);
+    vec.crossProductAssign(vec);
+    vec.crossProductAssign(vec2);
+
+    A.inverseAssign();
+
+    LOG << A.toString() << endl;
 
     //
     return 0;

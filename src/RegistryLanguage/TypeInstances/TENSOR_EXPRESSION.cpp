@@ -14,8 +14,8 @@ std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings 
     {TensorExpressionOperator::CrossingDoubleContraction, ".."},
     {TensorExpressionOperator::MirroringDoubleContraction, ":"},
     
-    {TensorExpressionOperator::Inversion, "^t"},
-    {TensorExpressionOperator::Transposition, "^-1"},
+    {TensorExpressionOperator::Inversion, "^-1"},
+    {TensorExpressionOperator::Transposition, "^t"},
 };
 
 void moveSelfIntoFirstChild(TensorExpression& node){
@@ -161,20 +161,186 @@ void TensorExpression::mulAssign(const TensorExpression& other){
 }
 
 void TensorExpression::dotProductAssign(const TensorExpression& other){
+    
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::DotProduct;
 
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0, "Tensoren mit Stufe kleiner 1 and Skalarprodukt beteiligt",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation != TkType::Operator || Operator != operation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 2;
 }
 
-void TensorExpression::crossProductAssign(const TensorExpression& other){}
+void TensorExpression::crossProductAssign(const TensorExpression& other){
 
-void TensorExpression::dyadProductAssign(const TensorExpression& other){}
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::CrossProduct;
 
-void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& other){}
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder == 1 && other.tensorOrder == 1, "Tensoren für Vektorprodukt müssen Vektoren sein",);
 
-void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& other){}
+    //
+    bool copySelf = false;
 
-void TensorExpression::transposeAssign(){}
+    //
+    if(Relation != TkType::Operator || Operator != operation){
 
-void TensorExpression::inverseAssign(){}
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+}
+
+void TensorExpression::dyadProductAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::DyadicProduct;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 1 && other.tensorOrder > 1, "Tensoren mit Stufe kleiner 2 ...",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation != TkType::Operator || Operator != operation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder;
+}
+
+void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::MirroringDoubleContraction;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0, "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation != TkType::Operator || Operator != operation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 2;
+}
+
+void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::CrossingDoubleContraction;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0, "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation != TkType::Operator || Operator != operation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 2;
+}
+
+void TensorExpression::transposeAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Transposition;
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = children.begin()->tensorOrder;
+}
+
+void TensorExpression::inverseAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Inversion;
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = children.begin()->tensorOrder;
+}
 
 //
 std::string TensorExpression::toString(size_t depth) const{
@@ -190,7 +356,7 @@ std::string TensorExpression::toString(size_t depth) const{
     // Container
     else if(Relation == TkType::Operator && children.size() == 1){
 
-        res += "(" + children.begin()->toString(depth+1) + ") " + TensorExpressionOperatorStrings[Operator];
+        res += "(" + children.begin()->toString(depth+1) + ")" + TensorExpressionOperatorStrings[Operator] + " ";
         res += "[" + std::to_string(tensorOrder) + "]";
     }
     // durch Operator verknüpfte Child nodes
