@@ -35,6 +35,7 @@ enum class TensorExpressionOperator{
     
     Inversion,
     Transposition,
+    Trace,
 };
 
 extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
@@ -69,6 +70,9 @@ struct TensorExpression{
     void crossingDoubleContractionAssign(const TensorExpression& other);
     void transposeAssign();
     void inverseAssign();
+
+    void traceAssign(int contractIndices);
+    void traceAssign();
 
     //
     std::string toString(size_t depth = 0) const;
@@ -260,7 +264,7 @@ namespace types{
         // virtual ist redundant, die print bleibt überscheibbar
         void print() const override{
 
-            LOG << getMember();
+            LOG << getMember().toString();
         }
     };
 
@@ -276,7 +280,7 @@ namespace types{
         // virtual ist redundant, die print bleibt überscheibbar
         void print() const override{
 
-            LOG << getMember();
+            LOG << getMember().toString();
         }
     };
 };

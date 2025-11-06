@@ -3,36 +3,6 @@
 int main(){
 
     //
-    TensorExpression A("A", 4), B("B", 4), sc("scalar",0), sc2("scalar",0), tmp("tmp", 4), vec("v", 1), vec2("v", 1);
-
-    tmp.subAssign(A);
-    tmp.subAssign(B);
-    tmp.subAssign(B);
-    tmp.subAssign(B);
-    tmp.subAssign(tmp);
-
-    sc.mulAssign(sc);
-    sc.mulAssign(sc);
-    sc2.mulAssign(A);
-    
-    sc.mulAssign(sc2);
-
-    A.crossingDoubleContractionAssign(B);
-    A.mirroringDoubleContractionAssign(A);
-    A.mirroringDoubleContractionAssign(B);
-
-    vec.crossProductAssign(vec);
-    vec.crossProductAssign(vec);
-    vec.crossProductAssign(vec2);
-
-    A.inverseAssign();
-
-    LOG << A.toString() << endl;
-
-    //
-    return 0;
-
-    //
     LOG << "ProcTestEnv exec Skript" << endl;
 
     //

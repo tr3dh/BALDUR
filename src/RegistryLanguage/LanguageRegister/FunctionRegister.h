@@ -135,7 +135,7 @@ public:
             return;
         }
 
-        RETURNING_ASSERT(TRIGGER_ASSERT, "Function für angegebenes Label " + functionLabel + " konnte nicht gefunden werden",);
+        RETURNING_ASSERT(TRIGGER_ASSERT, "Function für angegebenes Label " + functionLabel + " mit " + std::to_string(functionParams.size()) + " args konnte nicht gefunden werden",);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const FunctionRegister& reg){

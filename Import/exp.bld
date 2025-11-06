@@ -60,9 +60,8 @@ decl fibonacci(int ref member){
     return [fibonacci(member - 1) + fibonacci(member - 2)]
 }
 
-//
-decl main(){
-    
+decl testRecursives(){
+
     // Fakultäten
     for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
         log("Faculty(", i, ") =", faculty(i))
@@ -77,16 +76,22 @@ decl main(){
     log(" ")
     log("faculty called :", g_facultyCalls, "times")
     log("fibonacci called :", g_fibonacciCalls, "times")
+}
 
-    void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
-    void VecC <+ VecA
+//
+decl main(){
     
-    log(VecC + VecB)
+    void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
+    logRes(VecA + VecB)
 
-    log(tExpr("A", 2))
+    void tmp = tExpr("sigma", 4)
+    tmp = tmp . tmp
 
-    // log(((A .. C)')->toString());
-    // log((A)->toString());
+    log(tmp)
+
+    tmp ^~
+
+    log("->", tmp)
 
     return 0
 }

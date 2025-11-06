@@ -10,10 +10,11 @@ std::vector<std::string> g_UsedOperators = {
     "&&", "!&", "||", "!|", "x|", "!x|",            // ...
     "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
     "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
-    ".", "..", ":", "\\x", "\\(x)", "\\(.)",        // für verkettung über Matrix ops
+    ".", "..", ":", "\\x", "\\(x)", "\\(.)", "°=",  // für verkettung über Matrix ops
     "++", "--", "!",                                // Single Argument Ops
     KOMMA,                                          //
-    "~", "'", "°"                                   // Ops für Index Notation
+    "~", "'", "°",                                  // Ops für Index Notation
+    "^~", "^'", "^°",                                  // Ops für Index Notation
     "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
 };
 
@@ -27,9 +28,12 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"<-", "__move__"},
     {"<<", "__reference__"},
     {"<+", "__copy__"},
-    {"~", "__inverse__"},
-    {"'", "__transpose__"},
-    {"°", "__trace__"},
+    {"~", "__inverseAssign__"},
+    {"'", "__transposeAssign__"},
+    {"°", "__traceAssign__"},
+    {"^~", "__inverseInplaceAssign__"},
+    {"^'", "__transposeInplaceAssign__"},
+    {"^°", "__traceInplaceAssign__"},
 };
 
 // Map der Form Operator | Funktionslabel
@@ -70,6 +74,7 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {":=", "__crossingDoubleContractionAssign__"},
     {"\\x=", "__crossProductAssign__"},
     {"\\(x)=", "__dyadProductAssign__"},
+    {"°=", "__traceAssign__"},
 };
 
 // Map der Form Operator | (Funktionslabel, verknüpfende Operation)
@@ -109,6 +114,7 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {":", "__crossingDoubleContractionAssign__"},
     {"\\x", "__crossProductAssign__"},
     {"\\(x)", "__dyadProductAssign__"},
+    {"°", "__traceAssign__"},
 };
 
 //

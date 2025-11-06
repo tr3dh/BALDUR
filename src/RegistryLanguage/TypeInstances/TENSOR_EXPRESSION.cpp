@@ -16,6 +16,7 @@ std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings 
     
     {TensorExpressionOperator::Inversion, "^-1"},
     {TensorExpressionOperator::Transposition, "^t"},
+    {TensorExpressionOperator::Trace, "^//"},
 };
 
 void moveSelfIntoFirstChild(TensorExpression& node){
@@ -342,11 +343,44 @@ void TensorExpression::inverseAssign(){
     tensorOrder = children.begin()->tensorOrder;
 }
 
+void TensorExpression::traceAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Trace;
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+}
+
+void TensorExpression::traceAssign(int contractIndices){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Trace;
+
+    //
+    RETURNING_ASSERT(tensorOrder >= contractIndices, "Tensor Dimension nicht groß genug für Trace mit angegebener Kontraktion",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = children.back().tensorOrder - contractIndices;
+}
+
 //
 std::string TensorExpression::toString(size_t depth) const{
 
     //
     std::string res;
+
+    res += depth == 0 ? "TensorExpression[" + std::to_string(tensorOrder) + "] = " : "";
 
     // Argument node
     if(Relation == TkType::Argument && children.size() == 0){
@@ -363,8 +397,8 @@ std::string TensorExpression::toString(size_t depth) const{
     else if(Relation == TkType::Operator && Operator != TensorExpressionOperator::None && children.size() > 1){
 
         //
-        res += "(";
-        // res += depth > 0 ? "(" : "";
+        // res += "(";
+        res += depth > 0 ? "(" : "";
         for(size_t childIdx = 0; childIdx < children.size(); childIdx++){
 
             // print der Verknüfpung über Operator 
@@ -373,9 +407,9 @@ std::string TensorExpression::toString(size_t depth) const{
             // print der node
             res += children[childIdx].toString(depth+1);
         }
-        // res += depth > 0 ? ")" : "";
-        res += ")";
-        res += "[" + std::to_string(tensorOrder) + "]";
+        res += depth > 0 ? ")" : " ";
+        // res += ")";
+        res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
     }
     else{
 
@@ -385,20 +419,22 @@ std::string TensorExpression::toString(size_t depth) const{
     return res;
 }
 
+// Für Tree
+// if(expr.Relation == TkType::Argument){
+//     os << "Node : " << expr.label;
+// }
+// else{
+
+//     os << "Operation : " << TensorExpressionOperatorStrings[expr.Operator] << " {" << endl;
+//     for(const auto& child : expr.children){
+//         os << "|" << child << endl;
+//     }
+//     os << "}";
+// }
+
 std::ostream& operator<<(std::ostream& os, const TensorExpression& expr){
 
-    if(expr.Relation == TkType::Argument){
-        os << "Node : " << expr.label;
-    }
-    else{
-
-        os << "Operation : " << TensorExpressionOperatorStrings[expr.Operator] << " {" << endl;
-        for(const auto& child : expr.children){
-            os << "|" << child << endl;
-        }
-        os << "}";
-    }
-
+    os << expr.toString();
     return os;
 }
 
@@ -429,6 +465,213 @@ namespace types{
                 ret0->getMember() = TensorExpression(arg0->getMember(), arg1->getMember());
         },
         {TENSOR_EXPRESSION::typeIndex});
+
+        // Operator Überladung
+
+        registerFunction("__dotProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__dotProductAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.dotProductAssign(member1);
+        },
+        {});
+
+        registerFunction("__crossProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__crossProductAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.crossProductAssign(member1);
+        },
+        {});
+
+        registerFunction("__dyadProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__dyadProductAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.dyadProductAssign(member1);
+        },
+        {});
+
+        registerFunction("__mirroringDoubleContractionAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__mirroringDoubleContractionAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.mirroringDoubleContractionAssign(member1);
+        },
+        {});
+
+        registerFunction("__crossingDoubleContractionAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__crossingDoubleContractionAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.crossingDoubleContractionAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__inverseAssign__", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__inverseAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().inverseAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("__transposeAssign__", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__transposeAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().transposeAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("__traceAssign__", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__traceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().traceAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        registerFunction("__traceAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__traceAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+                arg0->getMember().traceAssign(arg1->getMember());
+        },
+        {});
+
+        //
+        registerFunction("__inverseInplaceAssign__", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__inverseInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.inverseAssign();
+        },
+        {});
+
+        //
+        registerFunction("__transposeInplaceAssign__", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__transposeInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.transposeAssign();
+        },
+        {});
+
+        //
+        registerFunction("__traceInplaceAssign__", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__traceInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.traceAssign();
+        },
+        {});
 
         return true;
     }
