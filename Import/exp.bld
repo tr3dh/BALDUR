@@ -84,6 +84,12 @@ decl main(){
     void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
     logRes(VecA + VecB)
 
+    bool a = true
+    bool b = a
+    b = false
+
+    log(a, b)
+
     void tmp = tExpr("sigma", 4)
     tmp = tmp . tmp
 

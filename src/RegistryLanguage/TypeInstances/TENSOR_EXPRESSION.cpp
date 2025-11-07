@@ -420,25 +420,30 @@ std::string TensorExpression::toString(size_t depth) const{
 }
 
 // Für Tree
-// if(expr.Relation == TkType::Argument){
-//     os << "Node : " << expr.label;
-// }
-// else{
-
-//     os << "Operation : " << TensorExpressionOperatorStrings[expr.Operator] << " {" << endl;
-//     for(const auto& child : expr.children){
-//         os << "|" << child << endl;
-//     }
-//     os << "}";
-// }
-
 std::ostream& operator<<(std::ostream& os, const TensorExpression& expr){
 
-    os << expr.toString();
+    if(expr.Relation == TkType::Argument){
+        os << "Node : " << expr.label;
+    }
+    else{
+
+        os << "Operation : " << TensorExpressionOperatorStrings[expr.Operator] << " {" << endl;
+        for(const auto& child : expr.children){
+            os << "|" << child << endl;
+        }
+        os << "}";
+    }
+
     return os;
 }
 
 namespace types{
+
+    void TENSOR_EXPRESSION::print() const {
+
+        // Implementation
+        LOG << member->toString();
+    }
 
     int TENSOR_EXPRESSION::setUpClass(){
 

@@ -54,9 +54,11 @@ public:
 template<typename Tag>
 TypeIndex IIndexedObject<Tag>::typeIndex = INVALID_TYPE_INDEX;
 
-// Interface für Wrap konkret EINER Instanz (T) eines Backendtypen fürs Frontend 
-//
-// Natives Object
+// # Wrapper Interface für native Typen
+// - Interface für Wrap konkret EINER Instanz (T) eines Backendtypen fürs Frontend 
+// - Hierbei kann Tag entweder eine Signatur sein (dummy) oder der tatsächliche Erbe
+// - Die virtuelle clone Funktion geht hierbei davon aus, dass der Tag die valide Childklasse ist
+// - ist dies nicht der Fall muss die clone Funktion in der Childklasse zwangsläufig überschrieben werden
 template<typename Tag, typename T>
 class INativeObject : public IIndexedObject<Tag>{
 
@@ -122,7 +124,8 @@ public:
         if constexpr (!is_problematic_container<T>::value) {
 
             // Standard
-            INativeObject<Tag, T>* newObj = new INativeObject<Tag, T>(*this);
+            // INativeObject<Tag, T>* newObj = new INativeObject<Tag, T>(*this);
+            Tag* newObj = new Tag(*static_cast<Tag*>(this));
 
             newObj->IsManagingMemory = true;
             newObj->member = new T(*member);

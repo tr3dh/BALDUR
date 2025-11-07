@@ -262,10 +262,7 @@ namespace types{
         TENSOR_EXPRESSION(TensorExpression* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die print bleibt überscheibbar
-        void print() const override{
-
-            LOG << getMember().toString();
-        }
+        void print() const override;
     };
 
     class INDEX_NOTATED_TENSOR_EXPRESSION : public INativeObject<INDEX_NOTATED_TENSOR_EXPRESSION, IndexNotatedTensorExpression>{
