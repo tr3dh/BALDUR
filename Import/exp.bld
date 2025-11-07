@@ -50,7 +50,6 @@ decl faculty(int ref member){
     return [member * faculty(member - 1)]
 }
 
-//
 decl fibonacci(int ref member){
     
     g_fibonacciCalls++
@@ -60,7 +59,7 @@ decl fibonacci(int ref member){
     return [fibonacci(member - 1) + fibonacci(member - 2)]
 }
 
-decl testRecursives(){
+decl runRecursiveDemo(){
 
     // Fakultäten
     for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
@@ -81,23 +80,16 @@ decl testRecursives(){
 //
 decl main(){
     
-    void [VecA, VecB] = Vector3(4.0,2.0,3.0), Vector3(1.0,2.0,3.0)
-    logRes(VecA + VecB)
-
-    bool a = true
-    bool b = a
-    b = false
-
-    log(a, b)
-
-    void tmp = tExpr("sigma", 4)
+    void [tmp, sc] = tExpr("sigma", 4), tExpr("scalar", 0)
     tmp = tmp . tmp
 
-    log(tmp)
+    log([tmp, tmp] ° [1,2])
+    log(tmp * sc * sc)
 
-    tmp ^~
-
-    log("->", tmp)
+    void [a, b, c] = tIDN("A", 2), tIDN("B", 6), tIDN("C", 0)
+    log(b ° 1)
+    log(b ° 1 ° 1 ° 1)
+    log(b °)
 
     return 0
 }

@@ -9,6 +9,778 @@ std::map<IndexNotationOperator, std::string> IndexNotationOperatorStrings = {
     {IndexNotationOperator::Multiplication, "*"},
 };
 
+void moveSelfIntoFirstChild(IndexNotatedTensorExpression& node)
+{
+    IndexNotatedTensorExpression tmp = std::move(node);
+
+    node = IndexNotatedTensorExpression();
+    node.children.emplace_back(std::move(tmp));
+}
+
+IndexNotatedTensorExpression::IndexNotatedTensorExpression() = default;
+    
+// Konstruktion einer Arg node
+IndexNotatedTensorExpression::IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
+
+    Relation = TkType::Argument;
+}
+
+bool IndexNotatedTensorExpression::isValid(){
+    return label != NULLSTR && tensorOrder >= 0;
+}
+
+void IndexNotatedTensorExpression::fillIndices(){
+    
+    notatedIndices.reserve(tensorOrder);
+
+    for(int i = 0; i < tensorOrder; i++){
+
+        //
+        notatedIndices.emplace_back(NotationIndexCounter++);
+    }
+}
+
+void IndexNotatedTensorExpression::replaceIndex(NotationIndex oldIndex, NotationIndex newIndex){
+
+    for(auto& idx : notatedIndices){
+
+        if(idx == oldIndex){
+
+            idx = newIndex;
+        }
+    }
+
+    for(auto& child : children){
+
+        child.replaceIndex(oldIndex, newIndex);
+    }
+}
+
+void IndexNotatedTensorExpression::replaceIndices(const std::vector<NotationIndex>& oldIndices, const std::vector<NotationIndex>& newIndices){
+
+    RETURNING_ASSERT(oldIndices.size() == newIndices.size(),
+        "replaceIndices: oldIndices und newIndices müssen die gleiche Länge haben", );
+
+    for(size_t i = 0; i < oldIndices.size(); i++){
+
+        replaceIndex(oldIndices[i], newIndices[i]);
+    }
+}
+
+std::vector<NotationIndex> IndexNotatedTensorExpression::getUniqueChildIndices() const {
+
+    std::unordered_map<NotationIndex, int> indexCount;
+    std::vector<NotationIndex> order;
+
+    for (const auto& child : children) {
+        for (auto idx : child.notatedIndices) {
+            if (indexCount[idx]++ == 0) {
+                order.push_back(idx);
+            }
+        }
+    }
+
+    std::vector<NotationIndex> uniqueIndices;
+    uniqueIndices.reserve(order.size());
+
+    for (auto idx : order) {
+        if (indexCount[idx] == 1) {
+            uniqueIndices.push_back(idx);
+        }
+    }
+
+    return uniqueIndices;
+}
+
+//
+const std::vector<NotationIndex>& IndexNotatedTensorExpression::getSortedIndices(){
+
+    // Nur Wenn Transpose Container keinen reverse der notated Indices durchführt
+    // if(Relation == TkType::Container && Operator == IndexNotationOperator::Transposition){
+
+    //     cachedSortedIndices.assign(notatedIndices.rbegin(), notatedIndices.rend());
+    //     return cachedSortedIndices;
+    // }
+
+    return notatedIndices;
+}
+
+//         if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Addition){
+
+        //             moveSelfIntoFirstChild(arg0->getMember());
+
+        //             //
+        //             arg0->getMember().Relation = TkType::Operator;
+        //             arg0->getMember().Operator = IndexNotationOperator::Addition;
+        //         }
+                
+        //         //
+        //         member0.children.emplace_back(member1);
+
+        //         //
+        //         IndexNotatedTensorExpression& processedMember0 =
+        //             member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
+        //         IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
+
+        //         //
+        //         if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
+        //         if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
+
+        //         //
+        //         RETURNING_ASSERT(processedMember0.tensorOrder == processedMember1.tensorOrder,
+        //             "Addition von Tensoren unterschiedlicher Stufe nicht möglich", );
+                
+        //         // A[i,j] + B[i,j] = C[i,j]
+        //         processedMember1.replaceIndices(processedMember1.notatedIndices, processedMember0.notatedIndices);
+
+        //         // Aufgrund von Assoziaitivität
+        //         if(processedMember1.Relation == TkType::Operator &&
+        //            processedMember1.Operator == IndexNotationOperator::Addition){
+
+        //             IndexNotatedTensorExpression tmp = std::move(processedMember1);
+        //             member0.children.pop_back();
+
+        //             member0.children.insert(
+        //                 member0.children.end(),
+        //                 std::make_move_iterator(tmp.children.begin()),
+        //                 std::make_move_iterator(tmp.children.end())
+        //             );
+        //         }
+
+        //         // ab hier sind die processedMember Referenzen nicht mehr gültig
+
+        //         // freie Indices bleiben erhalten
+        //         member0.notatedIndices = member0.children.back().notatedIndices;
+        //         member0.tensorOrder = member0.children.back().tensorOrder;
+        // },
+        // {});
+
+void IndexNotatedTensorExpression::moveSelfIntoFirstChild(){
+
+    IndexNotatedTensorExpression tmp = std::move(*this);
+
+    *this = IndexNotatedTensorExpression();
+    children.emplace_back(std::move(tmp));
+}
+
+// Operatoren
+void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Addition;
+    static TensorExpressionOperator operation = TensorExpressionOperator::Addition;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder == other.tensorOrder, "Addition von Tensoren unterschiedlicher Stufe versucht",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+    children.back().replaceIndices(operand1Indices, operand0Indices);
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+}
+
+void IndexNotatedTensorExpression::subAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Subtraction;
+    static TensorExpressionOperator operation = TensorExpressionOperator::Subtraction;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder == other.tensorOrder, "Addition von Tensoren unterschiedlicher Stufe versucht",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+    children.back().replaceIndices(operand1Indices, operand0Indices);
+
+    // Tensor Order muss nicht angepasst werde
+}
+
+void IndexNotatedTensorExpression::mulAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::Multiplication;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder == 0 || other.tensorOrder == 0, "Skalar Multiplikation braucht beteiligtes Skalar",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::dotProductAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::DotProduct;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0,
+                    "Skalarproduktbildung mit skalaren Operanden funktioniert nicht",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+    children.back().replaceIndex(operand1Indices[0], operand0Indices.back());
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::CrossProduct;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder == 1 && other.tensorOrder == 1,
+                    "Kreuzproduktbildung mit nicht vektoriellen Operanden funktioniert nicht",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+    
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    //
+    IndexNotatedTensorExpression civitaDelta("eps", 3);
+    civitaDelta.notatedIndices = {IndexNotatedTensorExpression::NotationIndexCounter++, operand0Indices.back(), operand1Indices.back()};
+    children.emplace_back(std::move(civitaDelta));
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::dyadProductAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::DyadicProduct;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0,
+                    "Dyadproduktbildung mit skalaren Operanden funktioniert nicht",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::mirroringDoubleContractionAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::MirroringDoubleContraction;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 1 && other.tensorOrder > 1,
+                    "Für Doppelte Überschiebungen werden Tensoren mit jeweils Tensorstufe > 2 benötigt",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+    children.back().replaceIndices({operand1Indices[0], operand1Indices[1]}, {operand0Indices.back(), operand0Indices[operand0Indices.size() - 2]});
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::CrossingDoubleContraction;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 1 && other.tensorOrder > 1,
+                    "Für Doppelte Überschiebungen werden Tensoren mit jeweils Tensorstufe > 2 benötigt",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
+    children.back().replaceIndices({operand1Indices[1], operand1Indices[0]}, {operand0Indices.back(), operand0Indices[operand0Indices.size() - 2]});
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::transposeAssign(){
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Transposition;
+
+    notatedIndices = children.begin()->notatedIndices;
+    std::reverse(notatedIndices.begin(), notatedIndices.end());
+
+    tensorOrder = children.begin()->tensorOrder;
+}
+
+void IndexNotatedTensorExpression::inverseAssign(){
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // neue Indizes zuweisen ?? >> kein Zusammenhang zwischen indices bzw. Einträgen von source und inverse
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Inversion;
+
+    // Option 1
+    // notatedIndices = children.begin()->notatedIndices;
+
+    // Option 2
+    notatedIndices.reserve(children.begin()->notatedIndices.size());
+    for(size_t i = 0; i < children.begin()->notatedIndices.size(); i++){
+        notatedIndices.emplace_back(IndexNotatedTensorExpression::NotationIndexCounter++);
+    }
+
+    tensorOrder = children.begin()->tensorOrder;
+}
+
+void IndexNotatedTensorExpression::traceAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder > 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    // Container benötigt ??
+
+    //
+    const std::vector<NotationIndex>& indices = getSortedIndices();
+
+    //
+    for(size_t i = 1; i < indices.size(); i++){
+        replaceIndex(indices[i], indices[0]);
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Inversion;
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+void IndexNotatedTensorExpression::traceAssign(int contractIndices){
+
+    //
+    RETURNING_ASSERT(tensorOrder > 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+    RETURNING_ASSERT(tensorOrder >= contractIndices, "Tensor kann nicht so viele Indices kontrahieren",);
+
+    //
+    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& indices = getSortedIndices();
+
+    //
+    size_t i = 1, contractedIndices = 0;
+    while(contractedIndices < contractIndices && i < indices.size()){
+
+        if(indices[i] != indices[0]){ replaceIndex(indices[i], indices[0]); contractedIndices++; }
+        i++;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Arbitary;
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
+std::string IndexNotatedTensorExpression::toString(size_t depth) const {
+
+    //
+    std::string result = "";
+
+    if(depth == 0){
+
+        result += "Res[";
+
+        for(size_t i = 0; i < notatedIndices.size(); i++){
+
+            result += std::to_string(notatedIndices[i]);
+            result += i < notatedIndices.size() - 1 ? "," : "";
+        }
+
+        result += "] = ";
+    }
+
+    if(Relation == TkType::Argument){
+
+        result += label + "[";
+
+        for(size_t i = 0; i < notatedIndices.size(); i++){
+
+            result += std::to_string(notatedIndices[i]);
+            result += i < notatedIndices.size() - 1 ? "," : "";
+        }
+
+        result += "]";
+    }
+    else if(Relation == TkType::Container){
+
+        result += "Container " + std::string(magic_enum::enum_name(Operator)) + " [";
+
+        for(size_t i = 0; i < notatedIndices.size(); i++){
+
+            result += std::to_string(notatedIndices[i]);
+            result += i < notatedIndices.size() - 1 ? "," : "";
+        }
+
+        result += "]";
+
+        result += "{ ";
+
+        for(size_t i = 0; i < children.size(); i++){
+
+            const IndexNotatedTensorExpression& child = children[i];
+
+            result += child.toString(depth + 1);
+        }
+
+        result += " }";
+    }
+    else if(Relation == TkType::Operator){
+        
+        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator", "");
+
+        result += depth > 0 ? "(" : "";
+
+        for(size_t i = 0; i < children.size(); i++){
+
+            const IndexNotatedTensorExpression& child = children[i];
+
+            result += (i > 0) ? " " + IndexNotationOperatorStrings[Operator] + " " : "";
+            result += child.toString(depth + 1);
+        }
+
+        result += depth > 0 ? ")" : "";
+    }
+
+    return result;
+}
+
 std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr){
 
     os << "TensorExpr >> ";
@@ -64,14 +836,6 @@ std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& e
     return os;
 }
 
-void moveSelfIntoFirstChild(IndexNotatedTensorExpression& node)
-{
-    IndexNotatedTensorExpression tmp = std::move(node);
-
-    node = IndexNotatedTensorExpression();
-    node.children.emplace_back(std::move(tmp));
-}
-
 namespace types{
 
     int INDEX_NOTATED_TENSOR_EXPRESSION::setUpClass(){
@@ -101,8 +865,8 @@ namespace types{
         {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
 
         // Konstruktoren
-        registerFunction("tIdn", {STRING::typeIndex, INT::typeIndex},
-            [__functionLabel__ = "tIdn", __numArgs__ = 2](FREG_ARGS){
+        registerFunction("tIDN", {STRING::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "tIDN", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -136,15 +900,7 @@ namespace types{
         },
         {STRING::typeIndex});
 
-        // Konstruktoren
-
-        // Operatoren
-
-        // Addition
-        // Bedingung: Gleiche TensorStufe
-        // IndexNotation: A[i,j] + B[i,j] = C[i,j]
-        // Ergebnis: Tensor der Stufe beider Operanden, beteiligte Indices bleiben frei
-        //           (Summenkonvention greift nicht innerhalb Operanden der Addition)
+        // Operator Überladung
         registerFunction("__addAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -159,61 +915,10 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Addition){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Addition;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                //
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder == processedMember1.tensorOrder,
-                    "Addition von Tensoren unterschiedlicher Stufe nicht möglich", );
-                
-                // A[i,j] + B[i,j] = C[i,j]
-                processedMember1.replaceIndices(processedMember1.notatedIndices, processedMember0.notatedIndices);
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Addition){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // ab hier sind die processedMember Referenzen nicht mehr gültig
-
-                // freie Indices bleiben erhalten
-                member0.notatedIndices = member0.children.back().notatedIndices;
-                member0.tensorOrder = member0.children.back().tensorOrder;
+                member0.addAssign(member1);
         },
         {});
 
-        // Subtraktion (>> Addition ähnlich)
-        // Bedingung: Gleiche TensorStufe
-        // IndexNotation: A[i,j] - B[i,j] = C[i,j]
-        // Ergebnis: Tensor der Stufe beider Operanden, beteiligte Indices bleiben frei
-        //           (Summenkonvention greift nicht innerhalb Operanden der Addition)
         registerFunction("__subAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__subAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -228,44 +933,10 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Subtraction){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Subtraction;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                //
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder == processedMember1.tensorOrder,
-                    "Subtraktion von Tensoren unterschiedlicher Stufe nicht möglich", );
-                
-                // A[i,j] - B[i,j] = C[i,j]
-                processedMember1.replaceIndices(processedMember1.notatedIndices, processedMember0.notatedIndices);
-
-                // freie Indices bleiben erhalten
-                member0.notatedIndices = member0.children.back().notatedIndices;
-                member0.tensorOrder = member0.children.back().tensorOrder;
+                member0.subAssign(member1);
         },
         {});
 
-        // Multiplikation
-        // Bedingung: mindestens ein skalarer Operand
-        // IndexNotation: A[] * B[i,j] = C[i,j]
-        // Ergebnis: Tensor der Stufe des Tensor Operands oder Skalar, Tensor Indices bleiben frei
         registerFunction("__mulAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -280,62 +951,10 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                //
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder == 0 || processedMember1.tensorOrder == 0,
-                    "Kein Skalarer Operand für Multiplikation gefunden", );
-                
-                // A[] * B[i,j] = C[i,j]
-                // ...
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Multiplication){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // Tensorstufe : m + n - 2
-                // freie Indices : [i_1 ... i_{m-1}, j_2 ... j_n] >> nur k wird summiert
-                member0.notatedIndices = member0.getUniqueChildIndices();
-                member0.tensorOrder = member0.notatedIndices.size();
+                member0.mulAssign(member1);
         },
         {});
 
-        // Skalar/Dot Product
-        // Operanden können unterschiedliche TensorStufen haben
-        // lhs : Stufe m, rhs : Stufe n
-        // IndexNotation: A[i_1 ...i_{m-1},k] * B[k, j_2 ... j_n] = C[i_1 ... i_{m-1}, j_2 ... j_n]
-        // Ergebnis:
-        // Tensorstufe : m + n - 2
-        // freie Indices : [i_1 ... i_{m-1}, j_2 ... j_n] >> nur k wird summiert
         registerFunction("__dotProductAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__dotProductAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -350,133 +969,10 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                // die hintersten beiden Childs sind die Operanden
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder > 0 && processedMember1.tensorOrder > 0,
-                    "Skalarproduktbildung mit skalaren Operanden funktioniert nicht", );
-                
-                // A[i_1 ...i_{m-1},k] * B[k, j_2 ... j_n] = C[i_1 ... i_{m-1}, j_2 ... j_n]
-                processedMember1.replaceIndex(processedMember1.notatedIndices[0], processedMember0.notatedIndices.back());
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Multiplication){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // Tensorstufe : m + n - 2
-                // freie Indices : [i_1 ... i_{m-1}, j_2 ... j_n] >> nur k wird summiert
-                member0.notatedIndices = member0.getUniqueChildIndices();
-                member0.tensorOrder = member0.notatedIndices.size();
+                member0.dotProductAssign(member1);
         },
         {});
 
-        // Dyadisches Product
-        // Operanden können unterschiedliche TensorStufen haben
-        // lhs : Stufe m, rhs : Stufe n
-        // IndexNotation: A[i_1 ... i_m] (x) B[j_1 ... j_n] = C[i_1 ... i_m, j_1 ... j_n]
-        // Ergebnis:
-        // Tensorstufe : m + n
-        // freie Indices : [i_1 ... i_m, j_1 ... j_n] >> nichts wird summiert
-        registerFunction("__dyadProductAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "__dyadProductAssign__", __numArgs__ = 2](FREG_ARGS){
-
-                // Asserts
-                ASSERT_IS_NO_MEMBER_FUNCTION;
-                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-                PREPARE_RETURNS;
-
-                // Returns
-                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 1);
-
-                IndexNotatedTensorExpression& member0 = arg0->getMember();
-                IndexNotatedTensorExpression& member1 = arg1->getMember();
-
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                // die hintersten beiden Childs sind die Operanden
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder > 0 && processedMember1.tensorOrder > 0,
-                    "Skalarproduktbildung mit skalaren Operanden funktioniert nicht", );
-                
-                // A[i_1 ... i_m] (x) B[j_1 ... j_n] = C[i_1 ... i_m, j_1 ... j_n]
-                // keine Änderung >> Indices bleiben unverändert >> alle singulär
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Multiplication){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // Tensorstufe : m + n
-                // freie Indices : [all]
-                member0.notatedIndices = member0.getUniqueChildIndices();
-                member0.tensorOrder = member0.notatedIndices.size();
-        },
-        {});
-
-        // Kreuz Product
-        // Bedingungen : Operanden müssen beide TensorStufe 1 haben (>> Vectoren)
-        // lhs : Stufe 1, rhs : Stufe 1
-        // Indexnotation : a[i] x b[j] = e[z,i, j] a[i] b[j]
-        // Indices bleiben aber civitapermutations Symbol wird anmultipliziert
-        // Ergebnis:
-        // Tensorstufe : 1
-        // freie Indices : [z] >> nur i und j werden summiert
         registerFunction("__crossProductAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__crossProductAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -491,68 +987,12 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                // die hintersten beiden Childs sind die Operanden
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder == 1 && processedMember1.tensorOrder == 1,
-                    "Kreuzprodukt ist nur für vektorielle Operanden definiert",);
-                
-                // a[i] x b[j] = e[z,i, j] a[i] b[j]
-                IndexNotatedTensorExpression hodgeStar("epsilon", 3);
-                hodgeStar.notatedIndices.reserve(3);
-                hodgeStar.notatedIndices = {IndexNotatedTensorExpression::NotationIndexCounter++, processedMember0.notatedIndices.back(), processedMember1.notatedIndices.back()};
-
-                member0.children.emplace_back(std::move(hodgeStar));
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Multiplication){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // Tensorstufe : m + n
-                // freie Indices : [all]
-                member0.notatedIndices = member0.getUniqueChildIndices();
-                member0.tensorOrder = member0.notatedIndices.size();
+                member0.crossProductAssign(member1);
         },
         {});
 
-        // Doppelte Überschiebung
-        // Bedingungen : beide Tensoren müssen mindestens Stufe 2 haben
-        // lhs : Stufe m, rhs : Stufe n
-        // Indexnotation : A[i_1, ..., i_n, k, l] : B[o, p, j_1, ..., j_n] = A[i_1, ..., i_n, k, l] B[k, l, j_1, ..., j_n]
-        // Ergebnis:
-        // Tensorstufe : m + n - 2
-        // freie Indices : [i_1, ..., i_n, j_1, ..., j_n] >> nur k und l werden summiert
-        registerFunction("__crossingDoubleContractionAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "__crossingDoubleContractionAssign__", __numArgs__ = 2](FREG_ARGS){
+        registerFunction("__dyadProductAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__dyadProductAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -565,65 +1005,10 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                // die hintersten beiden Childs sind die Operanden
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder >= 2 && processedMember1.tensorOrder >= 2,
-                    "Für doppelte Überschiebung müssen beide Tensoren mindestens zweiter Stufe sein",);
-                
-                // A[i_1, ..., i_n, k, l] : B[o, p, j_1, ..., j_n] = A[i_1, ..., i_n, k, l] B[k, l, j_1, ..., j_n]
-                // >> letze zwei Indices von member0 und erste zwei Indices von member1 werden ersetzt
-                processedMember1.replaceIndices(
-                    {processedMember1.notatedIndices[0], processedMember1.notatedIndices[1]},
-                    {processedMember0.notatedIndices[processedMember0.notatedIndices.size() - 2],
-                        processedMember0.notatedIndices[processedMember0.notatedIndices.size() - 1]});
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Multiplication){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // Tensorstufe : m + n - 4
-                member0.notatedIndices = member0.getUniqueChildIndices();
-                member0.tensorOrder = member0.notatedIndices.size();
+                member0.dyadProductAssign(member1);
         },
         {});
 
-        // Doppelte Überschiebung
-        // Bedingungen : beide Tensoren müssen mindestens Stufe 2 haben
-        // lhs : Stufe m, rhs : Stufe n
-        // Indexnotation : A[i_1, ..., i_n, k, l] .. B[o, p, j_1, ..., j_n] = A[i_1, ..., i_n, k, l] B[l, k, j_1, ..., j_n]
-        // Ergebnis:
-        // Tensorstufe : m + n - 2
-        // freie Indices : [i_1, ..., i_n, j_1, ..., j_n] >> nur k und l werden summiert
         registerFunction("__mirroringDoubleContractionAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__mirroringDoubleContractionAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -638,65 +1023,12 @@ namespace types{
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Multiplication){
-
-                    moveSelfIntoFirstChild(arg0->getMember());
-
-                    //
-                    arg0->getMember().Relation = TkType::Operator;
-                    arg0->getMember().Operator = IndexNotationOperator::Multiplication;
-                }
-                
-                //
-                member0.children.emplace_back(member1);
-
-                // die hintersten beiden Childs sind die Operanden
-                IndexNotatedTensorExpression& processedMember0 =
-                    member0.children.size() == 2 ? member0.children[member0.children.size() - 2] : member0;
-                IndexNotatedTensorExpression& processedMember1 = member0.children[member0.children.size() - 1];
-
-                //
-                if(processedMember0.Relation == TkType::Argument) processedMember0.fillIndices();
-                if(processedMember1.Relation == TkType::Argument) processedMember1.fillIndices();
-
-                //
-                RETURNING_ASSERT(processedMember0.tensorOrder >= 2 && processedMember1.tensorOrder >= 2,
-                    "Für doppelte Überschiebung müssen beide Tensoren mindestens zweiter Stufe sein",);
-                
-                // A[i_1, ..., i_n, k, l] .. B[o, p, j_1, ..., j_n] = A[i_1, ..., i_n, k, l] B[l, k, j_1, ..., j_n]
-                // >> letze zwei Indices von member0 und erste zwei Indices von member1 werden ersetzt (vertauscht)
-                processedMember1.replaceIndices(
-                    {processedMember1.notatedIndices[0], processedMember1.notatedIndices[1]},
-                    {processedMember0.notatedIndices[processedMember0.notatedIndices.size() - 1],
-                        processedMember0.notatedIndices[processedMember0.notatedIndices.size() - 2]});
-
-                // Aufgrund von Assoziaitivität
-                if(processedMember1.Relation == TkType::Operator &&
-                   processedMember1.Operator == IndexNotationOperator::Multiplication){
-
-                    IndexNotatedTensorExpression tmp = std::move(processedMember1);
-                    member0.children.pop_back();
-
-                    member0.children.insert(
-                        member0.children.end(),
-                        std::make_move_iterator(tmp.children.begin()),
-                        std::make_move_iterator(tmp.children.end())
-                    );
-                }
-
-                // Tensorstufe : m + n - 4
-                member0.notatedIndices = member0.getUniqueChildIndices();
-                member0.tensorOrder = member0.notatedIndices.size();
+                member0.mirroringDoubleContractionAssign(member1);
         },
         {});
 
-        // absolut trace Funktion
-        // Bedingung : Tensor muss mindestens Stufe 2 haben
-        // Funktionsweise : Indices der Expression node zb [i, j, k, l] werden so ersetzt, dass die
-        // indices [2] , ..., [n] mit dem ersten kontrahiert werden also hier [j,k,l] mit dem ersten also i ersetzt
-        // >> absolutTrace(node[i,j,k,l]) = node[i,i,i,i]
-        registerFunction("__absolutTrace__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "__absolutTrace__", __numArgs__ = 1](FREG_ARGS){
+        registerFunction("__crossingDoubleContractionAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__crossingDoubleContractionAssign__", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -704,88 +1036,82 @@ namespace types{
                 PREPARE_RETURNS;
 
                 // Returns
-                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 1);
 
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
-                IndexNotatedTensorExpression& return0 = ret0->getMember();
-            
-                RETURNING_ASSERT(member0.tensorOrder >= 2,
-                    "Absolute Spur nur für Tensoren mindestens zweiter Stufe definiert", );
+                IndexNotatedTensorExpression& member1 = arg1->getMember();
 
-                // copy
-                return0.children.emplace_back(member0);
+                member0.crossingDoubleContractionAssign(member1);
+        },
+        {});
 
-                //
-                if(return0.children.back().Relation == TkType::Argument) return0.children.back().fillIndices();
+        //
+        registerFunction("__inverseAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__inverseAssign__", __numArgs__ = 1](FREG_ARGS){
 
-                //
-                return0.Relation = TkType::Container;
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
 
-                //
-                for(size_t i = 1; i < return0.children.back().notatedIndices.size(); ++i){
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
 
-                    return0.children.back().replaceIndex(return0.children.back().notatedIndices[i], return0.children.back().notatedIndices[0]);
-                }
-
-                return0.notatedIndices = return0.getUniqueChildIndices();
-                return0.tensorOrder = return0.notatedIndices.size();
+                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                ret0->getMember().inverseAssign();
         },
         {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
 
-        // trace Funktion
-        // Bedingung : Tensor muss mindestens Stufe 2 haben
-        // Funktionsweise : Indices der Expression node zb [i, j, k, l] werden so ersetzt, dass die
-        // indices [2] , ..., [n] mit dem ersten kontrahiert werden also hier [j,k,l] mit dem ersten also i ersetzt
-        // >> absolutTrace(node[i,j,k,l]) = node[i,i,i,i]
-        registerFunction("__trace__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
-            [__functionLabel__ = "__trace__", __numArgs__ = 2](FREG_ARGS){
+        //
+        registerFunction("__transposeAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__transposeAssign__", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
                 PREPARE_RETURNS;
 
-                // Returns
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
                 GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                ret0->getMember().transposeAssign();
+        },
+        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("__traceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__traceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                ret0->getMember().traceAssign();
+        },
+        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+
+        registerFunction("__traceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__traceAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
                 GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
-
-                IndexNotatedTensorExpression& member0 = arg0->getMember();
-                int& contractNumIndices = arg1->getMember();
-                IndexNotatedTensorExpression& return0 = ret0->getMember();
-            
-                RETURNING_ASSERT(member0.tensorOrder >= 2,
-                    "Absolute Spur nur für Tensoren mindestens zweiter Stufe definiert", );
-
-                RETURNING_ASSERT(member0.tensorOrder > static_cast<size_t>(contractNumIndices),
-                    "Tensorstufe muss größer sein als Anzahl kontraktierter Indices", );
-
-                // copy
-                return0.children.emplace_back(member0);
-
-                //
-                if(return0.children.back().Relation == TkType::Argument) return0.children.back().fillIndices();
-
-                //
-                return0.Relation = TkType::Container;
-
-                //
-                for(size_t i = 1; i < contractNumIndices + 1; ++i){
-
-                    return0.children.back().replaceIndex(return0.children.back().notatedIndices[i], return0.children.back().notatedIndices[0]);
-                }
-
-                return0.notatedIndices = return0.getUniqueChildIndices();
-                return0.tensorOrder = return0.notatedIndices.size();
+                arg0->getMember().traceAssign(arg1->getMember());
         },
-        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+        {});
 
-        // trace Funktion
-        // Bedingung : Tensor muss mindestens Stufe 2 haben
-        // Funktionsweise : Indices der Expression node zb [i, j, k, l] werden so ersetzt, dass die
-        // indices [2] , ..., [n] mit dem ersten kontrahiert werden also hier [j,k,l] mit dem ersten also i ersetzt
-        // >> absolutTrace(node[i,j,k,l]) = node[i,i,i,i]
-        registerFunction("__trace__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "__trace__", __numArgs__ = 1](FREG_ARGS){
+        //
+        registerFunction("__inverseInplaceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__inverseInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -793,46 +1119,16 @@ namespace types{
                 PREPARE_RETURNS;
 
                 // Returns
-                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
                 GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
 
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
-                int contractNumIndices = 1;
-                IndexNotatedTensorExpression& return0 = ret0->getMember();
-            
-                RETURNING_ASSERT(member0.tensorOrder >= 2,
-                    "Absolute Spur nur für Tensoren mindestens zweiter Stufe definiert", );
-
-                RETURNING_ASSERT(member0.tensorOrder > static_cast<size_t>(contractNumIndices),
-                    "Tensorstufe muss größer sein als Anzahl kontraktierter Indices", );
-
-                // copy
-                return0.children.emplace_back(member0);
-
-                //
-                if(return0.children.back().Relation == TkType::Argument) return0.children.back().fillIndices();
-
-                //
-                return0.Relation = TkType::Container;
-
-                //
-                for(size_t i = 1; i < contractNumIndices + 1; ++i){
-
-                    return0.children.back().replaceIndex(return0.children.back().notatedIndices[i], return0.children.back().notatedIndices[0]);
-                }
-
-                return0.notatedIndices = return0.getUniqueChildIndices();
-                return0.tensorOrder = return0.notatedIndices.size();
+                member0.inverseAssign();
         },
-        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+        {});
 
-        // transpose >> über __transpose__ oder "'" Operator (ruft transpose auf)
-
-        // transpose Funktion
-        // Bedingung : 
-        // Funktionsweise : Indices der Expression node zb [i, j, k, l] werden umgekehrt zu [l, k, j, i]
-        registerFunction("__transpose__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "__transpose__", __numArgs__ = 1](FREG_ARGS){
+        //
+        registerFunction("__transposeInplaceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__transposeInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -840,22 +1136,29 @@ namespace types{
                 PREPARE_RETURNS;
 
                 // Returns
-                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
                 GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
 
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
-                IndexNotatedTensorExpression& return0 = ret0->getMember();
-            
-                // copy
-                return0 = member0;
-
-                //
-                if(return0.Relation == TkType::Argument) return0.fillIndices();
-
-                //
-                std::reverse(return0.notatedIndices.begin(), return0.notatedIndices.end());  // dreht den Vektor um
+                member0.transposeAssign();
         },
-        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+        {});
+
+        //
+        registerFunction("__traceInplaceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__traceInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+
+                IndexNotatedTensorExpression& member0 = arg0->getMember();
+                member0.traceAssign();
+        },
+        {});
 
         return true;
     }
