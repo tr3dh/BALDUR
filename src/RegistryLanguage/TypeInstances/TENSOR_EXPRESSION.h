@@ -22,6 +22,11 @@ enum class IndexNotationOperator{
 
 extern std::map<IndexNotationOperator, std::string> IndexNotationOperatorStrings;
 
+enum class TensorExpressionOperator;
+class IndexNotatedTensorExpression;
+
+extern std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const IndexNotatedTensorExpression&)> operatorFunctions;
+
 enum class TensorExpressionOperator{
     
     None,

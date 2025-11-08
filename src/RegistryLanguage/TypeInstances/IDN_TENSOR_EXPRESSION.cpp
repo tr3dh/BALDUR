@@ -673,7 +673,7 @@ void IndexNotatedTensorExpression::traceAssign(){
 
     // node erneut Aufsetzen
     Relation = TkType::Container;
-    Operator = IndexNotationOperator::Inversion;
+    Operator = IndexNotationOperator::Arbitary;
     notatedIndices = getUniqueChildIndices();
     tensorOrder = notatedIndices.size();
 }
@@ -836,6 +836,80 @@ std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& e
     return os;
 }
 
+std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const IndexNotatedTensorExpression&)> operatorFunctions = {
+
+    {TensorExpressionOperator::Addition, &IndexNotatedTensorExpression::addAssign},
+    {TensorExpressionOperator::Subtraction, &IndexNotatedTensorExpression::subAssign},
+    {TensorExpressionOperator::Multiplication, &IndexNotatedTensorExpression::mulAssign},
+    {TensorExpressionOperator::DotProduct, &IndexNotatedTensorExpression::dotProductAssign},
+    {TensorExpressionOperator::CrossProduct, &IndexNotatedTensorExpression::crossProductAssign},
+    {TensorExpressionOperator::DyadicProduct, &IndexNotatedTensorExpression::dyadProductAssign},
+    {TensorExpressionOperator::MirroringDoubleContraction, &IndexNotatedTensorExpression::mirroringDoubleContractionAssign},
+    {TensorExpressionOperator::CrossingDoubleContraction, &IndexNotatedTensorExpression::crossingDoubleContractionAssign},
+};
+
+IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr, size_t depth = 0){
+
+    IndexNotatedTensorExpression res;
+
+    switch(expr.Relation){
+        
+        case (TkType::Argument):{
+            
+            res = IndexNotatedTensorExpression(expr.label, expr.tensorOrder);
+
+            if(depth == 0){
+                res.fillIndices();
+            }
+
+            break;
+        }
+        case (TkType::Operator):{
+
+            res = convertToIndexNotation(expr.children[0]);
+
+            if(operatorFunctions.contains(expr.Operator)){
+
+                RETURNING_ASSERT(expr.children.size() > 1, "...", res);
+
+                for(size_t idx = 1; idx < expr.children.size(); idx++){
+
+                    (res.*operatorFunctions[expr.Operator])(convertToIndexNotation(expr.children[idx], depth + 1));
+                }
+            }
+            else if(expr.Operator == TensorExpressionOperator::Inversion){
+
+                res.inverseAssign(); 
+            }
+            else if(expr.Operator == TensorExpressionOperator::Transposition){
+
+                res.transposeAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Trace && expr.tensorOrder == 0){
+
+                res.traceAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Trace){
+                
+                res.traceAssign(expr.children.begin()->tensorOrder - expr.tensorOrder - 1);
+            }
+            else{
+
+                RETURNING_ASSERT(TRIGGER_ASSERT,
+                    "Für Operator " + std::string(magic_enum::enum_name(expr.Operator)) + " ist keine verknüpfende Funktion hinterlegt", res);
+            }
+
+            break;
+        }
+        default:{
+
+            break;
+        }
+    }
+
+    return res;
+}
+
 namespace types{
 
     int INDEX_NOTATED_TENSOR_EXPRESSION::setUpClass(){
@@ -879,6 +953,24 @@ namespace types{
 
                 // schreiben in returns
                 ret0->getMember() = IndexNotatedTensorExpression(arg0->getMember(), arg1->getMember());
+        },
+        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("toIDN", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "toIDN", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                GET_ARG(TENSOR_EXPRESSION, 0);
+
+                //
+                ret0->getMember() = convertToIndexNotation(arg0->getMember());
         },
         {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
 

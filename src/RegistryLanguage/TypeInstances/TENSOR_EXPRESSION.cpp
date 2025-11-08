@@ -281,7 +281,7 @@ void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& 
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 2;
+    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 4;
 }
 
 void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& other){
@@ -312,7 +312,7 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 2;
+    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 4;
 }
 
 void TensorExpression::transposeAssign(){
@@ -371,7 +371,7 @@ void TensorExpression::traceAssign(int contractIndices){
     // node erneut Aufsetzen
     Relation = TkType::Operator;
     Operator = operation;
-    tensorOrder = children.back().tensorOrder - contractIndices;
+    tensorOrder = children.back().tensorOrder - (contractIndices + 1);
 }
 
 //
