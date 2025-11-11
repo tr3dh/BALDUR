@@ -6,11 +6,13 @@ std::vector<std::string> g_UsedOperators = {
     "=", "<<", "<>", "<-", "<+",                    // Memory Management Semantik
     "+=", "-=", "*=", "/=", "^=",                   // Ops für 2 Arg Operationen
     ".=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
+    "\\diff=",
     "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen 
     "&&", "!&", "||", "!|", "x|", "!x|",            // ...
     "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
     "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
-    ".", "..", ":", "\\x", "\\(x)", "\\(.)", "°=",  // für verkettung über Matrix ops
+    ".", "..", ":", "\\x", "\\(x)", "°=",           // für verkettung über Matrix ops
+    "\\diff",
     "++", "--", "!",                                // Single Argument Ops
     KOMMA,                                          //
     "~", "'", "°",                                  // Ops für Index Notation
@@ -75,6 +77,7 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"\\x=", "__crossProductAssign__"},
     {"\\(x)=", "__dyadProductAssign__"},
     {"°=", "__traceAssign__"},
+    {"\\diff=", "__diffAssign__"},
 };
 
 // Map der Form Operator | (Funktionslabel, verknüpfende Operation)
@@ -115,6 +118,7 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {"\\x", "__crossProductAssign__"},
     {"\\(x)", "__dyadProductAssign__"},
     {"°", "__traceAssign__"},
+    {"\\diff", "__diffAssign__"},
 };
 
 //

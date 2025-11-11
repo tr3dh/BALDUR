@@ -81,19 +81,14 @@ decl runRecursiveDemo(){
 decl main(){
     
     void [tmp, sc] = tExpr("sigma", 4), tExpr("scalar", 0)
+    
+    log((tmp .. tmp . tmp))
+    log(toIDN((tmp .. tmp . tmp)))
 
-    // log([tmp, tmp] ° [1,2])
-    // log(tmp * sc * sc)
+    log((tmp .. tmp . tmp) ° 2)
+    log(toIDN((tmp .. tmp . tmp) ° 2))
 
-    tmp = (tmp .. tmp . tmp) ° 2
-
-    void [a, b, c] = tIDN("A", 2), tIDN("B", 6), tIDN("C", 0)
-    log(b ° 1)
-    log(b ° 1 ° 1 ° 1 + c)
-    log(b °)
-
-    log(tmp)
-    log(toIDN(tmp))
+    log((tmp \diff sc) + tmp)
 
     return 0
 }

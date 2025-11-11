@@ -17,7 +17,11 @@ enum class IndexNotationOperator{
     Multiplication,
     Transposition,
     Inversion,
-    Arbitary
+    Trace,
+
+    Diff,
+
+    Arbitary,
 };
 
 extern std::map<IndexNotationOperator, std::string> IndexNotationOperatorStrings;
@@ -44,6 +48,10 @@ enum class TensorExpressionOperator{
     Inversion,
     Transposition,
     Trace,
+
+    Diff,
+
+    Arbitary,
 };
 
 extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
@@ -64,6 +72,8 @@ struct TensorExpression{
     // Konstruktion einer Arg node
     TensorExpression(const std::string& labelIn, int tensorOrderIn);
 
+    bool operator==(const TensorExpression& other);
+
     //
     void moveSelfIntoFirstChild();
 
@@ -78,6 +88,9 @@ struct TensorExpression{
     void crossingDoubleContractionAssign(const TensorExpression& other);
     void transposeAssign();
     void inverseAssign();
+
+    //
+    void diffAssign(const TensorExpression& other);
 
     void traceAssign(int contractIndices);
     void traceAssign();

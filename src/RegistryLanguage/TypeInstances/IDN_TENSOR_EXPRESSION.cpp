@@ -673,7 +673,7 @@ void IndexNotatedTensorExpression::traceAssign(){
 
     // node erneut Aufsetzen
     Relation = TkType::Container;
-    Operator = IndexNotationOperator::Arbitary;
+    Operator = IndexNotationOperator::Trace;
     notatedIndices = getUniqueChildIndices();
     tensorOrder = notatedIndices.size();
 }
@@ -703,7 +703,7 @@ void IndexNotatedTensorExpression::traceAssign(int contractIndices){
 
     // node erneut Aufsetzen
     Relation = TkType::Container;
-    Operator = IndexNotationOperator::Arbitary;
+    Operator = IndexNotationOperator::Trace;
     notatedIndices = getUniqueChildIndices();
     tensorOrder = notatedIndices.size();
 }

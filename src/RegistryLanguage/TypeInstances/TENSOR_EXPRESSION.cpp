@@ -374,6 +374,61 @@ void TensorExpression::traceAssign(int contractIndices){
     tensorOrder = children.back().tensorOrder - (contractIndices + 1);
 }
 
+bool TensorExpression::operator==(const TensorExpression& other){
+
+    bool equal = true;
+
+    equal &= Relation == other.Relation;
+    equal &= Operator == other.Operator;
+    equal &= label == other.label;
+    equal &= tensorOrder == other.tensorOrder;
+
+    equal &= children.size() == other.children.size();
+
+    if(!equal){
+
+        return equal;
+    }
+
+    for(size_t childIdx = 0; childIdx < children.size(); childIdx++){
+        
+        equal &= children[childIdx] == other.children[childIdx]; 
+    }
+
+    return equal;
+}
+
+void TensorExpression::diffAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Diff;
+
+    //
+    bool copySelf = false;
+
+    //
+    if(*this == other){
+
+        *this = TensorExpression("Identity", this->tensorOrder);
+    }
+    else if(Relation == TkType::Argument && other.Relation == TkType::Argument){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+
+        //
+        children.emplace_back(copySelf ? children.back() : other);
+
+        //
+        tensorOrder = children.begin()->tensorOrder + children.back().tensorOrder;
+    }
+}
+
 //
 std::string TensorExpression::toString(size_t depth) const{
 
@@ -394,7 +449,8 @@ std::string TensorExpression::toString(size_t depth) const{
         res += "[" + std::to_string(tensorOrder) + "]";
     }
     // durch Operator verknüpfte Child nodes
-    else if(Relation == TkType::Operator && Operator != TensorExpressionOperator::None && children.size() > 1){
+    else if(Relation == TkType::Operator && Operator != TensorExpressionOperator::None && children.size() > 1 &&
+            TensorExpressionOperatorStrings.contains(Operator)){
 
         //
         // res += "(";
@@ -411,9 +467,14 @@ std::string TensorExpression::toString(size_t depth) const{
         // res += ")";
         res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
     }
+    // durch Operator verknüpfte Child nodes
+    else if(Relation == TkType::Operator && Operator == TensorExpressionOperator::Diff && children.size() == 2){
+
+        res += "diff(" + children[0].toString(depth+1) + " / " + children[1].toString(depth+1) + ")";        
+    }
     else{
 
-        RETURNING_ASSERT(TRIGGER_ASSERT, "Invalides TensorExpressionformat kann nicht ausgegeben werden", "");
+        res += "Invalid Expr";
     }
 
     return res;
@@ -728,6 +789,43 @@ namespace types{
 
                 TensorExpression& member0 = arg0->getMember();
                 member0.traceAssign();
+        },
+        {});
+
+        //
+        registerFunction("diff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "diff", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                arg0->getMember().diffAssign(arg1->getMember());
+                ret0->getMember() = arg0->getMember();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("__diffAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__diffAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.diffAssign(member1);
         },
         {});
 
