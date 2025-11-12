@@ -382,13 +382,9 @@ bool TensorExpression::operator==(const TensorExpression& other){
     equal &= Operator == other.Operator;
     equal &= label == other.label;
     equal &= tensorOrder == other.tensorOrder;
-
     equal &= children.size() == other.children.size();
 
-    if(!equal){
-
-        return equal;
-    }
+    if(!equal){ return equal; }
 
     for(size_t childIdx = 0; childIdx < children.size(); childIdx++){
         
@@ -411,7 +407,8 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
         *this = TensorExpression("Identity", this->tensorOrder);
     }
-    else if(Relation == TkType::Argument && other.Relation == TkType::Argument){
+    else if((Relation == TkType::Argument && other.Relation == TkType::Argument) ||
+            Relation == TkType::Operator && Operator == TensorExpressionOperator::Diff){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -426,6 +423,35 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
         //
         tensorOrder = children.begin()->tensorOrder + children.back().tensorOrder;
+    }
+    else if(Relation == TkType::Operator){
+     
+        if(Operator == TensorExpressionOperator::Addition){
+
+            std::vector tmpChilds = std::move(children);
+
+            tmpChilds[0].diffAssign(other);
+            *this = std::move(tmpChilds[0]);
+
+            for(size_t i = 1; i < tmpChilds.size(); i++){
+
+                tmpChilds[i].diffAssign(other);
+                addAssign(std::move(tmpChilds[i]));
+            }
+        }
+        else if(Operator == TensorExpressionOperator::Subtraction){
+
+            std::vector tmpChilds = std::move(children);
+
+            tmpChilds[0].diffAssign(other);
+            *this = std::move(tmpChilds[0]);
+
+            for(size_t i = 1; i < tmpChilds.size(); i++){
+
+                tmpChilds[i].diffAssign(other);
+                subAssign(std::move(tmpChilds[i]));
+            }
+        }
     }
 }
 
@@ -470,7 +496,8 @@ std::string TensorExpression::toString(size_t depth) const{
     // durch Operator verknüpfte Child nodes
     else if(Relation == TkType::Operator && Operator == TensorExpressionOperator::Diff && children.size() == 2){
 
-        res += "diff(" + children[0].toString(depth+1) + " / " + children[1].toString(depth+1) + ")";        
+        res += "diff(" + children[0].toString(depth+1) + " / " + children[1].toString(depth+1) + ")";   
+        res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";     
     }
     else{
 
