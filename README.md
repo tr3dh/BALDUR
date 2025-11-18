@@ -3,7 +3,11 @@
 🌐 <a href="./README.md">English</a> | <a href="./README.de.md">Deutsch</a>
 </p>
 
-# TensorProc
+# ALBERICH
+Assembling Library for Building Embedded Runtime and Independent Interpreters for Controlling High Performance C Backends
+
+# BALDUR
+Basic Algebraic Language for Deriving underscored Tensor Representations
 
 # 🤝 Many thanks
 

@@ -45,6 +45,7 @@ enum class TensorExpressionOperator{
     CrossingDoubleContraction,
     MirroringDoubleContraction,
     
+    Negation,
     Inversion,
     Transposition,
     Trace,
@@ -54,7 +55,10 @@ enum class TensorExpressionOperator{
     Arbitary,
 };
 
+struct TensorExpression;
+
 extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
+extern std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpression&)> operatorMemberFunctions;
 
 struct TensorExpression{
 
@@ -88,6 +92,9 @@ struct TensorExpression{
     void crossingDoubleContractionAssign(const TensorExpression& other);
     void transposeAssign();
     void inverseAssign();
+
+    //
+    std::vector<std::string> getRawLabels();
 
     //
     void diffAssign(const TensorExpression& other);

@@ -3,7 +3,7 @@
 🌐 <a href="./README.md">English</a> | <a href="./README.de.md">Deutsch</a>
 </p>
 
-# TensorProc
+# BALDUR
 
 # 🤝 Danksagung
 

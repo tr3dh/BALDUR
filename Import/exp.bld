@@ -82,13 +82,7 @@ decl main(){
     
     void [tmp, sc, tp2] = tExpr("sigma", 4), tExpr("scalar", 0), tExpr("tmp2", 4)
     
-    log((tmp .. tmp . tmp))
-    log(toIDN((tmp .. tmp . tmp)))
-
-    log((tmp .. tmp . tmp) ° 2)
-    log(toIDN((tmp .. tmp . tmp) ° 2))
-
-    log((tp2 + (tp2 \diff sc) + tp2) \diff tmp)
+    log(diff(diff(tmp : tmp, tp2), tp2))
 
     return 0
 }

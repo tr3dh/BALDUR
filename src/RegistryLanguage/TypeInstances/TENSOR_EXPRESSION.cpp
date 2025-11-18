@@ -11,12 +11,21 @@ std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings 
     {TensorExpressionOperator::DotProduct, "."},
     {TensorExpressionOperator::CrossProduct, "x"},
     {TensorExpressionOperator::DyadicProduct, "(x)"},
-    {TensorExpressionOperator::CrossingDoubleContraction, ".."},
-    {TensorExpressionOperator::MirroringDoubleContraction, ":"},
+    {TensorExpressionOperator::CrossingDoubleContraction, ":"},
+    {TensorExpressionOperator::MirroringDoubleContraction, ".."},
     
     {TensorExpressionOperator::Inversion, "^-1"},
     {TensorExpressionOperator::Transposition, "^t"},
     {TensorExpressionOperator::Trace, "^//"},
+};
+
+std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpression&)> operatorMemberFunctions = {
+
+    {TensorExpressionOperator::DotProduct, &TensorExpression::dotProductAssign},
+    {TensorExpressionOperator::CrossProduct, &TensorExpression::crossProductAssign},
+    {TensorExpressionOperator::DyadicProduct, &TensorExpression::dyadProductAssign},
+    {TensorExpressionOperator::CrossingDoubleContraction, &TensorExpression::crossingDoubleContractionAssign},
+    {TensorExpressionOperator::MirroringDoubleContraction, &TensorExpression::mirroringDoubleContractionAssign},
 };
 
 void moveSelfIntoFirstChild(TensorExpression& node){
@@ -42,6 +51,25 @@ void TensorExpression::moveSelfIntoFirstChild(){
 
     *this = TensorExpression();
     children.emplace_back(std::move(tmp));
+}
+
+std::vector<std::string> TensorExpression::getRawLabels(){
+
+    std::vector<std::string> labels, res;
+
+    if(Relation == TkType::Argument){
+        
+        res.emplace_back(label);
+    }
+    else{
+        for(auto& child : children){
+
+            labels = child.getRawLabels();
+            res.insert(res.end(), labels.begin(), labels.end());
+        }
+    }
+
+    return res;
 }
 
 // Operatoren
@@ -451,6 +479,50 @@ void TensorExpression::diffAssign(const TensorExpression& other){
                 tmpChilds[i].diffAssign(other);
                 subAssign(std::move(tmpChilds[i]));
             }
+        }
+        // aus diff(dotProduct(a, b, c, ...), x) wird
+        // >> sum(dotProduct(diff(a,x), b, c), dotProduct(a, diff(b, x), c), ...)
+        //  || Operator == TensorExpressionOperator::DyadicProduct ||
+        //         Operator == TensorExpressionOperator::CrossProduct || Operator == TensorExpressionOperator::MirroringDoubleContraction ||
+        //         Operator == TensorExpressionOperator::CrossingDoubleContraction
+        else if(operatorMemberFunctions.contains(Operator)){
+
+            TensorExpression self = *this;
+            std::vector<TensorExpression> tmpChilds = self.children;
+
+            TensorExpression result;
+            bool firstTerm = true;
+
+            for (size_t i = 0; i < tmpChilds.size(); i++) {
+
+                // Start mit dem ersten Kind
+                TensorExpression term = tmpChilds[0];
+
+                if (i == 0) {
+                    term.diffAssign(other);
+                }
+
+                // Die restlichen Kinder anhängen
+                for (size_t j = 1; j < tmpChilds.size(); j++) {
+
+                    if (j == i) {
+                        TensorExpression tmp = tmpChilds[j];
+                        tmp.diffAssign(other);
+                        (term.*operatorMemberFunctions[Operator])(tmp);
+                    } else {
+                        (term.*operatorMemberFunctions[Operator])(tmpChilds[j]);
+                    }
+                }
+
+                if (firstTerm) {
+                    result = std::move(term);
+                    firstTerm = false;
+                } else {
+                    result.addAssign(term);
+                }
+            }
+
+            *this = std::move(result);
         }
     }
 }

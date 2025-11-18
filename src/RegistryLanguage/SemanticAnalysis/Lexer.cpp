@@ -93,6 +93,12 @@ void getOperatorIdx(const std::string& expression){
                 }
             }
 
+            if(opFound && (std::isalpha(op.back()) || std::isdigit(op.back())) &&
+               exprIdx + op.size() < expression.size() && !std::isspace(expression[exprIdx + op.size()])){
+                
+                opFound = false;
+            }
+
             if(opFound){
 
                 return;

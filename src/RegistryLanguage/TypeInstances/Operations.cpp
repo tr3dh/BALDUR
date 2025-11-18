@@ -17,7 +17,7 @@ std::vector<std::string> g_UsedOperators = {
     KOMMA,                                          //
     "~", "'", "°",                                  // Ops für Index Notation
     "^~", "^'", "^°",                               // Ops für Index Notation
-    "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
+    "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes                     
 };
 
 //
