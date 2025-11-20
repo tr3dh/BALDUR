@@ -9,7 +9,7 @@ struct Vector3{
         decl getA(){ return a }
         decl getB(){ return b }
 
-        decl printStatics(){ log(a, b) }
+        decl printStatics(){ slog(a, b) }
     }
     
     double[x,y,z]

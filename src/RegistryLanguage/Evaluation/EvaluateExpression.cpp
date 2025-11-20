@@ -1010,10 +1010,18 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             }
         }
         else if(node.children.size() == 3 && node.children[0].argument == "fetch" &&
-                node.children[1].argument == "script" && node.children[2].Relation == TkType::String){
+                node.children[1].argument == "script"){
 
-            std::string scriptPath = (fs::path(static_cast<types::STRING*>(scope.getVariable("__CWD__")->getData())->getMember()) / fs::path(node.children[2].argument + "." + g_languageScriptSuffix)).string();
-            prcResult = executeScript(scriptPath, &scope, ExecuteScriptAs::Include);
+            for(auto& child : evaluateExpression(node.children[2], scope, scope, context).evalResults){
+
+                RETURNING_ASSERT(child.getTypeIndex() == types::STRING::typeIndex, "Fetch Syntax erwartet String Inputs", {});
+
+                std::string scriptPath = (fs::path(static_cast<types::STRING*>(scope.getVariable("__CWD__")->getData())->getMember()) /
+                                            fs::path(static_cast<types::STRING*>(child.getData())->getMember() + "." + g_languageScriptSuffix)).string();
+
+                ProcessingResult incRes = executeScript(scriptPath, &scope, ExecuteScriptAs::Include);
+                prcResult.append(incRes);
+            }
         }
         else{
             

@@ -60,6 +60,9 @@ struct TensorExpression;
 extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
 extern std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpression&)> operatorMemberFunctions;
 
+extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs;
+extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates;
+
 struct TensorExpression{
 
     //
@@ -76,7 +79,7 @@ struct TensorExpression{
     // Konstruktion einer Arg node
     TensorExpression(const std::string& labelIn, int tensorOrderIn);
 
-    bool operator==(const TensorExpression& other);
+    bool operator==(const TensorExpression& other) const;
 
     //
     void moveSelfIntoFirstChild();
@@ -94,6 +97,9 @@ struct TensorExpression{
     void inverseAssign();
 
     //
+    void convertToTemplate();
+
+    //
     std::vector<std::string> getRawLabels();
 
     //
@@ -109,6 +115,8 @@ struct TensorExpression{
 };
 
 void moveSelfIntoFirstChild(TensorExpression& node);
+
+bool operator<(const TensorExpression& lhs, const TensorExpression& rhs);
 
 struct IndexNotatedTensorExpression{
 

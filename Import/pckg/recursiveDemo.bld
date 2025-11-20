@@ -21,17 +21,19 @@ decl fibonacci(int ref member){
 decl runRecursiveDemo(){
 
     // Fakultäten
+    slog(" ")
     for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
-        log("Faculty(", i, ") =", faculty(i))
+        slog("Faculty(", i, ") =", faculty(i))
     }
 
-    log(" ")
     // Fibonacci
+    slog(" ")
     for([int [i, numFibonacci] = 0,20], i < numFibonacci, i++){
-        log("Fibonacci[", i, "] :", fibonacci(i))
+        slog("Fibonacci[", i, "] :", fibonacci(i))
     }
 
-    log(" ")
-    log("faculty called :", g_facultyCalls, "times")
-    log("fibonacci called :", g_fibonacciCalls, "times")
+    // Log der Funktionsaufrufe
+    slog(" ")
+    slog("faculty called :", g_facultyCalls, "times")
+    slog("fibonacci called :", g_fibonacciCalls, "times")
 }

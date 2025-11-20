@@ -28,12 +28,45 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpres
     {TensorExpressionOperator::MirroringDoubleContraction, &TensorExpression::mirroringDoubleContractionAssign},
 };
 
+std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
+std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates = {};
+
 void moveSelfIntoFirstChild(TensorExpression& node){
 
     TensorExpression tmp = std::move(node);
 
     node = TensorExpression();
     node.children.emplace_back(std::move(tmp));
+}
+
+bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
+{
+    if (lhs.Relation != rhs.Relation)
+        return lhs.Relation < rhs.Relation;
+
+    if (lhs.Operator != rhs.Operator)
+        return lhs.Operator < rhs.Operator;
+
+    if (lhs.label != rhs.label)
+        return lhs.label < rhs.label;
+
+    if (lhs.tensorOrder != rhs.tensorOrder)
+        return lhs.tensorOrder < rhs.tensorOrder;
+
+    //
+    const auto& a = lhs.children;
+    const auto& b = rhs.children;
+
+    if (a.size() != b.size())
+        return a.size() < b.size();
+
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        if (a[i] == b[i]) continue;
+        return a[i] < b[i];
+    }
+
+    //
+    return false;
 }
 
 // Default Konstruktion
@@ -402,7 +435,7 @@ void TensorExpression::traceAssign(int contractIndices){
     tensorOrder = children.back().tensorOrder - (contractIndices + 1);
 }
 
-bool TensorExpression::operator==(const TensorExpression& other){
+bool TensorExpression::operator==(const TensorExpression& other) const {
 
     bool equal = true;
 
@@ -431,7 +464,12 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(*this == other){
+    if(tensorExpressionDiffs.contains(std::make_pair(*this, other))){
+
+        LOG << "Contains" << endl;
+        *this = tensorExpressionDiffs[std::make_pair(*this, other)];
+    }
+    else if(*this == other){
 
         *this = TensorExpression("Identity", this->tensorOrder);
     }
@@ -525,6 +563,11 @@ void TensorExpression::diffAssign(const TensorExpression& other){
             *this = std::move(result);
         }
     }
+}
+
+//
+void TensorExpression::convertToTemplate(){
+
 }
 
 //
@@ -925,6 +968,69 @@ namespace types{
                 TensorExpression& member1 = arg1->getMember();
 
                 member0.diffAssign(member1);
+        },
+        {});
+
+        // Operatoren
+        registerFunction("__equal__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__equal__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+               
+                //
+                returns.emplace_back();
+                returns[returns.size() - 1].constructRValueByObject(constructRegisteredType(functionReturnTypes[0]));
+
+                // Returns | Inputs
+                BOOL* ret0 = static_cast<BOOL*>(returns[returns.size()-1].getVariableRef().getData());
+
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                // schreiben in returns
+                ret0->getMember() = arg0->getMember() == arg1->getMember();
+        },
+        {BOOL::typeIndex});
+
+        //
+        registerFunction("setDiff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "setDiff", __numArgs__ = 3](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1); GET_ARG(TENSOR_EXPRESSION, 2);
+
+                TensorExpression& member0 = arg0->getMember(), member1 = arg1->getMember(), member2 = arg2->getMember();
+
+                RETURNING_ASSERT(tensorExpressionDiffs.try_emplace(std::make_pair(member0, member1), member2).second,
+                                 "Differential für gegebenes Tensorpaar bereits gesetzt",);
+        },
+        {});
+
+        //
+        registerFunction("setTemplateDiff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "setTemplateDiff", __numArgs__ = 3](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1); GET_ARG(TENSOR_EXPRESSION, 2);
+
+                TensorExpression& member0 = arg0->getMember(), member1 = arg1->getMember(), member2 = arg2->getMember();
+                member0.convertToTemplate();
+                member1.convertToTemplate();
+                member2.convertToTemplate();
+
+                RETURNING_ASSERT(tensorExpressionDiffTemplates.try_emplace(std::make_pair(member0, member1), member2).second,
+                                 "Differential für gegebenes Tensortemplatepaar bereits gesetzt",);
         },
         {});
 
