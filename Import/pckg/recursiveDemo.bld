@@ -1,0 +1,37 @@
+int [g_fibonacciCalls, g_facultyCalls]
+
+decl faculty(int ref member){
+    
+    g_facultyCalls++
+    if(member == 0 || member == 1){ 
+        return 1 
+    }
+    return [member * faculty(member - 1)]
+}
+
+decl fibonacci(int ref member){
+    
+    g_fibonacciCalls++
+    if(member <= 1){ 
+        return member 
+    }
+    return [fibonacci(member - 1) + fibonacci(member - 2)]
+}
+
+decl runRecursiveDemo(){
+
+    // Fakultäten
+    for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
+        log("Faculty(", i, ") =", faculty(i))
+    }
+
+    log(" ")
+    // Fibonacci
+    for([int [i, numFibonacci] = 0,20], i < numFibonacci, i++){
+        log("Fibonacci[", i, "] :", fibonacci(i))
+    }
+
+    log(" ")
+    log("faculty called :", g_facultyCalls, "times")
+    log("fibonacci called :", g_fibonacciCalls, "times")
+}

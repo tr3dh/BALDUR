@@ -3,16 +3,12 @@
 int main(){
 
     //
-    LOG << "ProcTestEnv exec Skript" << endl;
-
-    //
     const std::string scriptPath = "../Import/exp.bld";
-
-    auto results = executeScript(scriptPath, nullptr);
+    auto results = executeProgram(scriptPath);
     
     //
-    LOG << "Skript Returns: " << endl;
-    LOG << results << endl;
+    // LOG << "Skript Returns: " << endl;
+    // LOG << results << endl;
 
     //
     return 0;

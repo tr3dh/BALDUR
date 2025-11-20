@@ -982,9 +982,6 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             //
             const std::string& structName = node.children[1].argument;
 
-            //
-            LOG << "Registriere struct " << structName << endl;
-
             Scope& attribScope = STRUCT::emplaceScopes(DeclaringStructByIndex, scope);
 
             //
@@ -1011,6 +1008,12 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 
                 LOG << "\n";
             }
+        }
+        else if(node.children.size() == 3 && node.children[0].argument == "fetch" &&
+                node.children[1].argument == "script" && node.children[2].Relation == TkType::String){
+
+            std::string scriptPath = (fs::path(static_cast<types::STRING*>(scope.getVariable("__CWD__")->getData())->getMember()) / fs::path(node.children[2].argument + "." + g_languageScriptSuffix)).string();
+            prcResult = executeScript(scriptPath, &scope, ExecuteScriptAs::Include);
         }
         else{
             

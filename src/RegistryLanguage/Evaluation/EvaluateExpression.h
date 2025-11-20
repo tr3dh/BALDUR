@@ -6,6 +6,7 @@
 #include "../TypeInstances/gatheredInstances.h"
 #include "IdentifyNodeCases.h"
 #include "../TypeInstances/STRUCT.h"
+#include "../Interpreter.h"
 
 enum class Context : uint8_t{
 

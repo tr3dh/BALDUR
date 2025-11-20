@@ -1,87 +1,16 @@
 // Includes
+fetch script "pckg/preDecls"
+fetch script "pckg/recursiveDemo"
+fetch script "pckg/Vector3"
 
 // Assert Uniforms >> sicherstellen dass bestimmte Referenzen vom Programm ans Skript übergeben werden
 requires uniform ExecMode
 requires [ExecMode == "DEBUG"] "..."
 
 //
-struct Vector3{
-    
-    static{
-    
-        int[a,b]
-        
-        decl getA(){ return a }
-        decl getB(){ return b }
-
-        decl printStatics(){ log(a, b) }
-    }
-    
-    double[x,y,z]
-    
-    decl getX(){ return [x] }
-}
-
-decl Vector3(double ref [xIn, yIn, zIn]){
-    
-    Vector3 vec
-    vec->[x,y,z] = xIn, yIn, zIn
-    
-    // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
-    // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
-    // ohne, dass es zu einem Kopiervorgang kommt
-    return [<-vec]
-}
-
-decl __addAssign__(Vector3 ref [a, b]){
-    
-    //
-    a->[x,y,z] += b->[x,y,z]
-}
-
-int [g_fibonacciCalls, g_facultyCalls]
-
-decl faculty(int ref member){
-    
-    g_facultyCalls++
-    if(member == 0 || member == 1){ 
-        return 1 
-    }
-    return [member * faculty(member - 1)]
-}
-
-decl fibonacci(int ref member){
-    
-    g_fibonacciCalls++
-    if(member <= 1){ 
-        return member 
-    }
-    return [fibonacci(member - 1) + fibonacci(member - 2)]
-}
-
-decl runRecursiveDemo(){
-
-    // Fakultäten
-    for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
-        log("Faculty(", i, ") =", faculty(i))
-    }
-
-    log(" ")
-    // Fibonacci
-    for([int [i, numFibonacci] = 0,20], i < numFibonacci, i++){
-        log("Fibonacci[", i, "] :", fibonacci(i))
-    }
-
-    log(" ")
-    log("faculty called :", g_facultyCalls, "times")
-    log("fibonacci called :", g_fibonacciCalls, "times")
-}
-
-//
 decl main(){
     
     void [tmp, sc, tp2] = tExpr("sigma", 4), tExpr("scalar", 0), tExpr("tmp2", 4)
-    
     log(diff(diff(tmp : tmp, tp2), tp2))
 
     return 0
