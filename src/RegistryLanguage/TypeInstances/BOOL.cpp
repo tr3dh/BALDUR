@@ -77,7 +77,6 @@ namespace types{
 
                 // Returns | Inputs
                 BOOL* ret0 = static_cast<BOOL*>(returns[returns.size()-1].getVariableRef().getData());
-
                 GET_ARG(BOOL, 0); GET_ARG(BOOL, 1);
 
                 // schreiben in returns
@@ -216,15 +215,19 @@ namespace types{
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-                PREPARE_RETURNS;
+                // PREPARE_RETURNS;
+
+                //
+                returns.emplace_back();
+                returns.back().constructRValueByObject(constructRegisteredType(functionReturnTypes[0]));
 
                 // Returns | Inputs
-                GET_ARG(BOOL, 0);
-
+                GET_LBRETURN(BOOL, 0, returns.size() - 1); GET_ARG(BOOL, 0);
+                
                 // schreiben in returns
-                arg0->getMember() = !arg0->getMember();
+                ret0->getMember() = !arg0->getMember();
         },
-        {});
+        {BOOL::typeIndex});
 
         //
         registerFunction("if", {IObject::ARGS_TYPE},

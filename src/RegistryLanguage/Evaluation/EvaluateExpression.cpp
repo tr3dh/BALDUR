@@ -405,10 +405,18 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             if(leftSide.evalResults.size() == rightSide.evalResults.size()){
 
                 //
+                ProcessingResult tmpRes;
+
+                //
                 for(size_t childIdx = 0; childIdx < leftSide.evalResults.size(); childIdx++){
 
-                    callFunction(g_TwoArgOperations[Operator], prcResult.evalResults,
+                    //
+                    tmpRes.clear();
+
+                    callFunction(g_TwoArgOperations[Operator], tmpRes.evalResults,
                         { &leftSide.evalResults[childIdx], &rightSide.evalResults[childIdx] }, scope);
+
+                    prcResult.append(tmpRes);
                 }
             }
             // Problematisch da rvalue aus evalresult beim assign weggemovt wird und dann nur noch als
@@ -999,6 +1007,18 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                     _ERROR << "Assertion failed : Uniform " << node.children[2].argument << " konnte nicht gefunden werden\n" << endl;
                 }
+            }
+            else if(typeForKeywordExists(node.children[1].argument) && node.children[2].argument == "uniform" && node.children.size() > 3){
+
+                if(!returnToScope.containsVariable(node.children[3].argument) ||
+                    returnToScope.getVariable(node.children[3].argument)->getData()->isUniform() == false ||
+                    returnToScope.getVariable(node.children[3].argument)->getData()->getTypeIndex() != getTypeIndexByKeyword(node.children[1].argument)){
+
+                    _ERROR << "Assertion failed : Uniform " << node.children[3].argument << " konnte nicht gefunden werden\n" << endl;
+                }
+            }
+            else if( node.children[2].argument == "uniform"){
+
             }
             else{
 

@@ -275,10 +275,14 @@ void emplaceStdOperations(){
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;
             ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-            PREPARE_RETURNS;
+            // PREPARE_RETURNS;
 
             //
-            EvalResult& recipient = returns[0];
+            returns.emplace_back();
+            returns.back().constructRValueByObject(constructRegisteredType(inputs[0]->getTypeIndex()));
+
+            //
+            EvalResult& recipient = returns.back();
             EvalResult& source = *inputs[0];
 
             //

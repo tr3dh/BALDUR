@@ -770,12 +770,12 @@ namespace types{
                 PREPARE_RETURNS;
 
                 // Returns | Inputs
-                GET_ARG(DOUBLE, 0);
+                GET_RETURN(DOUBLE, 0); GET_ARG(DOUBLE, 0);
 
                 // schreiben in returns
-                arg0->getMember() = -arg0->getMember();
+                ret0->getMember() = -arg0->getMember();
         },
-        {});
+        {DOUBLE::typeIndex});
 
         //
         registerFunction("sleep", {DOUBLE::typeIndex},

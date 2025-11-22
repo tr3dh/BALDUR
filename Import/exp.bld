@@ -3,7 +3,7 @@ fetch script ["pckg/preDecls", "pckg/Vector3"]
 fetch script ["pckg/recursiveDemo"]
 
 // Assert Uniforms >> sicherstellen dass bestimmte Referenzen vom Programm ans Skript übergeben werden
-requires uniform ExecMode
+requires string uniform ExecMode
 requires [ExecMode == "DEBUG"] "..."
 
 //
@@ -12,7 +12,7 @@ decl main(){
     void [tmp, sc, tp2] = tExpr("sigma", 4), tExpr("scalar", 0), tExpr("tmp2", 4)
     // slog(diff(diff(tmp : tmp, tp2), tp2))
 
-    slog(diff(u, epsilon))
+    slog(diff(x, X))
 
     return 0
 }

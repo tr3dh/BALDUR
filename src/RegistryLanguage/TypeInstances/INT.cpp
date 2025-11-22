@@ -138,12 +138,9 @@ namespace types{
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
 
-                returns.emplace_back();
-                returns[returns.size() - 1].constructRValueByObject(constructRegisteredType(functionReturnTypes[0]));
-
-                // Returns | Inputs
-                BOOL* ret0 = static_cast<BOOL*>(returns[returns.size()-1].getVariableRef().getData());
+                GET_RETURN(BOOL, 0);
                 GET_ARG(INT, 0); GET_ARG(INT, 1);
 
                 // schreiben in returns
@@ -253,15 +250,19 @@ namespace types{
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-                PREPARE_RETURNS;
+                // PREPARE_RETURNS;
 
                 // Returns | Inputs
-                GET_ARG(INT, 0);
+                returns.emplace_back();
+                returns.back().constructRValueByObject(constructRegisteredType(functionReturnTypes[0]));
+
+                // Returns | Inputs
+                GET_LBRETURN(INT, 0, returns.size() - 1); GET_ARG(INT, 0);
 
                 // schreiben in returns
-                arg0->getMember() = -arg0->getMember();
+                ret0->getMember() = -arg0->getMember();
         },
-        {});
+        {INT::typeIndex});
 
         //
         registerFunction("__increment__", {INT::typeIndex},
@@ -273,12 +274,14 @@ namespace types{
                 PREPARE_RETURNS;
 
                 // Returns | Inputs
+                GET_RETURN(INT, 0);
                 GET_ARG(INT, 0);
 
                 // schreiben in returns
-                arg0->getMember() = arg0->getMember() + 1;
+                ret0->getMember() = arg0->getMember() + 1;
+                arg0->getMember() += 1;
         },
-        {});
+        {INT::typeIndex});
 
         //
         registerFunction("__decrement__", {INT::typeIndex},
@@ -290,12 +293,14 @@ namespace types{
                 PREPARE_RETURNS;
 
                 // Returns | Inputs
+                GET_RETURN(INT, 0);
                 GET_ARG(INT, 0);
 
                 // schreiben in returns
-                arg0->getMember() = arg0->getMember() - 1;
+                ret0->getMember() = arg0->getMember() - 1;
+                arg0->getMember() -= 1;
         },
-        {});
+        {INT::typeIndex});
 
         //
         registerFunction("sleep", {INT::typeIndex},

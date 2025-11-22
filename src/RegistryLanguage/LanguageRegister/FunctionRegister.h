@@ -102,7 +102,7 @@ public:
 
         for(auto& ptr : params){
 
-            RETURNING_ASSERT(ptr->getVariableRef().isValid(), "",{});
+            RETURNING_ASSERT(ptr->getVariableRef().isValid(), "param ptr is not valid",{});
             types.emplace_back(ptr->getVariableRef().getData()->getTypeIndex());
         }
 
@@ -204,13 +204,34 @@ public:
         returns[retIdx].constructRValueByObject(constructRegisteredType(functionReturnTypes[retIdx])); \
     }
 
+#define APPEND_RETURNS \
+    \
+    returns.resize(returns.size() + functionReturnTypes.size()); \
+    \
+    for(size_t retIdx = 0; retIdx < functionReturnTypes.size(); retIdx++){ \
+        \
+        returns[returns.size() - functionReturnTypes.size() + retIdx].constructRValueByObject(constructRegisteredType(functionReturnTypes[retIdx])); \
+    }
+
 #define CLEAR_RETURNS returns.clear();
 
+// #define GET_RETURN(CastType, Position) \
+//     CastType* ret##Position = nullptr; \
+//     if(returns.size() == functionReturnTypes.size()){ \
+//         CastType* ret##Position = static_cast<CastType*>(returns[Position].getVariableRef().getData()); \
+//     } \
+//     else { \
+//         CastType* ret##Position = static_cast<CastType*>(returns[returns.size() - functionReturnTypes.size() + Position].getVariableRef().getData()); \
+//     }
+
 #define GET_RETURN(CastType, Position) \
-    CastType* ret##Position = static_cast<CastType*>(returns[Position].getVariableRef().getData())
+    CastType* ret##Position =  static_cast<CastType*>(returns[Position].getVariableRef().getData());
+
+#define GET_LBRETURN(CastType, PseudoPos, Position) \
+    CastType* ret##PseudoPos =  static_cast<CastType*>(returns[Position].getVariableRef().getData());
 
 #define GET_ARG(CastType, Position) \
-    CastType* arg##Position = static_cast<CastType*>(inputs[Position]->getVariableRef().getData())
+    CastType* arg##Position = static_cast<CastType*>(inputs[Position]->getVariableRef().getData()); \
 
 #define GET_MEMBER(CastType) \
     CastType* mb = static_cast<CastType*>(member->getVariableRef().getData());

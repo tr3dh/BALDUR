@@ -466,7 +466,6 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     //
     if(tensorExpressionDiffs.contains(std::make_pair(*this, other))){
 
-        LOG << "Contains" << endl;
         *this = tensorExpressionDiffs[std::make_pair(*this, other)];
     }
     else if(*this == other){
@@ -1013,8 +1012,8 @@ namespace types{
         {});
 
         //
-        registerFunction("setTemplateDiff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "setTemplateDiff", __numArgs__ = 3](FREG_ARGS){
+        registerFunction("setDiffTemplate", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "setDiffTemplate", __numArgs__ = 3](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;

@@ -1,6 +1,7 @@
 #include "ImGuiStyleDecls.h"
 
 ImFont* ttfJuliaMonoItalic = nullptr;
+ImFont* ttfJuliaMonoBold = nullptr;
 
 void scaleImguiUI(const float& UIZoom){
 
@@ -72,11 +73,11 @@ void SetupImGuiStyle()
 
     // Zugriff auf IO-Struktur
     ImGuiIO& io = ImGui::GetIO();
-    ImFont* ttfArial = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 16.0f);
-    // ImFont* ttfOldEnglish = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\OLDENGL.TTF", 16.0f);
-    ImFont* ttfConsola = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\consola.ttf", 18.0f);
+
+    // Fonts laden
     ttfJuliaMonoItalic = io.Fonts->AddFontFromFileTTF("../Recc/Fonts/JuliaMono-ttf/JuliaMono-MediumItalic.ttf", 16.0f);
+    ttfJuliaMonoBold = io.Fonts->AddFontFromFileTTF("../Recc/Fonts/JuliaMono-ttf/JuliaMono-Bold.ttf", 16.0f);
     // ...
 
-    // io.FontDefault = ttfConsola;
+    io.FontDefault = ttfJuliaMonoBold;
 }

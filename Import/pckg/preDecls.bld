@@ -5,6 +5,8 @@
 tExpr [a, b, A, B] = tExpr("a", 0), tExpr("b", 0), tExpr("A", 1), tExpr("B", 1)
 
 // Standard TensorExpression Instanzen
+tExpr [x, X]  = tExpr("x", 2), tExpr("X", 2)  
+
 tExpr u       = tExpr("u", 1)            // Verschiebung
 tExpr epsilon = tExpr("epsilon", 2)      // Dehnung
 tExpr sigma   = tExpr("sigma", 2)        // Spannung
@@ -16,8 +18,7 @@ tExpr S       = tExpr("S", 2)            // 2. Piola-Kirchhoff Tensor
 tExpr F       = tExpr("F", 4)            // Deformationsgradient
 
 // Direkte Ersetzung und Vereinfachung
-setDiff(C, S, sigma)
+setDiff(x, X, F)
 
-// template Instanzierungen
-// >> Ersetzung das angegebenem Schema folgt
-setTemplateDiff(A', B, diff(A, B)')
+// template Instanzierungen für Ersetzung durch template Schema
+setDiffTemplate(A', B, diff(A, B)')

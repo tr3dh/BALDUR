@@ -28,8 +28,31 @@ decl Vector3(double ref [xIn, yIn, zIn]){
     return [<-vec]
 }
 
+decl Vector3(int ref [xIn, yIn, zIn]){
+    
+    Vector3 vec
+    vec->[x,y,z] = double(xIn), double(yIn), double(zIn)
+    
+    // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
+    // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
+    // ohne, dass es zu einem Kopiervorgang kommt
+    return [<-vec]
+}
+
 decl __addAssign__(Vector3 ref [a, b]){
     
     //
     a->[x,y,z] += b->[x,y,z]
+}
+
+decl __equal__(Vector3 ref [a, b]){
+
+    //
+    return [nIf(a->[x,y,z] == b->[x,y,z])] 
+}
+
+decl __negate__(Vector3 ref a){
+
+    //
+    return [Vector3(-(a->[x,y,z]))]
 }

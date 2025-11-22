@@ -50,6 +50,12 @@ struct ProcessingResult{
 
     ProcessingResult() = default;
 
+    void clear(){
+
+        evalResults.clear();
+        exit = ExitCase::None;
+    }
+
     void append(ProcessingResult& other, bool ignoreExit = false){
 
         //
