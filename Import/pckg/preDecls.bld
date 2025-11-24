@@ -2,7 +2,7 @@
 
 // Dummy tExprs für DiffTemplates
 // durch -1 ersetzen bei A und B für arbitary
-tExpr [a, b, A, B] = tExpr("a", 0), tExpr("b", 0), tExpr("A", 1), tExpr("B", 1)
+tExpr [a, b, A, B] = tExpr("a", 0), tExpr("b", 0), tExpr("A", -1), tExpr("B", -1)
 
 // Standard TensorExpression Instanzen
 tExpr [x, X]  = tExpr("x", 2), tExpr("X", 2)  
@@ -22,3 +22,4 @@ setDiff(x, X, F)
 
 // template Instanzierungen für Ersetzung durch template Schema
 setDiffTemplate(A', B, diff(A, B)')
+setDiffTemplate(a * A, B, a * diff(A, B))

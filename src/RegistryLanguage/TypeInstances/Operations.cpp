@@ -2,6 +2,7 @@
 
 //
 std::vector<std::string> g_UsedOperators = {
+    
     COLON,
     "=", "<<", "<>", "<-", "<+",                    // Memory Management Semantik
     "+=", "-=", "*=", "/=", "^=",                   // Ops für 2 Arg Operationen

@@ -10,9 +10,9 @@ requires [ExecMode == "DEBUG"] "..."
 decl main(){
     
     void [tmp, sc, tp2] = tExpr("sigma", 4), tExpr("scalar", 0), tExpr("tmp2", 4)
-    // slog(diff(diff(tmp : tmp, tp2), tp2))
 
-    slog(diff(x, X))
+    logDiffTemplates()
+    slog(diff(sc * sigma, X))
 
     return 0
 }

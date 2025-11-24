@@ -98,6 +98,7 @@ struct TensorExpression{
 
     //
     void convertToTemplate();
+    bool isTemplate() const;
 
     //
     std::vector<std::string> getRawLabels();

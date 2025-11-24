@@ -112,7 +112,7 @@ void TensorExpression::addAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::Addition;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder == other.tensorOrder, "Addition von Tensoren unterschiedlicher Stufe versucht",);
+    RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1, "Addition von Tensoren unterschiedlicher Stufe versucht",);
 
     //
     bool copySelf = false;
@@ -145,6 +145,14 @@ void TensorExpression::addAssign(const TensorExpression& other){
     // Anpassen TensorOrder
     // hier nicht nötig aufgrund von Addition
     // ...
+
+    //
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(otherMember.tensorOrder == -1){
+        tensorOrder = -1;
+    }
 }
 
 //
@@ -154,7 +162,7 @@ void TensorExpression::subAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::Subtraction;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder == other.tensorOrder, "Addition von Tensoren unterschiedlicher Stufe versucht",);
+    RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1, "Addition von Tensoren unterschiedlicher Stufe versucht",);
 
     //
     bool copySelf = false;
@@ -178,6 +186,14 @@ void TensorExpression::subAssign(const TensorExpression& other){
     // Anpassen TensorOrder
     // hier nicht nötig aufgrund von Addition
     // ...
+
+    //
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(otherMember.tensorOrder == -1){
+        tensorOrder = -1;
+    }
 }
 
 void TensorExpression::mulAssign(const TensorExpression& other){
@@ -186,7 +202,7 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::Multiplication;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder == 0 || other.tensorOrder == 0, "Skalar Multiplikation ohne Skalar versucht",);
+    RETURNING_ASSERT(tensorOrder == 0 || other.tensorOrder == 0 || tensorOrder == -1 || other.tensorOrder == -1, "Skalar Multiplikation ohne Skalar versucht",);
 
     //
     bool copySelf = false;
@@ -218,8 +234,16 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     }
 
     // Anpassen TensorOrder
-    // hier nicht nötig aufgrund von Addition
-    tensorOrder = other.tensorOrder > tensorOrder ? other.tensorOrder : tensorOrder;
+    
+    //
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    else{
+        tensorOrder = otherMember.tensorOrder > tensorOrder ? otherMember.tensorOrder : tensorOrder;
+    }
 }
 
 void TensorExpression::dotProductAssign(const TensorExpression& other){
@@ -228,7 +252,7 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::DotProduct;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0, "Tensoren mit Stufe kleiner 1 and Skalarprodukt beteiligt",);
+    RETURNING_ASSERT((tensorOrder > 0 && other.tensorOrder > 0) || tensorOrder == -1 || other.tensorOrder == -1, "Tensoren mit Stufe kleiner 1 and Skalarprodukt beteiligt",);
 
     //
     bool copySelf = false;
@@ -250,7 +274,16 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 2;
+
+    //
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    else{
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 2;
+    }
 }
 
 void TensorExpression::crossProductAssign(const TensorExpression& other){
@@ -259,7 +292,7 @@ void TensorExpression::crossProductAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::CrossProduct;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder == 1 && other.tensorOrder == 1, "Tensoren für Vektorprodukt müssen Vektoren sein",);
+    RETURNING_ASSERT((tensorOrder == 1 || tensorOrder == -1) && (other.tensorOrder == 1 || other.tensorOrder == -1), "Tensoren für Vektorprodukt müssen Vektoren sein",);
 
     //
     bool copySelf = false;
@@ -280,7 +313,13 @@ void TensorExpression::crossProductAssign(const TensorExpression& other){
     //
     children.emplace_back(copySelf ? children.back() : other);
 
+    //
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
     // Anpassen TensorOrder
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
 }
 
 void TensorExpression::dyadProductAssign(const TensorExpression& other){
@@ -289,7 +328,7 @@ void TensorExpression::dyadProductAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::DyadicProduct;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder > 1 && other.tensorOrder > 1, "Tensoren mit Stufe kleiner 2 ...",);
+    RETURNING_ASSERT((tensorOrder > 1 && other.tensorOrder > 1) || tensorOrder == -1 || other.tensorOrder == -1, "Tensoren mit Stufe kleiner 2 ...",);
 
     //
     bool copySelf = false;
@@ -311,7 +350,14 @@ void TensorExpression::dyadProductAssign(const TensorExpression& other){
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder;
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    else{
+        tensorOrder = tensorOrder + otherMember.tensorOrder;
+    }
 }
 
 void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& other){
@@ -320,7 +366,7 @@ void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& 
     static TensorExpressionOperator operation = TensorExpressionOperator::MirroringDoubleContraction;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0, "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
+    RETURNING_ASSERT((tensorOrder > 1 || tensorOrder == -1) && (other.tensorOrder > 1 || other.tensorOrder == -1), "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
 
     //
     bool copySelf = false;
@@ -342,7 +388,16 @@ void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& 
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 4;
+
+    // Anpassen TensorOrder
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    else{
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 4;
+    }
 }
 
 void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& other){
@@ -351,7 +406,7 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
     static TensorExpressionOperator operation = TensorExpressionOperator::CrossingDoubleContraction;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0, "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
+    RETURNING_ASSERT((tensorOrder > 1 || tensorOrder == -1) && (other.tensorOrder > 1 || other.tensorOrder == -1), "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
 
     //
     bool copySelf = false;
@@ -373,7 +428,14 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    tensorOrder = tensorOrder + (copySelf ? children.back() : other).tensorOrder - 4;
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    else{
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 4;
+    }
 }
 
 void TensorExpression::transposeAssign(){
@@ -424,7 +486,7 @@ void TensorExpression::traceAssign(int contractIndices){
     static TensorExpressionOperator operation = TensorExpressionOperator::Trace;
 
     //
-    RETURNING_ASSERT(tensorOrder >= contractIndices, "Tensor Dimension nicht groß genug für Trace mit angegebener Kontraktion",);
+    RETURNING_ASSERT(tensorOrder >= contractIndices || tensorOrder == -1, "Tensor Dimension nicht groß genug für Trace mit angegebener Kontraktion",);
 
     //
     moveSelfIntoFirstChild();
@@ -432,17 +494,27 @@ void TensorExpression::traceAssign(int contractIndices){
     // node erneut Aufsetzen
     Relation = TkType::Operator;
     Operator = operation;
-    tensorOrder = children.back().tensorOrder - (contractIndices + 1);
+    tensorOrder = children.back().tensorOrder != -1 ? children.back().tensorOrder - (contractIndices + 1) : -1;
 }
 
 bool TensorExpression::operator==(const TensorExpression& other) const {
+
+    // Check ob gleiche Instanz
+    if(this == &other){ return true; }
+
+    if((isTemplate() || other.isTemplate()) &&
+       (tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1)){
+
+        return true;
+    }
 
     bool equal = true;
 
     equal &= Relation == other.Relation;
     equal &= Operator == other.Operator;
     equal &= label == other.label;
-    equal &= tensorOrder == other.tensorOrder;
+
+    equal &= tensorOrder != -1 && other.tensorOrder != -1 ? tensorOrder == other.tensorOrder : true;
     equal &= children.size() == other.children.size();
 
     if(!equal){ return equal; }
@@ -462,11 +534,31 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
     //
     bool copySelf = false;
+    
+    //
+    bool IsRepresentableByTemplate = false;
+    auto it = tensorExpressionDiffTemplates.begin();
+
+    // Check ob Expression durch ein abgespeichertes Template repräsentiert werden kann
+    for (; it != tensorExpressionDiffTemplates.end(); ++it) {
+
+        if (it->first.first == *this && it->first.second == other) 
+        {
+            IsRepresentableByTemplate = true;
+            break;
+        }
+    }
 
     //
     if(tensorExpressionDiffs.contains(std::make_pair(*this, other))){
 
         *this = tensorExpressionDiffs[std::make_pair(*this, other)];
+    }
+    else if(IsRepresentableByTemplate){
+
+        // Aufstellen einer Substitutionstabelle mit <template label : Ersetzungs TensorExpression>
+        // Kopie des Template Ausdrucks, in diesem findet die Ersetzung statt
+        // >> Rebuild der ursprünglichen Kopie (nicht mehr templatiert)
     }
     else if(*this == other){
 
@@ -486,8 +578,8 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         //
         children.emplace_back(copySelf ? children.back() : other);
 
-        //
-        tensorOrder = children.begin()->tensorOrder + children.back().tensorOrder;
+        tensorOrder = (children.begin()->tensorOrder < 0 || children.back().tensorOrder < 0) ? -1 :
+                        children.begin()->tensorOrder + children.back().tensorOrder;
     }
     else if(Relation == TkType::Operator){
      
@@ -567,6 +659,27 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 //
 void TensorExpression::convertToTemplate(){
 
+    // Dead Ends Templatisieren
+    if(Relation == TkType::Argument){
+
+        Relation = TkType::Container;
+        Operator = TensorExpressionOperator::Arbitary;
+    }
+
+    for(auto& child : children){
+
+        child.convertToTemplate();
+    }
+}
+
+bool TensorExpression::isTemplate() const{
+
+    if(Relation == TkType::Container && Operator == TensorExpressionOperator::Arbitary){
+
+        return true;
+    }
+
+    return false;
 }
 
 //
@@ -611,6 +724,11 @@ std::string TensorExpression::toString(size_t depth) const{
     else if(Relation == TkType::Operator && Operator == TensorExpressionOperator::Diff && children.size() == 2){
 
         res += "diff(" + children[0].toString(depth+1) + " / " + children[1].toString(depth+1) + ")";   
+        res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";     
+    }
+    else if(isTemplate()){
+
+        res += "<" + label + ">";  
         res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";     
     }
     else{
@@ -942,12 +1060,14 @@ namespace types{
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
                 PREPARE_RETURNS;
 
+                //
+                returns[0].getVariableRef().clone(inputs[0]->getVariableRef());
+
                 // Returns
                 GET_RETURN(TENSOR_EXPRESSION, 0);
                 GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
 
-                arg0->getMember().diffAssign(arg1->getMember());
-                ret0->getMember() = arg0->getMember();
+                ret0->getMember().diffAssign(arg1->getMember());
         },
         {TENSOR_EXPRESSION::typeIndex});
 
@@ -993,6 +1113,26 @@ namespace types{
         {BOOL::typeIndex});
 
         //
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "toTemplate", {},
+            [__functionLabel__ = "toTemplate", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                returns[0].cloneIntoRValue(member->getVariableRef());
+
+                //
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().convertToTemplate();
+
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
         registerFunction("setDiff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "setDiff", __numArgs__ = 3](FREG_ARGS){
 
@@ -1030,6 +1170,22 @@ namespace types{
 
                 RETURNING_ASSERT(tensorExpressionDiffTemplates.try_emplace(std::make_pair(member0, member1), member2).second,
                                  "Differential für gegebenes Tensortemplatepaar bereits gesetzt",);
+        },
+        {});
+
+        //
+        registerFunction("logDiffTemplates", {},
+            [__functionLabel__ = "logDiffTemplates", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                for(const auto& [k,v] : tensorExpressionDiffTemplates){
+
+                    LOG << "d " << k.first.toString(1) << " | d " << k.second.toString(1) << " -> " << v.toString(1) << endl;
+                }
         },
         {});
 
