@@ -893,6 +893,9 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
                 
                 res.traceAssign(expr.children.begin()->tensorOrder - expr.tensorOrder - 1);
             }
+            else if(expr.Operator == TensorExpressionOperator::Section){
+                
+            }
             else{
 
                 RETURNING_ASSERT(TRIGGER_ASSERT,

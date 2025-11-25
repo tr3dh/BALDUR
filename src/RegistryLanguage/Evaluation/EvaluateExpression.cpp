@@ -780,6 +780,12 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 prcResult.evalResults[0].setLValue(
                     constructVariable(constructVariables.argument, scope, constructType, constructReference));
             }
+            if(constructVariables.Relation == TkType::Listing && constructVariables.children[0].Relation == TkType::Argument){
+
+                prcResult.evalResults.emplace_back();
+                prcResult.evalResults[0].setLValue(
+                    constructVariable(constructVariables.children[0].argument, scope, constructType, constructReference));
+            }
             else if(constructVariables.Relation == TkType::Listing){
 
                 RETURNING_ASSERT(constructVariables.children.size() == 1 &&

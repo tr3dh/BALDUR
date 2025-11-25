@@ -49,6 +49,7 @@ enum class TensorExpressionOperator{
     Inversion,
     Transposition,
     Trace,
+    Section,
 
     Diff,
 
@@ -59,6 +60,7 @@ struct TensorExpression;
 
 extern std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings;
 extern std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpression&)> operatorMemberFunctions;
+extern std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperatorMemberFunctions;
 
 extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs;
 extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates;
@@ -66,11 +68,20 @@ extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression>
 struct TensorExpression{
 
     //
+    typedef std::map<TensorExpression, TensorExpression> substitutionMap;
+
+    //
+    static void replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap);
+    static void assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap);
+
+    //
     TkType Relation;
     TensorExpressionOperator Operator;
 
     std::string label = NULLSTR;
     int tensorOrder = -1;
+
+    int contractNIndices = 0;
 
     std::vector<TensorExpression> children;
 
@@ -98,16 +109,23 @@ struct TensorExpression{
 
     //
     void convertToTemplate();
+    bool isTemplatedNode() const;
     bool isTemplate() const;
 
     //
     std::vector<std::string> getRawLabels();
 
     //
+    void rawDiffAssign(const TensorExpression& other);
     void diffAssign(const TensorExpression& other);
 
     void traceAssign(int contractIndices);
     void traceAssign();
+
+    void sectionAssign();
+
+    //
+    TensorExpression rebuild();
 
     //
     std::string toString(size_t depth = 0) const;

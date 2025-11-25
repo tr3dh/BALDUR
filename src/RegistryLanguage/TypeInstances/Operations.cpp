@@ -16,7 +16,7 @@ std::vector<std::string> g_UsedOperators = {
     "\\diff",
     "++", "--", "!",                                // Single Argument Ops
     KOMMA,                                          //
-    "~", "'", "°",                                  // Ops für Index Notation
+    "~", "'", "°", "$",                             // Ops für Index Notation
     "^~", "^'", "^°",                               // Ops für Index Notation
     "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes                     
 };
@@ -37,6 +37,7 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"^~", "__inverseInplaceAssign__"},
     {"^'", "__transposeInplaceAssign__"},
     {"^°", "__traceInplaceAssign__"},
+    {"$", "__sectionAssign__"},
 };
 
 // Map der Form Operator | Funktionslabel

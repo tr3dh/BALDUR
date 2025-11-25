@@ -9,10 +9,8 @@ requires [ExecMode == "DEBUG"] "..."
 //
 decl main(){
     
-    void [tmp, sc, tp2] = tExpr("sigma", 4), tExpr("scalar", 0), tExpr("tmp2", 4)
-
-    logDiffTemplates()
-    slog(diff(sc * sigma, X))
+    void [scalar] = tExpr("scalar", 0)
+    slog("result", diff(scalar * x, X))
 
     return 0
 }
