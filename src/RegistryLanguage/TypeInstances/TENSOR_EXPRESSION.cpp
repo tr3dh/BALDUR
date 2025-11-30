@@ -948,6 +948,25 @@ namespace types{
         },
         {TENSOR_EXPRESSION::typeIndex});
 
+        // Konstruktoren
+        registerFunction("tExprTmpl", {STRING::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "tExprTmpl", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0); GET_ARG(INT, 1);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), arg1->getMember());
+                ret0->getMember().convertToTemplate();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
         // Operator Überladung
         registerFunction("__addAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
@@ -1338,9 +1357,9 @@ namespace types{
                 GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1); GET_ARG(TENSOR_EXPRESSION, 2);
 
                 TensorExpression& member0 = arg0->getMember(), member1 = arg1->getMember(), member2 = arg2->getMember();
-                member0.convertToTemplate();
-                member1.convertToTemplate();
-                member2.convertToTemplate();
+                
+                RETURNING_ASSERT((member0.isTemplate() || member1.isTemplate()) && member2.isTemplate(),
+                                  "In übergebenen Termen sind keine templatierten Nodes vorhanden",);
 
                 RETURNING_ASSERT(tensorExpressionDiffTemplates.try_emplace(std::make_pair(member0, member1), member2).second,
                                  "Differential für gegebenes Tensortemplatepaar bereits gesetzt",);

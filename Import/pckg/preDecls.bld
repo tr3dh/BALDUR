@@ -17,9 +17,13 @@ tExpr C       = tExpr("C", 2)            // Rechter Cauchy-Green Tensor
 tExpr S       = tExpr("S", 2)            // 2. Piola-Kirchhoff Tensor
 tExpr F       = tExpr("F", 4)            // Deformationsgradient
 
+//
+tExpr [tmplA, tmplB] = tExprTmpl("A", -1), tExprTmpl("B", -1)
+tExpr [tmplScalar, tmplVector] = tExprTmpl("a", 0), tExprTmpl("a", 1)
+
 // Direkte Ersetzung und Vereinfachung
 setDiff(x, X, F)
 
 // template Instanzierungen für Ersetzung durch template Schema
-setDiffTemplate(A', B, diff(A, B)')
-setDiffTemplate(a * A, B, a * diff(A, B))
+setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
+setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
