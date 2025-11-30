@@ -12,6 +12,7 @@ decl main(){
     logDiffTemplates()
 
     void [scalar] = tExpr("scalar", 0)
+
     slog("result", diff(scalar * x, X))
 
     return 0

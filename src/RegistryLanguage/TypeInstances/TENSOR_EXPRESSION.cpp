@@ -43,6 +43,16 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates = {};
 
+// Substitutionsmap muss zusätzlich nach den labels der templatierten Nodes unterscheiden sonst
+// kann nur eine templatierte Node einer Stufe (oder einmal -1) in der Map stehen
+bool SubstitutionComparator::operator()(const TensorExpression& a, const TensorExpression& b) const{
+
+    if (a < b) return true;
+    if (b < a) return false;
+
+    return a.label < b.label;
+}
+
 void moveSelfIntoFirstChild(TensorExpression& node){
 
     TensorExpression tmp = std::move(node);
@@ -51,30 +61,37 @@ void moveSelfIntoFirstChild(TensorExpression& node){
     node.children.emplace_back(std::move(tmp));
 }
 
+// bei Rückgabe von true wird lhs vor rhs sortiert bei false andersherum
 bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
 {
-    if (lhs.Relation != rhs.Relation)
-        return lhs.Relation < rhs.Relation;
+    bool lhsIsTemplate = lhs.isTemplate(), rhsIsTemplate = rhs.isTemplate();
 
-    if (lhs.Operator != rhs.Operator)
-        return lhs.Operator < rhs.Operator;
+    //
+    if (lhsIsTemplate != rhsIsTemplate){ return !lhsIsTemplate; }
+     
+    //
+    if (lhs.Relation != rhs.Relation){ return lhs.Relation < rhs.Relation; }
+    if (lhs.Operator != rhs.Operator){ return lhs.Operator < rhs.Operator; }
 
-    if (lhs.label != rhs.label)
+    if(!lhsIsTemplate && !rhsIsTemplate && lhs.label != rhs.label){
         return lhs.label < rhs.label;
+    }
 
-    if (lhs.tensorOrder != rhs.tensorOrder)
-        return lhs.tensorOrder < rhs.tensorOrder;
+    if (lhs.tensorOrder != rhs.tensorOrder){ return lhs.tensorOrder > rhs.tensorOrder; }
 
     //
     const auto& a = lhs.children;
     const auto& b = rhs.children;
 
-    if (a.size() != b.size())
-        return a.size() < b.size();
+    if (a.size() != b.size()){
 
-    for (std::size_t i = 0; i < a.size(); ++i) {
-        if (a[i] == b[i]) continue;
-        return a[i] < b[i];
+        return a.size() < b.size();
+    }
+
+    for (size_t i = 0; i < a.size(); ++i) {
+        
+        if (a[i] < b[i]) return true;
+        if (b[i] < a[i]) return false;
     }
 
     //
@@ -695,6 +712,7 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         assembleSubstitutionMap(it->first.second, other, subsMap);
 
         // for(const auto& [k, v] : subsMap){
+
         //     LOG << k.toString() << " <> " << v.toString() << endl;
         // }
 
@@ -1362,7 +1380,8 @@ namespace types{
                                   "In übergebenen Termen sind keine templatierten Nodes vorhanden",);
 
                 RETURNING_ASSERT(tensorExpressionDiffTemplates.try_emplace(std::make_pair(member0, member1), member2).second,
-                                 "Differential für gegebenes Tensortemplatepaar bereits gesetzt",);
+                                 "Differential für gegebenes Tensortemplatepaar bereits gesetzt : " +
+                                 member0.toString() + "|" + member1.toString() + " -> " + member2.toString(),);
         },
         {});
 

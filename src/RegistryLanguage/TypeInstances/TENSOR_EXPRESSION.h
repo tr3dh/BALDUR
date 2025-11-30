@@ -65,10 +65,15 @@ extern std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleAr
 extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs;
 extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates;
 
+struct SubstitutionComparator {
+
+    bool operator()(const TensorExpression& a, const TensorExpression& b) const;
+};
+
 struct TensorExpression{
 
     //
-    typedef std::map<TensorExpression, TensorExpression> substitutionMap;
+    typedef std::map<TensorExpression, TensorExpression, SubstitutionComparator> substitutionMap;
 
     //
     static void replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap);
