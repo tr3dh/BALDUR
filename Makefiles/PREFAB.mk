@@ -285,6 +285,22 @@ ImTextEdit:
 		make libimguiedit; \
 	fi
 
+diligent:
+#cd thirdParty && git clone --recursive https://github.com/DiligentGraphics/DiligentEngine.git
+	cd thirdParty/DiligentEngine && mkdir build
+	cd thirdParty/DiligentEngine/build && cmake .. -G "MinGW Makefiles" \
+		-DDILIGENT_BUILD_STATIC_LIBS=ON \
+		-DDILIGENT_NO_OPENGL=ON \
+		-DDILIGENT_NO_DIRECT3D11=ON \
+		-DDILIGENT_NO_DIRECT3D12=ON \
+		-DCMAKE_BUILD_TYPE=Release
+	cd thirdParty/DiligentEngine/build && cmake --build . --config Release
+
+windiligent:
+#cd thirdParty && git clone --recursive https://github.com/DiligentGraphics/DiligentEngine.git
+	cd thirdParty/DiligentEngine && mkdir build
+	cd thirdParty/DiligentEngine/build && cmake .. -G "Visual Studio 17 2022" -A x64
+	cd thirdParty/DiligentEngine/build && cmake --build . --config Release -j8
 
 COPYTARGET ?= build/
 dllCopy:

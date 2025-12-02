@@ -39,3 +39,5 @@ setDiffTemplate(tmplMatrix * tmplA, tmplB, tmplMatrix * diff(tmplA, tmplB))
 setDiffTemplate(tmplA * tmplScalar, tmplB, tmplScalar * diff(tmplA, tmplB))
 setDiffTemplate(tmplA * tmplVector, tmplB, tmplVector * diff(tmplA, tmplB))
 setDiffTemplate(tmplA * tmplMatrix, tmplB, tmplMatrix * diff(tmplA, tmplB))
+
+setDiffTemplate(tmplScalar * tmplA * tmplScalar, tmplB, tmplScalar * tmplScalar * tmplA)

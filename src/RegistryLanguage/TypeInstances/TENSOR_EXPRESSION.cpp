@@ -117,23 +117,36 @@ void TensorExpression::replaceBySubstitutions(TensorExpression& expr, const subs
     }
 }
 
-void TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap){
+bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap){
 
-    RETURNING_ASSERT(tmplExpr == expr, "Ungleiche Operanden für Template Substitution",);
-    RETURNING_ASSERT(tmplExpr.children.size() == expr.children.size() || tmplExpr.children.size() == 0, "Ungleiche Operanden Childs für Template Substitution",);
+    bool res = true;
 
-    if(tmplExpr.isTemplatedNode()){
+    RETURNING_ASSERT(tmplExpr == expr, "Ungleiche Operanden für Template Substitution", false);
+    RETURNING_ASSERT(tmplExpr.children.size() == expr.children.size() || tmplExpr.children.size() == 0,
+                     "Ungleiche Operanden Childs für Template Substitution", false);
+
+    if(!tmplExpr.isTemplate()){ 
         
-        subsMap.try_emplace(tmplExpr, expr);
-        return;
+        return true;
+    }
+
+    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode();
+
+    if(tmplIsTemplatedNode && subsMap.try_emplace(tmplExpr, expr).second){}
+    else if(tmplIsTemplatedNode){
+
+        //
+        RETURNING_ASSERT(subsMap[tmplExpr] == expr, "Wiedersprüchliche Substitutions Argumente übergeben", false);
     }
     else{
 
         for(size_t i = 0; i < tmplExpr.children.size(); i++){
 
-            assembleSubstitutionMap(tmplExpr.children[i], expr.children[i], subsMap);
+            res &= assembleSubstitutionMap(tmplExpr.children[i], expr.children[i], subsMap);
         }
     }
+
+    return res;
 }
 
 // Default Konstruktion
@@ -673,6 +686,9 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     //
     static TensorExpressionOperator operation = TensorExpressionOperator::Diff;
 
+    static substitutionMap subsMap = {};
+    static bool isRepresentationConsistent = true;
+
     //
     bool copySelf = false;
     
@@ -686,7 +702,16 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         if (it->first.first == *this && it->first.second == other) 
         {
             IsRepresentableByTemplate = true;
-            break;
+
+            // Checke ob der Ausdruck durch das Template auch für mehrfache Vorkommen einzelner TemplateInstanzen
+            // zb. <A> .. <B> .. <A> repräsentiert werden kann
+            subsMap.clear();
+
+            isRepresentationConsistent = true;
+            isRepresentationConsistent &= assembleSubstitutionMap(*this, it->first.first, subsMap);
+            isRepresentationConsistent &= assembleSubstitutionMap(other, it->first.second, subsMap);
+
+            if(isRepresentationConsistent){ break; }
         }
     }
 

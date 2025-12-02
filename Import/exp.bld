@@ -13,7 +13,9 @@ decl main(){
 
     void [scalar] = tExpr("scalar", 0)
 
+    slog(" ")
     slog("result", diff(scalar * x, X))
+    slog("result", diff(scalar * x * scalar, X))
 
     return 0
 }
