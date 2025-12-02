@@ -18,26 +18,28 @@ tExpr S       = tExpr("S", 2)            // 2. Piola-Kirchhoff Tensor
 tExpr F       = tExpr("F", 4)            // Deformationsgradient
 
 //
-tExpr [tmplA, tmplB] = tExprTmpl("A", -1), tExprTmpl("B", -1)
+tExpr [tmplA, tmplB, tmplC] = tExprTmpl("A", -1), tExprTmpl("B", -1), tExprTmpl("C", -1)
 tExpr [tmplTensor, tmplScalar, tmplVector, tmplMatrix] = tExprTmpl("a", -1), tExprTmpl("a", 0), tExprTmpl("a", 1), tExprTmpl("a", 2),
 
 // Direkte Ersetzung und Vereinfachung
 setDiff(x, X, F)
 
 // template Instanzierungen für Ersetzung durch template Schema
+setDiffTemplate(tmplA .. tmplB .. tmplC, tmplTensor, tmplA)
+setDiffTemplate(tmplA .. tmplB .. tmplA, tmplTensor, tmplB)
 
 // setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
 
-setDiffTemplate(tmplScalar * Dev, tmplB, tmplTensor * diff(tmplA, tmplB))
+// setDiffTemplate(tmplScalar * Dev, tmplB, tmplTensor * diff(tmplA, tmplB))
 
-setDiffTemplate(tmplTensor * tmplA, tmplB, tmplTensor * diff(tmplA, tmplB))
-setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
-setDiffTemplate(tmplVector * tmplA, tmplB, tmplVector * diff(tmplA, tmplB))
-setDiffTemplate(tmplMatrix * tmplA, tmplB, tmplMatrix * diff(tmplA, tmplB))
+// setDiffTemplate(tmplTensor * tmplA, tmplB, tmplTensor * diff(tmplA, tmplB))
+// setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
+// setDiffTemplate(tmplVector * tmplA, tmplB, tmplVector * diff(tmplA, tmplB))
+// setDiffTemplate(tmplMatrix * tmplA, tmplB, tmplMatrix * diff(tmplA, tmplB))
 
-// setDiffTemplate(tmplA * tmplTensor, tmplB, tmplTensor * diff(tmplA, tmplB))
-setDiffTemplate(tmplA * tmplScalar, tmplB, tmplScalar * diff(tmplA, tmplB))
-setDiffTemplate(tmplA * tmplVector, tmplB, tmplVector * diff(tmplA, tmplB))
-setDiffTemplate(tmplA * tmplMatrix, tmplB, tmplMatrix * diff(tmplA, tmplB))
+// // setDiffTemplate(tmplA * tmplTensor, tmplB, tmplTensor * diff(tmplA, tmplB))
+// setDiffTemplate(tmplA * tmplScalar, tmplB, tmplScalar * diff(tmplA, tmplB))
+// setDiffTemplate(tmplA * tmplVector, tmplB, tmplVector * diff(tmplA, tmplB))
+// setDiffTemplate(tmplA * tmplMatrix, tmplB, tmplMatrix * diff(tmplA, tmplB))
 
-setDiffTemplate(tmplScalar * tmplA * tmplScalar, tmplB, tmplScalar * tmplScalar * tmplA)
+// setDiffTemplate(tmplScalar * tmplA * tmplScalar, tmplB, tmplScalar * tmplScalar * tmplA)

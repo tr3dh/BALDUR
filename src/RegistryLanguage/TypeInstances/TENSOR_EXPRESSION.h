@@ -77,7 +77,8 @@ struct TensorExpression{
 
     //
     static void replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap);
-    static bool assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap);
+    static bool assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap, bool disableLog = false);
+    static bool structurallyEqual(const TensorExpression& a, const TensorExpression& b);
 
     //
     TkType Relation;
@@ -116,6 +117,9 @@ struct TensorExpression{
     void convertToTemplate();
     bool isTemplatedNode() const;
     bool isTemplate() const;
+
+    //
+    size_t getNumOfUniqueNodes() const;
 
     //
     std::vector<std::string> getRawLabels();

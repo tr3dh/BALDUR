@@ -13,9 +13,11 @@ decl main(){
 
     void [scalar] = tExpr("scalar", 0)
 
+    void [_A,_B,_C] = tExpr("A", 4), tExpr("B", 4), tExpr("C", 4)
+
     slog(" ")
     slog("result", diff(scalar * x, X))
-    slog("result", diff(scalar * x * scalar, X))
+    slog("result", diff(_A .. _B .. _A, scalar))
 
     return 0
 }
