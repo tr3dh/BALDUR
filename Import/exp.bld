@@ -15,6 +15,11 @@ decl main(){
 
     void [_A,_B,_C] = tExpr("A", 4), tExpr("B", 4), tExpr("C", 4)
 
+    Vector3>>[a] += 2
+    Vector3>>[getB()] += 3
+
+    Vector3>>[printStatics()]
+
     slog(" ")
     slog("result", diff(scalar * x, X))
     slog("result", diff(_A .. _B .. _A, scalar))

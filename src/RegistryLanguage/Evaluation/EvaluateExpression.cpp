@@ -262,7 +262,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 const ASTNode& child = node.children[argIdx];
 
                 // getMember
-                if(child.Relation == TkType::Listing){
+                if(child.Relation == TkType::Listing && child.children[0].Relation != TkType::Argument && child.children[0].Relation != TkType::Chain){
 
                     for(size_t listingArgIdx = 1; listingArgIdx < child.children[0].children.size(); listingArgIdx++){
 
@@ -301,12 +301,29 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 }
                 // getMember
                 else if(child.Relation == TkType::Argument){ getAttrib(baseMember, child); }
+                else if(child.Relation == TkType::Listing && child.children[0].Relation == TkType::Argument){ getAttrib(baseMember, child.children[0]); }
                 // exec MemberFunc
                 else if(child.children.size() == 2){
 
                     // functionLabel : node.argument
                     const std::string& functionLabel = child.children[0].argument;
                     const ASTNode& params = child.children[1];
+
+                    //
+                    ProcessingResult paramRes = evaluateExpression(params, scope, returnToScope, context);
+
+                    //
+                    ProcessingResult res;
+                    callMemberFunction(functionLabel, res.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope, &baseMember);
+                    
+                    prcResult.evalResults.clear();
+                    prcResult.append(res);
+                }
+                else if(child.Relation == TkType::Listing && child.children[0].children.size() == 2){
+
+                    // functionLabel : node.argument
+                    const std::string& functionLabel = child.children[0].children[0].argument;
+                    const ASTNode& params = child.children[0].children[1];
 
                     //
                     ProcessingResult paramRes = evaluateExpression(params, scope, returnToScope, context);
@@ -328,7 +345,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             
             bool isFunctionCall = node.children[1].children.size() == 2;
 
-            if(node.children[1].Relation == TkType::Listing){
+            if(node.children[1].Relation == TkType::Listing &&
+                (node.children[1].children[0].Relation == TkType::Argument || node.children[1].children[0].Relation == TkType::Chain)){
+
+                isFunctionCall = node.children[1].children[0].children.size() == 2;
+            }
+
+            if(node.children[1].Relation == TkType::Listing && node.children[1].children[0].Relation != TkType::Argument && node.children[1].children[0].Relation != TkType::Chain){
 
                 for(size_t listingArgIdx = 0; listingArgIdx < node.children[1].children[0].children.size(); listingArgIdx++){
 
@@ -360,6 +383,15 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     }
                 }
             }
+            else if(!isFunctionCall && node.children[1].Relation == TkType::Listing){
+                
+                prcResult.evalResults.emplace_back();
+
+                Variable* varPtr = getStaticAttrib(node.children[0], node.children[1].children[0]);
+                RETURNING_ASSERT(varPtr != nullptr, "", {});
+
+                prcResult.evalResults.back().setLValue(varPtr);
+            }
             else if(!isFunctionCall){
 
                 prcResult.evalResults.emplace_back();
@@ -368,6 +400,14 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 RETURNING_ASSERT(varPtr != nullptr, "", {});
 
                 prcResult.evalResults.back().setLValue(varPtr);
+            }
+            else if(node.children[1].Relation == TkType::Listing){
+            
+                const ASTNode& params = node.children[1].children[0].children[1];
+                ProcessingResult paramRes = evaluateExpression(params, scope, scope, context);
+
+                callStaticFunction(getTypeIndexByKeyword(node.children[0].argument), node.children[1].children[0].children[0].argument,
+                    prcResult.evalResults, convertEvalResultsToPtrVec(prcResult.evalResults), scope);
             }
             else{
 
