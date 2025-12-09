@@ -2,12 +2,16 @@
 
 #include "TypeInstances/gatheredInstances.h"
 
-enum class ExecuteScriptAs{
+enum class ExecuteScriptAs : int{
 
     None,
     MainProc,
     CoProc,
     Include
+};
+
+enum class STDUniformType : int{
+
 };
 
 struct ProcessingResult;

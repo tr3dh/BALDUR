@@ -65,6 +65,23 @@ namespace types{
         {INT::typeIndex});
 
         // Operatoren
+        registerFunction("__addAssign__", {STRING::typeIndex, STRING::typeIndex},
+            [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_ARG(STRING, 0); GET_ARG(STRING, 1);
+
+                // schreiben in returns
+                arg0->getMember() += arg1->getMember();
+        },
+        {});
+
+        // Operatoren
         registerFunction("__equal__", {STRING::typeIndex, STRING::typeIndex},
             [__functionLabel__ = "__equal__", __numArgs__ = 2](FREG_ARGS){
 

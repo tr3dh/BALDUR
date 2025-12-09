@@ -23,14 +23,18 @@ IndexNotatedTensorExpression::IndexNotatedTensorExpression() = default;
 IndexNotatedTensorExpression::IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
 
     Relation = TkType::Argument;
+
+    fillIndices();
 }
 
 bool IndexNotatedTensorExpression::isValid(){
+
     return label != NULLSTR && tensorOrder >= 0;
 }
 
 void IndexNotatedTensorExpression::fillIndices(){
     
+    notatedIndices.clear();
     notatedIndices.reserve(tensorOrder);
 
     for(int i = 0; i < tensorOrder; i++){
@@ -177,7 +181,7 @@ void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression&
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -195,7 +199,9 @@ void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression&
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
+
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -231,7 +237,7 @@ void IndexNotatedTensorExpression::subAssign(const IndexNotatedTensorExpression&
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -249,8 +255,8 @@ void IndexNotatedTensorExpression::subAssign(const IndexNotatedTensorExpression&
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
-
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
+    
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
     const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
@@ -276,7 +282,7 @@ void IndexNotatedTensorExpression::mulAssign(const IndexNotatedTensorExpression&
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -294,7 +300,7 @@ void IndexNotatedTensorExpression::mulAssign(const IndexNotatedTensorExpression&
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -332,7 +338,7 @@ void IndexNotatedTensorExpression::dotProductAssign(const IndexNotatedTensorExpr
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -350,7 +356,7 @@ void IndexNotatedTensorExpression::dotProductAssign(const IndexNotatedTensorExpr
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -389,7 +395,7 @@ void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorEx
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -407,7 +413,7 @@ void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorEx
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -450,7 +456,7 @@ void IndexNotatedTensorExpression::dyadProductAssign(const IndexNotatedTensorExp
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -468,7 +474,7 @@ void IndexNotatedTensorExpression::dyadProductAssign(const IndexNotatedTensorExp
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -506,7 +512,7 @@ void IndexNotatedTensorExpression::mirroringDoubleContractionAssign(const IndexN
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -524,7 +530,7 @@ void IndexNotatedTensorExpression::mirroringDoubleContractionAssign(const IndexN
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -563,7 +569,7 @@ void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNo
     bool copySelf = false;
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     if(Relation != TkType::Operator || Operator != scalarOperation){
@@ -581,7 +587,7 @@ void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNo
 
     //
     children.emplace_back(copySelf ? children.back() : other);
-    if(children.back().Relation == TkType::Argument && children.back().notatedIndices.size() != tensorOrder){ children.back().fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
@@ -609,7 +615,7 @@ void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNo
 void IndexNotatedTensorExpression::transposeAssign(){
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     moveSelfIntoFirstChild();
@@ -627,7 +633,7 @@ void IndexNotatedTensorExpression::transposeAssign(){
 void IndexNotatedTensorExpression::inverseAssign(){
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     moveSelfIntoFirstChild();
@@ -656,7 +662,7 @@ void IndexNotatedTensorExpression::traceAssign(){
     RETURNING_ASSERT(tensorOrder > 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     // Container benötigt ??
 
@@ -685,7 +691,7 @@ void IndexNotatedTensorExpression::traceAssign(int contractIndices){
     RETURNING_ASSERT(tensorOrder >= contractIndices, "Tensor kann nicht so viele Indices kontrahieren",);
 
     //
-    if(Relation == TkType::Argument && notatedIndices.size() != tensorOrder){ fillIndices(); }
+    if(Relation == TkType::Argument){ fillIndices(); }
 
     //
     const std::vector<NotationIndex>& indices = getSortedIndices();
@@ -760,6 +766,20 @@ std::string IndexNotatedTensorExpression::toString(size_t depth) const {
         }
 
         result += " }";
+    }
+    else if(Relation == TkType::Operator && Operator == IndexNotationOperator::Diff){
+
+        result += "diff(";
+
+        for(size_t i = 0; i < children.size(); i++){
+
+            const IndexNotatedTensorExpression& child = children[i];
+
+            result += i > 0 ? ", " : "";
+            result += child.toString(depth + 1);
+        }
+
+        result += ")";
     }
     else if(Relation == TkType::Operator){
         
@@ -846,7 +866,52 @@ std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const I
     {TensorExpressionOperator::DyadicProduct, &IndexNotatedTensorExpression::dyadProductAssign},
     {TensorExpressionOperator::MirroringDoubleContraction, &IndexNotatedTensorExpression::mirroringDoubleContractionAssign},
     {TensorExpressionOperator::CrossingDoubleContraction, &IndexNotatedTensorExpression::crossingDoubleContractionAssign},
+    {TensorExpressionOperator::Diff, &IndexNotatedTensorExpression::diffAssign},
 };
+
+bool IndexNotatedTensorExpression::equals(const IndexNotatedTensorExpression& other){
+
+    if(label != other.label){ return false; }
+
+    if(notatedIndices.size() != other.notatedIndices.size()){ return false; }
+
+    for(size_t idx = 0; idx < notatedIndices.size(); idx++){
+
+        if(notatedIndices[idx] != other.notatedIndices[idx]){ return false; }
+    }
+
+    return true;
+}
+
+void IndexNotatedTensorExpression::diffAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Diff;
+
+    bool copySelf = false;
+
+    // mov
+    if(this == &other){ copySelf = true; }
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = IndexNotationOperator::Diff;
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    //
+    if(children.begin()->Relation == TkType::Argument){ children.begin()->fillIndices(); }
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
+
+    //
+    tensorOrder = children.begin()->tensorOrder + children.back().tensorOrder;
+
+    //
+    notatedIndices.clear();
+    notatedIndices = getUniqueChildIndices();
+}
 
 IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr, size_t depth = 0){
 
@@ -857,10 +922,6 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
         case (TkType::Argument):{
             
             res = IndexNotatedTensorExpression(expr.label, expr.tensorOrder);
-
-            if(depth == 0){
-                res.fillIndices();
-            }
 
             break;
         }
@@ -1252,6 +1313,62 @@ namespace types{
 
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 member0.traceAssign();
+        },
+        {});
+
+        //
+        registerFunction("__traceInplaceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__traceInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+
+                IndexNotatedTensorExpression& member0 = arg0->getMember();
+                member0.traceAssign();
+        },
+        {});
+
+        //
+        registerFunction("diff", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "diff", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                returns[0].getVariableRef().clone(inputs[0]->getVariableRef());
+
+                // Returns
+                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 1);
+
+                ret0->getMember().diffAssign(arg1->getMember());
+        },
+        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("__diffAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__diffAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 1);
+
+                IndexNotatedTensorExpression& member0 = arg0->getMember();
+                IndexNotatedTensorExpression& member1 = arg1->getMember();
+
+                member0.diffAssign(member1);
         },
         {});
 

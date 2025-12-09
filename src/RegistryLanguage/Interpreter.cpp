@@ -84,6 +84,10 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     nullScope.setVariable("__script__", new types::STRING(std::filesystem::absolute(scriptPath).string()));
 
     //
+    nullScope.constructVariable("__proc__", types::STRING::typeIndex);
+    nullScope.setVariable("__proc__", new types::STRING(std::filesystem::absolute(scriptPath).string()));
+
+    //
     nullScope.constructVariable("__args__", types::STRING::typeIndex);
     nullScope.setVariable("__args__", new types::STRING("--execute"));
 

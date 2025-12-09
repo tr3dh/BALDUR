@@ -65,11 +65,17 @@ extern std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleAr
 extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs;
 extern std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates;
 
+extern std::map<TensorExpression, TensorExpression> tensorExpressionSimplifications;
+
 struct SubstitutionComparator {
 
     bool operator()(const TensorExpression& a, const TensorExpression& b) const;
 };
 
+//
+extern bool unwrapOperands;
+
+//
 struct TensorExpression{
 
     //
@@ -191,8 +197,12 @@ struct IndexNotatedTensorExpression{
     void transposeAssign();
     void inverseAssign();
 
+    void diffAssign(const IndexNotatedTensorExpression& other);
+
     void traceAssign(int contractIndices);
     void traceAssign();
+
+    bool equals(const IndexNotatedTensorExpression& other);
 
     std::string toString(size_t depth = 0) const;
     friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);

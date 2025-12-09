@@ -10,19 +10,11 @@ requires [ExecMode == "DEBUG"] "..."
 decl main(){
     
     logDiffTemplates()
+    logSimplifications()
 
-    void [scalar] = tExpr("scalar", 0)
+    void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 2)
 
-    void [_A,_B,_C] = tExpr("A", 4), tExpr("B", 4), tExpr("C", 4)
-
-    Vector3>>[a] += 2
-    Vector3>>[getB()] += 3
-
-    Vector3>>[printStatics()]
-
-    slog(" ")
-    slog("result", diff(scalar * x, X))
-    slog("result", diff(_A .. _B .. _A, scalar))
+    slog(unwrap(diff(scalar * scalar * scalar * x, X)))
 
     return 0
 }

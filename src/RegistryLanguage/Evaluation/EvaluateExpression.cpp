@@ -1085,8 +1085,21 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 std::string scriptPath = (fs::path(static_cast<types::STRING*>(scope.getVariable("__CWD__")->getData())->getMember()) /
                                             fs::path(static_cast<types::STRING*>(child.getData())->getMember() + "." + g_languageScriptSuffix)).string();
 
+                //
+                Variable tmpCalledAs; tmpCalledAs.clone(*scope.getVariable("__ScriptCalledAs__"));
+                Variable tmpScript; tmpScript.clone(*scope.getVariable("__script__"));
+
+                // Hier wird Skript als auszuführendes MainProc aufgerufen
+                scope.getVariable("__ScriptCalledAs__")->clone(*scope.getVariable("__Include__"));
+                scope.setVariable("__script__", new types::STRING(scriptPath));
+
+                //
                 ProcessingResult incRes = executeScript(scriptPath, &scope, ExecuteScriptAs::Include);
                 prcResult.append(incRes);
+
+                //
+                scope.getVariable("__ScriptCalledAs__")->clone(tmpCalledAs);
+                scope.getVariable("__script__")->clone(tmpScript);
             }
         }
         else{

@@ -1,5 +1,7 @@
 #include "TENSOR_EXPRESSION.h"
 
+bool unwrapOperands = false;
+
 std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings = {
 
     {TensorExpressionOperator::None, "INV_OPS"},
@@ -42,6 +44,8 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
 
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates = {};
+
+std::map<TensorExpression, TensorExpression> tensorExpressionSimplifications = {};
 
 // Substitutionsmap muss zusätzlich nach den labels der templatierten Nodes unterscheiden sonst
 // kann nur eine templatierte Node einer Stufe (oder einmal -1) in der Map stehen
@@ -318,7 +322,7 @@ void TensorExpression::addAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -334,7 +338,7 @@ void TensorExpression::addAssign(const TensorExpression& other){
     children.emplace_back(copySelf ? children.back() : other);
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == operation){
+    if(unwrapOperands && (children.back().Relation == TkType::Operator && children.back().Operator == operation)){
 
         // sichere Kopie
         std::vector<TensorExpression> tempChildren = children.back().children;
@@ -368,7 +372,7 @@ void TensorExpression::subAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -408,7 +412,7 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -424,8 +428,8 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     children.emplace_back(copySelf ? children.back() : other);
 
     // unwrap (nur falls ein Operand ein Skalar ist)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == operation
-        && (children.back().tensorOrder == 0 || tensorOrder == 0)){
+    if(unwrapOperands && (children.back().Relation == TkType::Operator && children.back().Operator == operation
+        && (children.back().tensorOrder == 0 || tensorOrder == 0))){
 
         // sichere Kopie
         std::vector<TensorExpression> tempChildren = children.back().children;
@@ -458,7 +462,7 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -498,7 +502,7 @@ void TensorExpression::crossProductAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -534,7 +538,7 @@ void TensorExpression::dyadProductAssign(const TensorExpression& other){
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -572,7 +576,7 @@ void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& 
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -612,7 +616,7 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
     bool copySelf = false;
 
     //
-    if(Relation != TkType::Operator || Operator != operation){
+    if(!unwrapOperands || (Relation != TkType::Operator || Operator != operation)){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -794,7 +798,7 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
             if(isRepresentationConsistent){ 
 
-                LOG << "gefunden " << it->first.first.toString() << " " << it->first.second.toString() << endl;
+                // LOG << "gefunden " << it->first.first.toString() << " " << it->first.second.toString() << endl;
                 break;
             }
         }
@@ -1496,6 +1500,25 @@ namespace types{
         {});
 
         //
+        registerFunction("setEqual", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "setEqual", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember(), member1 = arg1->getMember();
+
+                RETURNING_ASSERT(tensorExpressionSimplifications.try_emplace(member0, member1).second,
+                                 "Simplification für gegebenes Tensorpaar bereits gesetzt",);
+        },
+        {});
+
+        //
         registerFunction("logDiffTemplates", {},
             [__functionLabel__ = "logDiffTemplates", __numArgs__ = 0](FREG_ARGS){
 
@@ -1504,26 +1527,88 @@ namespace types{
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
                 PREPARE_RETURNS;
 
+                LOG << "Found " << tensorExpressionDiffTemplates.size() << " registered Diff Templates :" << endl;
+
                 for(const auto& [k,v] : tensorExpressionDiffTemplates){
 
-                    LOG << "d " << k.first.toString(1) << " | d " << k.second.toString(1) << " -> " << v.toString(1) << endl;
+                    LOG << "diff[ " << k.first.toString(1) << ", " << k.second.toString(1) << " ] = " << v.toString(1) << endl;
                 }
+
+                LOG << endl;
         },
         {});
 
         //
-        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "rebuild", {},
-            [__functionLabel__ = "rebuild", __numArgs__ = 0](FREG_ARGS){
+        registerFunction("logSimplifications", {},
+            [__functionLabel__ = "logSimplifications", __numArgs__ = 0](FREG_ARGS){
 
                 // Asserts
-                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_IS_NO_MEMBER_FUNCTION;
                 ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
                 PREPARE_RETURNS;
 
-                GET_MEMBER(TENSOR_EXPRESSION);
+                LOG << "Found " << tensorExpressionSimplifications.size() << " registered Simplifications :" << endl;
+
+                for(const auto& [k,v] : tensorExpressionSimplifications){
+
+                    LOG << k.toString(1) << " => " << v.toString(1) << endl;
+                }
+
+                LOG << endl;
+        },
+        {});
+
+        //
+        registerFunction("rebuild", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "rebuild", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
 
                 GET_RETURN(TENSOR_EXPRESSION, 0);
-                ret0->getMember() = mb->getMember().rebuild();
+                GET_ARG(TENSOR_EXPRESSION, 0)
+
+                ret0->getMember() = arg0->getMember().rebuild();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("setUnwrapOperands", {BOOL::typeIndex},
+            [__functionLabel__ = "setUnwrapOperands", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                GET_ARG(BOOL, 0);
+
+                //
+                unwrapOperands = arg0->getMember();
+        },
+        {});
+
+        //
+        registerFunction("unwrap", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "unwrap", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(TENSOR_EXPRESSION, 0)
+
+                bool storedFlag = unwrapOperands;
+                unwrapOperands = true;
+
+                ret0->getMember() = arg0->getMember().rebuild();
+
+                unwrapOperands = storedFlag;
         },
         {TENSOR_EXPRESSION::typeIndex});
 
