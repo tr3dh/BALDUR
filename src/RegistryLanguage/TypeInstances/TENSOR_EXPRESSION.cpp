@@ -83,7 +83,11 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
         return lhs.label < rhs.label;
     }
 
-    if (lhs.tensorOrder != rhs.tensorOrder){ return lhs.tensorOrder > rhs.tensorOrder; }
+    if(lhs.tensorOrder != rhs.tensorOrder){ return lhs.tensorOrder > rhs.tensorOrder; }
+
+    if(lhs.isConstant && rhs.isConstant){ return lhs.value < rhs.value; }
+    else if(lhs.isConstant && !rhs.isConstant && rhs.Relation == TkType::Argument){ return true; }
+    else if(!lhs.isConstant && lhs.Relation == TkType::Argument && rhs.isConstant){ return false; }
 
     //
     const auto& a = lhs.children;
@@ -156,6 +160,11 @@ size_t TensorExpression::getNumOfUniqueNodes() const{
 
 // Statics
 void TensorExpression::replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap){
+
+    // Konstanten müssen nicht ersetzt werden
+    if(expr.isConstant){ return; }
+    if(expr.Relation == TkType::Argument && !expr.isTemplate()){ return; }
+    if(!expr.isTemplate()){ return; }
 
     for(const auto& [subsKey, subsVal] : subsMap){
         
@@ -245,6 +254,13 @@ TensorExpression::TensorExpression() = default;
 TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn) : label(labelIn), tensorOrder(tensorOrderIn){
 
     Relation = TkType::Argument;
+}
+
+TensorExpression::TensorExpression(float valueIn) : value(valueIn){
+
+    Relation = TkType::Argument;
+    tensorOrder = 0;
+    isConstant = true;
 }
 
 void TensorExpression::moveSelfIntoFirstChild(){
@@ -780,6 +796,8 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     equal &= tensorOrder != -1 && other.tensorOrder != -1 ? tensorOrder == other.tensorOrder : true;
     equal &= children.size() == other.children.size();
 
+    if(isConstant && other.isConstant){ return value == other.value; }
+
     if(!equal){ return equal; }
 
     for(size_t childIdx = 0; childIdx < children.size(); childIdx++){
@@ -842,7 +860,6 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
             if(isRepresentationConsistent){ 
 
-                // LOG << "gefunden " << it->first.first.toString() << " " << it->first.second.toString() << endl;
                 break;
             }
         }
@@ -869,10 +886,10 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         assembleSubstitutionMap(it->first.first, *this, subsMap);
         assembleSubstitutionMap(it->first.second, other, subsMap);
 
-        // for(const auto& [k, v] : subsMap){
+        for(const auto& [k, v] : subsMap){
 
-        //     LOG << k.toString() << " <> " << v.toString() << endl;
-        // }
+            LOG << k.toString() << " <> " << v.toString() << endl;
+        }
 
         //
         replaceBySubstitutions(res, subsMap);
@@ -1024,9 +1041,24 @@ std::string TensorExpression::toString(size_t depth) const{
     res += depth == 0 ? "TensorExpression[" + std::to_string(tensorOrder) + "] = " : "";
 
     // Argument node
-    if(Relation == TkType::Argument && children.size() == 0){
+    if(Relation == TkType::Argument && children.size() == 0 && !isConstant){
 
         res += label + "[" + std::to_string(tensorOrder) + "]";
+    }
+    // Constant node
+    else if(Relation == TkType::Argument && children.size() == 0){
+
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(6) << value;
+        std::string str = oss.str();
+
+        // Entferne trailing zeros
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+
+        // Entferne trailing '.' wenn vorhanden
+        if(str.back() == '.') str.pop_back();
+
+        res += str;
     }
     // Container
     else if(Relation == TkType::Operator && children.size() == 1){
@@ -1124,6 +1156,42 @@ namespace types{
         },
         {TENSOR_EXPRESSION::typeIndex});
 
+        //
+        registerFunction("tExpr", {INT::typeIndex},
+            [__functionLabel__ = "tExpr", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(INT, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(static_cast<double>(arg0->getMember()));
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("tExpr", {DOUBLE::typeIndex},
+            [__functionLabel__ = "tExpr", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(DOUBLE, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
         // Konstruktoren
         registerFunction("tExprTmpl", {STRING::typeIndex, INT::typeIndex},
             [__functionLabel__ = "tExprTmpl", __numArgs__ = 2](FREG_ARGS){
@@ -1162,6 +1230,90 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("__addAssign__", {DOUBLE::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                DOUBLE* formerMb = static_cast<DOUBLE*>(inputs[0]->getData()); 
+
+                //
+                inputs[0]->getVariableRef().constructByObject(new TENSOR_EXPRESSION(new TensorExpression(formerMb->getMember())));
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.addAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__addAssign__", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(DOUBLE, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+
+                member0.addAssign(TensorExpression(arg1->getMember()));
+        },
+        {});
+
+        //
+        registerFunction("__addAssign__", {INT::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                INT* formerMb = static_cast<INT*>(inputs[0]->getData()); 
+
+                //
+                inputs[0]->getVariableRef().constructByObject(new TENSOR_EXPRESSION(new TensorExpression(static_cast<double>(formerMb->getMember()))));
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.addAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__addAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__addAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+
+                member0.addAssign(TensorExpression(static_cast<double>(arg1->getMember())));
+        },
+        {});
+
         registerFunction("__subAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__subAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -1180,6 +1332,90 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("__subAssign__", {DOUBLE::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__subAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                DOUBLE* formerMb = static_cast<DOUBLE*>(inputs[0]->getData()); 
+
+                //
+                inputs[0]->getVariableRef().constructByObject(new TENSOR_EXPRESSION(new TensorExpression(formerMb->getMember())));
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.subAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__subAssign__", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "__subAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(DOUBLE, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+
+                member0.subAssign(TensorExpression(arg1->getMember()));
+        },
+        {});
+
+        //
+        registerFunction("__subAssign__", {INT::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__subAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                INT* formerMb = static_cast<INT*>(inputs[0]->getData()); 
+
+                //
+                inputs[0]->getVariableRef().constructByObject(new TENSOR_EXPRESSION(new TensorExpression(static_cast<double>(formerMb->getMember()))));
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.subAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__subAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__subAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+
+                member0.subAssign(TensorExpression(static_cast<double>(arg1->getMember())));
+        },
+        {});
+
         registerFunction("__mulAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -1195,6 +1431,90 @@ namespace types{
                 TensorExpression& member1 = arg1->getMember();
 
                 member0.mulAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__mulAssign__", {DOUBLE::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                DOUBLE* formerMb = static_cast<DOUBLE*>(inputs[0]->getData()); 
+
+                //
+                inputs[0]->getVariableRef().constructByObject(new TENSOR_EXPRESSION(new TensorExpression(formerMb->getMember())));
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.mulAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__mulAssign__", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(DOUBLE, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+
+                member0.mulAssign(TensorExpression(arg1->getMember()));
+        },
+        {});
+
+        //
+        registerFunction("__mulAssign__", {INT::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                INT* formerMb = static_cast<INT*>(inputs[0]->getData()); 
+
+                //
+                inputs[0]->getVariableRef().constructByObject(new TENSOR_EXPRESSION(new TensorExpression(static_cast<double>(formerMb->getMember()))));
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.mulAssign(member1);
+        },
+        {});
+
+        //
+        registerFunction("__mulAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+
+                member0.mulAssign(TensorExpression(static_cast<double>(arg1->getMember())));
         },
         {});
 
@@ -1620,8 +1940,8 @@ namespace types{
 
                 TensorExpression& member0 = arg0->getMember(), member1 = arg1->getMember(), member2 = arg2->getMember();
                 
-                RETURNING_ASSERT((member0.isTemplate() || member1.isTemplate()) && member2.isTemplate(),
-                                  "In übergebenen Termen sind keine templatierten Nodes vorhanden",);
+                // RETURNING_ASSERT((member0.isTemplate() || member1.isTemplate()) && member2.isTemplate(),
+                //                   "In übergebenen Termen sind keine templatierten Nodes vorhanden",);
 
                 RETURNING_ASSERT(tensorExpressionDiffTemplates.try_emplace(std::make_pair(member0, member1), member2).second,
                                  "Differential für gegebenes Tensortemplatepaar bereits gesetzt : " +

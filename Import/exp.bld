@@ -14,16 +14,12 @@ decl main(){
 
     void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 2)
 
-    slog(unwrap(diff(scalar * scalar * scalar * x, X)))
-
-    slog(toIDN(trace(F . F, 1)))
-
-    slog(R . U)
+    slog(diff(0.3 * scalar, B))
 
     void [tmp] = (V . R)' . (R . U)
     simplify(tmp)
 
-    slog(tmp)
+    slog(diff(time, scalar))
 
     return 0
 }

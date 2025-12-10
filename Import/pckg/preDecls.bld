@@ -69,3 +69,7 @@ setEqual(V . R, F)
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Instanz, Struktur und Tensorstufe
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
+
+setDiffTemplate(0.3 * tmplA, tmplB, tExpr(1) * tmplB)
+setDiffTemplate(0.4 * tmplA, tmplB, tExpr(2))
+setDiffTemplate(time, tmplA, time * tmplA)
