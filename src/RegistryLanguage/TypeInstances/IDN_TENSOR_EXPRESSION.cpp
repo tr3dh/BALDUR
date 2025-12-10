@@ -714,6 +714,26 @@ void IndexNotatedTensorExpression::traceAssign(int contractIndices){
     tensorOrder = notatedIndices.size();
 }
 
+void IndexNotatedTensorExpression::determinantAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder > 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    if(Relation == TkType::Argument){ fillIndices(); }
+
+    // Container benötigt ??
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Determinant;
+    notatedIndices = {};
+    tensorOrder = 0;
+}
+
 std::string IndexNotatedTensorExpression::toString(size_t depth) const {
 
     //
@@ -953,6 +973,10 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
             else if(expr.Operator == TensorExpressionOperator::Trace){
                 
                 res.traceAssign(expr.children.begin()->tensorOrder - expr.tensorOrder - 1);
+            }
+            else if(expr.Operator == TensorExpressionOperator::Determinant){
+                
+                res.determinantAssign();
             }
             else if(expr.Operator == TensorExpressionOperator::Section){
                 
@@ -1296,23 +1320,6 @@ namespace types{
 
                 IndexNotatedTensorExpression& member0 = arg0->getMember();
                 member0.transposeAssign();
-        },
-        {});
-
-        //
-        registerFunction("__traceInplaceAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "__traceInplaceAssign__", __numArgs__ = 1](FREG_ARGS){
-
-                // Asserts
-                ASSERT_IS_NO_MEMBER_FUNCTION;
-                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
-                PREPARE_RETURNS;
-
-                // Returns
-                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
-
-                IndexNotatedTensorExpression& member0 = arg0->getMember();
-                member0.traceAssign();
         },
         {});
 

@@ -229,7 +229,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 const ASTNode& child = node.children[childIdx];
                 paramResults = evaluateExpression(child, scope, returnToScope, context);
 
-                RETURNING_ASSERT(paramResults.evalResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
+                // RETURNING_ASSERT(paramResults.evalResults.size() == 1, "Param Section Eintrag gibt ungleich ein shared EvalResult zurück", {});
 
                 prcResult.append(paramResults);
             }

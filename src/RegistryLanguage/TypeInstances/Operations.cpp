@@ -534,7 +534,7 @@ void emplaceStdOperations(){
 
     //
     registerFunction("__copy__", {IObject::ARBITATRY_TYPE},
-        [__functionLabel__ = "__copy__", __numArgs__ = 0](FREG_ARGS){
+        [__functionLabel__ = "__copy__", __numArgs__ = 1](FREG_ARGS){
 
             // Asserts
             ASSERT_IS_NO_MEMBER_FUNCTION;

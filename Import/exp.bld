@@ -16,6 +16,15 @@ decl main(){
 
     slog(unwrap(diff(scalar * scalar * scalar * x, X)))
 
+    slog(toIDN(trace(F . F, 1)))
+
+    slog(R . U)
+
+    void [tmp] = (V . R)' . (R . U)
+    simplify(tmp)
+
+    slog(tmp)
+
     return 0
 }
 

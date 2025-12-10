@@ -18,6 +18,7 @@ enum class IndexNotationOperator{
     Transposition,
     Inversion,
     Trace,
+    Determinant,
 
     Diff,
 
@@ -49,6 +50,8 @@ enum class TensorExpressionOperator{
     Inversion,
     Transposition,
     Trace,
+    Determinant,
+
     Section,
 
     Diff,
@@ -137,11 +140,17 @@ struct TensorExpression{
     void traceAssign(int contractIndices);
     void traceAssign();
 
+    void determinantAssign();
+
     void sectionAssign();
 
     //
     TensorExpression rebuild();
 
+    //
+    bool simplifyOnce();
+    void simplify();
+    
     //
     std::string toString(size_t depth = 0) const;
 
@@ -201,6 +210,8 @@ struct IndexNotatedTensorExpression{
 
     void traceAssign(int contractIndices);
     void traceAssign();
+
+    void determinantAssign();
 
     bool equals(const IndexNotatedTensorExpression& other);
 
