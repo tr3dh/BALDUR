@@ -12,14 +12,14 @@ decl main(){
     logDiffTemplates()
     logSimplifications()
 
-    void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 2)
+    void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 3)
 
-    slog(diff(0.3 * scalar, B))
+    slog(diff(A * 0.9, B))
 
-    void [tmp] = (V . R)' . (R . U)
+    void tmp = 0.5 * (L' + L)
     simplify(tmp)
 
-    slog(diff(time, scalar))
+    slog(tmp)
 
     return 0
 }

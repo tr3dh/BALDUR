@@ -90,8 +90,8 @@ struct TensorExpression{
     static bool structurallyEqual(const TensorExpression& a, const TensorExpression& b);
 
     //
-    TkType Relation;
-    TensorExpressionOperator Operator;
+    TkType Relation = TkType::None;
+    TensorExpressionOperator Operator = TensorExpressionOperator::None;
 
     std::string label = NULLSTR;
     int tensorOrder = -1;
@@ -126,6 +126,9 @@ struct TensorExpression{
     void inverseAssign();
 
     //
+    bool isCommutativ() const;
+
+    //
     void convertToTemplate();
     bool isTemplatedNode() const;
     bool isTemplate() const;
@@ -148,7 +151,8 @@ struct TensorExpression{
     void sectionAssign();
 
     //
-    TensorExpression rebuild();
+    TensorExpression rebuild() const;
+    TensorExpression unwrap() const;
 
     //
     bool simplifyOnce();
