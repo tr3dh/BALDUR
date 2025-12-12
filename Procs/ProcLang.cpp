@@ -110,8 +110,8 @@ int main(int argc, char* argv[]){
         RETURNING_ASSERT(fs::exists(path), "Script existiert nicht", 1);
 
         std::filesystem::current_path(exeDir);
-        LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
-        LOG << "Start Unpacking and Simulating " << path << ENDL;
+        // LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
+        // LOG << "Start Unpacking and Simulating " << path << ENDL;
 
         auto result = executeProgram(path);
     }

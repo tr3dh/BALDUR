@@ -7,7 +7,8 @@ requires [calledAs(__Include__)] [__script__ + " is an Include and shouldnt be e
 setUnwrapOperands(false)
 
 // Dummy tExprs für DiffTemplates
-// durch -1 ersetzen bei A und B für arbitary
+// Stufe -1 bedeutet arbitary template, hier kann jeder beliebige andere Ausdruck eingesetzt werden
+// eine konkrete Stufe ermöglicht nur das Einsetzen von Ausdrücke dieser konkreten Stufe
 
 //
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
@@ -43,18 +44,18 @@ decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
 decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
 
 // Direkte Ersetzung und Vereinfachung
-setDiff(x, X, F)                    // Deformationsgradient: ∂x/∂X = F
-setDiff(u, X, H)                    // Verschiebungsgradient: ∂u/∂X = H
-setDiff(v, x, L)                    // Geschwindigkeitsgradient: ∂v/∂x = L
+setDiff(x, X, F)                                        // Deformationsgradient: ∂x/∂X = F
+setDiff(u, X, H)                                        // Verschiebungsgradient: ∂u/∂X = H
+setDiff(v, x, L)                                        // Geschwindigkeitsgradient: ∂v/∂x = L
 
 //
-setEqual(tExprIdentity(2) + H, F)                // F = I + H
-setEqual((L + L') * 0.5, D)                      // D = 0.5 * (L + L^T)
-setEqual((L - L') * 0.5, W)                      // W = 0.5 * (L - L^T)
+setEqual(tExprIdentity(2) + H, F)                       // F = I + H
+setEqual((L + L') * 0.5, D)                             // D = 0.5 * (L + L^T)
+setEqual((L - L') * 0.5, W)                             // W = 0.5 * (L - L^T)
 
 // Cauchy-Green Tensoren
-setEqual(F' . F, C)                                 // C = F^T · F
-setEqual(F . F', B)                                 // B = F · F^T
+setEqual(F' . F, C)                                     // C = F^T · F
+setEqual(F . F', B)                                     // B = F · F^T
 
 // Verzerrungsmaße
 // setEqual((C - tExprIdentity(2)) * 0.5, E)           // E = 0.5 * (C - I)

@@ -1,0 +1,35 @@
+// Beispiel Programm in Baldur
+fetch script ["pckg/preDecls"]
+
+// main des Skript
+decl main(){
+    
+    slog("[Baldur Lang Example Script]")
+    slog(" ")
+    slog("[Iteration through 10 delayed frames]")
+    slog(" ")
+
+    int [currentFrameIdx, numFrames] = 0, 10
+    int ref [currentFrameRef, expRef]
+
+    while(currentFrameIdx < numFrames){
+
+        static{
+            int tmpInt
+            expRef, currentFrameRef << tmpInt, currentFrameIdx
+        }
+
+        sleep(0.1)
+        log("[Frame ", currentFrameIdx , "/", numFrames, "]")
+
+        currentFrameIdx++
+    }
+
+    slog("Garbage Collection Destroyed referenced Variable")
+}
+
+//
+if(calledAs(__MainProc__)){
+
+    return [main()]
+}

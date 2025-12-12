@@ -1071,8 +1071,6 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 callFunction("assert", prcResult.evalResults,
                     {&evaluateExpression(node.children[1], scope, scope, context).evalResults[0],
                         &evaluateExpression(node.children[2], scope, scope, context).evalResults[0]}, scope);
-                
-                LOG << "\n";
             }
         }
         else if(node.children.size() == 3 && node.children[0].argument == "fetch" &&

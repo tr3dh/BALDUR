@@ -302,6 +302,16 @@ windiligent:
 	cd thirdParty/DiligentEngine/build && cmake .. -G "Visual Studio 17 2022" -A x64
 	cd thirdParty/DiligentEngine/build && cmake --build . --config Release -j8
 
+lsp:
+	@if [ ! -d "thirdParty/lsp-framework" ]; then \
+		cd thirdParty && git clone https://github.com/leon-bckl/lsp-framework.git; \
+	fi; \
+	\
+	if [ ! -d "thirdParty/lsp-framework/build" ]; then \
+		mkdir thirdParty/lsp-framework/build; \
+		cd thirdParty/lsp-framework && cmake -S . -B build && cmake --build build --parallel; \
+	fi
+	
 COPYTARGET ?= build/
 dllCopy:
 	mkdir -p $(COPYTARGET);

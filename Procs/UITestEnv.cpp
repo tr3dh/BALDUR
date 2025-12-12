@@ -32,6 +32,7 @@
 
 int main()
 {
+    //
     InitWindow(800, 600, "UI in RenderTexture");
     SetTargetFPS(60);
     RenderTexture2D uiTexture = LoadRenderTexture(800, 600);
