@@ -794,6 +794,36 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("sum", {IObject::ARGS_TYPE},
+            [__functionLabel__ = "sum", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(DOUBLE, 0);
+                double& res = ret0->getMember();
+
+                for (size_t argIdx = 0; argIdx < inputs.size(); argIdx++) {
+
+                    RETURNING_ASSERT(
+                        inputs[argIdx]->getData()->getTypeIndex() == DOUBLE::typeIndex ||
+                        inputs[argIdx]->getData()->getTypeIndex() == INT::typeIndex,
+                        "sum benötigt INT oder DOUBLE als Inputs",
+                    );
+
+                    if(inputs[argIdx]->getData()->getTypeIndex() == DOUBLE::typeIndex) {
+                        res += static_cast<DOUBLE*>(inputs[argIdx]->getVariableRef().getData())->getMember();
+                    } else {
+                        res += static_cast<double>(static_cast<INT*>(inputs[argIdx]->getVariableRef().getData())->getMember());
+                    }
+                }
+        },
+        {DOUBLE::typeIndex});
+
         return true;
     }
 };

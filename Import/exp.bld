@@ -7,8 +7,27 @@ requires string uniform ExecMode
 requires [ExecMode == "DEBUG"] "..."
 
 //
+decl handleArgs(args prms){
+    
+    //
+    void baseMember = prms->get(0)
+
+    //
+    for(int i = 1, i < prms->size(), i++){
+
+        baseMember += prms->get(i)
+    }
+
+    //
+    return baseMember
+}
+
+//
 decl main(){
     
+    log("Programm '", __script__, "' mit args [", __args__, "] gestartet")
+    log(" ")
+
     logDiffTemplates()
     logSimplifications()
 
@@ -20,6 +39,10 @@ decl main(){
     simplify(tmp)
 
     slog(tmp)
+
+    slog(handleArgs(2,5,9,7))
+
+
 
     return 0
 }

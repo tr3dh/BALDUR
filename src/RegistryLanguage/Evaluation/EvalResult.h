@@ -32,6 +32,21 @@ struct EvalResult {
         }
     }
 
+    void reference(EvalResult& other){
+
+        RETURNING_ASSERT(other.isValid(), "",);
+
+        // 
+        if(other.isRValue()){ // && other.getVariableRef().isReference()){
+            
+            variable.reference(other.getVariableRef());
+        }
+        //
+        else if(other.isLValue()){
+            setLValue(&other.getVariableRef());
+        }
+    }
+
     //
     void moveIntoRValue(Variable& varIn){
 

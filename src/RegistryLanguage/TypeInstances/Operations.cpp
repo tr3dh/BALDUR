@@ -498,6 +498,102 @@ void emplaceStdOperations(){
     {});
 
     //
+    registerFunction("logTypeRegister", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+            for(const auto& [label, idx] : g_TypeRegister.typeIndices){
+                LOG << "reg[" << label << "] = " << idx << endl;
+            }
+    },
+    {});
+
+    //
+    registerFunction("logFunctionRegister", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+            LOG << "functionRegister mit " << g_FunctionRegister.functions.size() << " Einträgen" << endl;
+
+            for(const auto& [key, val] : g_FunctionRegister.functions){
+
+                LOG << key.first << " [";
+                for(const auto& idx : key.second){
+                    LOG << idx << ", ";
+                }
+
+                LOG << "]" << endl;
+            }
+    },
+    {});
+
+    //
+    registerFunction("logMemberFunctionRegister", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+
+            for(const auto& [idx, reg] : g_MemberFunctionRegisters){
+                
+                LOG << "Register für tpIdx " << idx << endl;
+
+                for(const auto& [key, val] : reg.functions){
+
+                    LOG << key.first << " [";
+                    for(const auto& idx : key.second){
+                        LOG << idx << ", ";
+                    }
+
+                    LOG << "]" << endl;
+                }
+            }
+    },
+    {});
+
+    //
+    registerFunction("logStaticFunctionRegister", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+
+            for(const auto& [idx, reg] : g_StaticFunctionRegisters){
+                
+                LOG << "Register für tpIdx " << idx << endl;
+
+                for(const auto& [key, val] : reg.functions){
+
+                    LOG << key.first << " [";
+                    for(const auto& idx : key.second){
+                        LOG << idx << ", ";
+                    }
+
+                    LOG << "]" << endl;
+                }
+            }
+    },
+    {});
+
+    //
     registerFunction("assert", {types::BOOL::typeIndex, types::STRING::typeIndex},
         [__functionLabel__ = "assert", __numArgs__ = 2](FREG_ARGS){
 

@@ -9,7 +9,7 @@ typedef std::vector<EvalResult*> EvalResultPtrVec;
 
 //
 typedef EvalResultVec& FunctionReturns;
-typedef const EvalResultPtrVec& FunctionParams;
+typedef EvalResultPtrVec FunctionParams;
 typedef EvalResult* TypeMember;
 
 // Nutzung : <functionlabel, {paramIndices}>
@@ -19,10 +19,10 @@ typedef std::pair<std::string, std::vector<TypeIndex>> FunctionRegisterKey;
 struct Scope;
 
 #define FREG_DEFAULT_CALLARGS \
-    FunctionReturns returns, FunctionParams functionParams, Scope& returnToScope
+    FunctionReturns returns, const FunctionParams& functionParams, Scope& returnToScope
 
 #define FREG_CALLARGS \
-    FunctionReturns returns, FunctionParams functionParams, Scope& returnToScope
+    FunctionReturns returns, const FunctionParams& functionParams, Scope& returnToScope
 
 #define FREG_DEFAULT_CALLARGS_WITH_MEMBER \
     FREG_DEFAULT_CALLARGS, TypeMember member = nullptr
@@ -31,11 +31,11 @@ struct Scope;
     FREG_CALLARGS, TypeMember member
 
 #define FREG_ARGS \
-    FunctionReturns returns, FunctionParams inputs, Scope& returnToScope, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member
+    FunctionReturns returns, const FunctionParams& inputs, Scope& returnToScope, const std::vector<TypeIndex>& functionReturnTypes, TypeMember member
 
 //
 #define FREG_ARG_TYPES \
-    FunctionReturns, FunctionParams, Scope&, const std::vector<TypeIndex>&, TypeMember
+    FunctionReturns, const FunctionParams&, Scope&, const std::vector<TypeIndex>&, TypeMember
 
 // Parameter : void({outputs}, {inputs}, MemberRef)
 typedef std::function<void(FREG_ARG_TYPES)> IObjectFunction;
@@ -96,7 +96,7 @@ public:
         functions[key] = {func,functionReturnTypes};
     }
 
-    std::vector<TypeIndex> getArgTypes(FunctionParams params) {
+    std::vector<TypeIndex> getArgTypes(const FunctionParams& params) {
 
         std::vector<TypeIndex> types = {};
 

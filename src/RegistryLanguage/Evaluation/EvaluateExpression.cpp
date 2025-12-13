@@ -292,6 +292,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                             //
                             ProcessingResult res;
+
                             callMemberFunction(functionLabel, res.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope, &baseMember);
                             
                             prcResult.evalResults[listingArgIdx] = std::move(res.evalResults[0]);
@@ -314,6 +315,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                     //
                     ProcessingResult res;
+
                     callMemberFunction(functionLabel, res.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope, &baseMember);
                     
                     prcResult.evalResults.clear();
@@ -407,7 +409,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 ProcessingResult paramRes = evaluateExpression(params, scope, scope, context);
 
                 callStaticFunction(getTypeIndexByKeyword(node.children[0].argument), node.children[1].children[0].children[0].argument,
-                    prcResult.evalResults, convertEvalResultsToPtrVec(prcResult.evalResults), scope);
+                    prcResult.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope);
             }
             else{
 
@@ -415,7 +417,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 ProcessingResult paramRes = evaluateExpression(params, scope, scope, context);
 
                 callStaticFunction(getTypeIndexByKeyword(node.children[0].argument), node.children[1].children[0].argument,
-                    prcResult.evalResults, convertEvalResultsToPtrVec(prcResult.evalResults), scope);
+                    prcResult.evalResults, convertEvalResultsToPtrVec(paramRes.evalResults), scope);
             }
         }
         else if(g_OneArgOperations.contains(Operator) && node.children.size() == 1){
@@ -904,9 +906,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     __argIndices__ = argIndices, params, section, &scope
                     ](FREG_ARGS){
 
+                        // 
+                        bool argsInvolved = std::find(__argIndices__.begin(), __argIndices__.end(), types::ARGS::typeIndex)
+                                            != __argIndices__.end();
+
                         // Asserts
                         ASSERT_IS_MEMBER_FUNCTION;
-                        ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                        if(!argsInvolved){ ASSERT_HAS_N_INPUT_ARGS(__numArgs__); }
 
                         //
                         Scope functionScope;
@@ -914,7 +920,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                         // mit params befüllen
                         ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
-                        RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
+                        if(!argsInvolved){ RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",); }
 
                         //
                         for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
@@ -924,7 +930,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                             EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                             //
-                            if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex){
+
+                                static_cast<types::ARGS*>(paramVarN.getVariableRef().getData())->moveFrom(
+                                    FunctionParams(std::next(inputs.begin(), paramIdx), inputs.end()));
+                                break;
+                            }
+                            else if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
 
                                 // Reference
                                 paramVarN.getVariableRef().reference(inputN.getVariableRef());
@@ -948,9 +960,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     __argIndices__ = argIndices, params, section, &scope
                     ](FREG_ARGS){
 
+                        // 
+                        bool argsInvolved = std::find(__argIndices__.begin(), __argIndices__.end(), types::ARGS::typeIndex)
+                                            != __argIndices__.end();
+
                         // Asserts
                         ASSERT_IS_NO_MEMBER_FUNCTION;
-                        ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                        if(!argsInvolved){ ASSERT_HAS_N_INPUT_ARGS(__numArgs__); }
 
                         //
                         Scope functionScope;
@@ -958,7 +974,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                         // mit params befüllen
                         ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
-                        RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
+                        if(!argsInvolved){ RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",); }
 
                         //
                         for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
@@ -968,7 +984,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                             EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                             //
-                            if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex){
+
+                                static_cast<types::ARGS*>(paramVarN.getVariableRef().getData())->moveFrom(
+                                    FunctionParams(std::next(inputs.begin(), paramIdx), inputs.end()));
+                                break;
+                            }
+                            else if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
 
                                 // Reference
                                 paramVarN.getVariableRef().reference(inputN.getVariableRef());
@@ -992,9 +1014,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     __argIndices__ = argIndices, params, section, &scope
                     ](FREG_ARGS){
 
+                        // 
+                        bool argsInvolved = std::find(__argIndices__.begin(), __argIndices__.end(), types::ARGS::typeIndex)
+                                            != __argIndices__.end();
+
                         // Asserts
                         ASSERT_IS_NO_MEMBER_FUNCTION;
-                        ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                        if(!argsInvolved){ ASSERT_HAS_N_INPUT_ARGS(__numArgs__); }
 
                         //
                         Scope functionScope;
@@ -1003,7 +1029,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         // mit params befüllen
                         ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
 
-                        RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",);
+                        if(!argsInvolved){ RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",); }
 
                         //
                         for(size_t paramIdx = 0; paramIdx < paramRes.evalResults.size(); paramIdx++){
@@ -1013,7 +1039,13 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                             EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                             //
-                            if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
+                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex){
+
+                                static_cast<types::ARGS*>(paramVarN.getVariableRef().getData())->moveFrom(
+                                    FunctionParams(std::next(inputs.begin(), paramIdx), inputs.end()));
+                                break;
+                            }
+                            else if(paramVarN.getVariableRef().isReference() && (inputN.isLValue() || inputN.getVariableRef().isReference())){
 
                                 // Reference
                                 paramVarN.getVariableRef().reference(inputN.getVariableRef());
