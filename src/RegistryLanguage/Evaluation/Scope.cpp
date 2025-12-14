@@ -18,7 +18,6 @@ Scope::~Scope(){
         while(refExists){
 
             std::tie(refExists, refPtr) = parent->containsVariableReference(&var);
-            LOG << "Checking " << label << " for garbadge Collection" << endl;
     
             if(refExists){
 
@@ -54,8 +53,6 @@ Scope::~Scope(){
 
     // Löschung nach return dieser Funktion
     // ...
-
-    
 }
 
 bool Scope::IsRootScope(){
@@ -119,6 +116,7 @@ bool Scope::containsVariable(Variable* variablePtr){
 //
 std::pair<bool, Variable*> Scope::containsVariableReference(Variable* variablePtr){
 
+    //
     if(variablePtr->isReference()){
         return std::make_pair(false, nullptr);
     }
@@ -133,7 +131,7 @@ std::pair<bool, Variable*> Scope::containsDataReference(IObject* dataPtr){
     //
     for(auto& [lb, var] : variableTable){
 
-        if(!var.isReference()){ continue; }
+        if(var.getData()->isTrivial() && !var.isReference()){ continue; }
 
         if(var.getData() == dataPtr){
             return std::make_pair(true, &var);
@@ -141,6 +139,8 @@ std::pair<bool, Variable*> Scope::containsDataReference(IObject* dataPtr){
 
         auto pair = var.getData()->containsDataReference(dataPtr);
         if(pair.first){
+
+            LOG << lb << " is containing "; dataPtr->print(); LOG << " at " << *pair.second << endl;
             return pair;
         }
     }
@@ -160,7 +160,7 @@ std::pair<bool, Variable*> Scope::containsDataVariableOrReference(IObject* dataP
     for(auto& [lb, var] : variableTable){
 
         if(var.getData() == dataPtr){
-            return std::make_pair(true, &var);
+            return std::make_pair(true, &variableTable[lb]);
         }
 
         auto pair = var.getData()->containsDataVariableOrReference(dataPtr);

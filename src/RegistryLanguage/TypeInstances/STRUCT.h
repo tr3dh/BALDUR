@@ -124,4 +124,6 @@ public:
     std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override;
 
     std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override;
+
+    bool isTrivial() override { return false; }
 };

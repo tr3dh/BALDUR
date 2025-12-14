@@ -9,7 +9,6 @@ bool STRUCT::containsVariable(Variable* variablePtr){
 
 std::pair<bool, Variable*> STRUCT::containsDataReference(IObject* dataPtr){
 
-    LOG << "Struct ist getting checken for "; dataPtr->print(); LOG << endl;
     return attribScope.containsDataReference(dataPtr);
 }
 
