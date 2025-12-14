@@ -594,6 +594,29 @@ void emplaceStdOperations(){
     {});
 
     //
+    registerFunction("logNullRefs", {},
+        [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            // PREPARE_RETURNS;
+
+            // Returns
+
+            //
+            LOG << "NullRefs gefunden : " << g_nullRefs.size() << endl;
+
+            for(const auto& [idx, ref] : g_nullRefs){
+                
+                LOG << "nullRefs [" << idx << "] : " << ref << endl;
+            }
+
+            LOG << endl;
+    },
+    {});
+
+    //
     registerFunction("assert", {types::BOOL::typeIndex, types::STRING::typeIndex},
         [__functionLabel__ = "assert", __numArgs__ = 2](FREG_ARGS){
 
@@ -671,6 +694,7 @@ void emplaceStdOperations(){
             ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
             PREPARE_RETURNS;
 
+            returns.back().variable.inValidate();
             returns.back().variable.reference(inputs[0]->getVariableRef());
     },
     {types::VOID::typeIndex});

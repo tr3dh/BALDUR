@@ -43,6 +43,8 @@ public:
 
     virtual bool isUniform(){ return false; }
     virtual bool isTrivial(){ return true; }
+
+    virtual void clear(){};
 };
 
 std::ostream& operator<<(std::ostream& os, IObject* obj);

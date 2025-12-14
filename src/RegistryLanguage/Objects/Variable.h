@@ -46,6 +46,12 @@ struct Variable{
         referencedObject = other;
     }
 
+    void forceReference(std::unique_ptr<IObject>* other){
+        
+        inValidate();
+        reference(other);
+    }
+
     bool isValid() const {
 
         return !(ownedObject == nullptr && referencedObject == nullptr);
@@ -54,6 +60,7 @@ struct Variable{
     void inValidate(){
 
         ownedObject.reset(nullptr);
+        referencedObject = nullptr;
     }
 
     bool isReference() const {

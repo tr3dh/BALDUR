@@ -21,10 +21,10 @@ Scope::~Scope(){
     
             if(refExists){
 
-                refPtr->reference(&g_nullRefs[refPtr->getData()->getTypeIndex()]);
-
                 _ERROR << "Bei Scope Löschung existiert externe Referenz lokaler Variable " << label << endl;
                 _ERROR << "entsprechende Referenz wird dereferenziert" << endl;
+
+                refPtr->forceReference(&g_nullRefs[refPtr->getData()->getTypeIndex()]);
             }
         }
     }
@@ -134,6 +134,7 @@ std::pair<bool, Variable*> Scope::containsDataReference(IObject* dataPtr){
         if(var.getData()->isTrivial() && !var.isReference()){ continue; }
 
         if(var.getData() == dataPtr){
+
             return std::make_pair(true, &var);
         }
 

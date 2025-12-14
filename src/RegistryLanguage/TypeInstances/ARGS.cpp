@@ -2,6 +2,31 @@
 
 namespace types{
 
+    std::pair<bool, Variable*> ARGS::containsDataReference(IObject* dataPtr) {
+
+        //
+        for(auto& var : getMember()){
+
+            if(var.getData() == dataPtr){
+                
+                return std::make_pair(true, &var.getVariableRef());
+            }
+
+            auto pair = var.getData()->containsDataVariableOrReference(dataPtr);
+            if(pair.first){
+
+                return pair;
+            }
+        }
+
+        return std::make_pair(false, nullptr);
+    }
+
+    std::pair<bool, Variable*> ARGS::containsDataVariableOrReference(IObject* dataPtr){
+
+        return std::make_pair(false, nullptr);
+    }
+
     bool ARGS::setUpClass(){
 
         // register in TypeRegister

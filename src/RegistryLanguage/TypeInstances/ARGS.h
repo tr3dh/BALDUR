@@ -10,6 +10,7 @@ namespace types{
 
     public:
 
+        //
         static bool setUpClass();
 
         // Für Funktionen die konkrete TypeIndices brauchen weil source Typen nach eigener Klasse registriert werden
@@ -36,6 +37,8 @@ namespace types{
                     member->back().cloneIntoRValue(param->getVariableRef());
                 }
             }
+
+            eliminateLValues();
         }
 
         void moveFrom(const FunctionParams& params){
@@ -56,6 +59,29 @@ namespace types{
                     member->back().moveIntoRValue(param->getVariableRef());
                 }
             }
+
+            eliminateLValues();
+        }
+
+        // Vorläufig weil Einbauen von lvalue behandlung in aktuelle dref routinen zu aufwendig ist
+        // >> keine verwendung von lvalues
+        void eliminateLValues(){
+
+            for(auto& res : getMember()){
+
+                if(res.isLValue()){
+
+                    Variable* var = &res.getVariableRef();
+                    
+                    res.variablePtr = nullptr;
+                    res.variable.forceReference(var->getUniqueData());
+                }
+            }
+        }
+
+        void clear() override{
+
+            getMember().clear();
         }
 
         // ARGS(const EvalResultVec& params) : INativeObject(params){}
@@ -95,16 +121,10 @@ namespace types{
         // Anpassen sobald es zu MM Problemen kommt mit Gültigkeitsverletzungen bei Löschung / Verlassen von Scopes
         Variable* getAttrib(const std::string& attribLabel) override { return nullptr; }
 
-        bool containsVariable(Variable* variablePtr) override { return false; }
+        bool isTrivial() override { return false; }
 
-        std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override {
+        std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override;
 
-            return std::make_pair(false, nullptr);
-        }
-
-        std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override {
-
-            return std::make_pair(false, nullptr);
-        }
+        std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override;
     };
 };
