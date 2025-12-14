@@ -68,13 +68,13 @@ namespace types{
         //     args.clear();
         //     args.reserve(otherArgs.size());
 
-        //     for(const auto& arg : otherArgs){
+        //     for(auto& arg : otherArgs){
 
-        //         if(arg->isLValue()){
+        //         if(arg.isLValue()){
         //             args.emplace_back(arg);
         //         }
         //         else{
-        //             args.emplace_back()->cloneIntoRValue(arg->getVariableRef());
+        //             args.emplace_back().cloneIntoRValue(arg.getVariableRef());
         //         }
         //     }
         // }
@@ -92,27 +92,19 @@ namespace types{
             LOG << "]";
         }
 
-        //
-        std::unique_ptr<IObject> clone() override {
+        // Anpassen sobald es zu MM Problemen kommt mit Gültigkeitsverletzungen bei Löschung / Verlassen von Scopes
+        Variable* getAttrib(const std::string& attribLabel) override { return nullptr; }
 
-            LOG << "Clone " << endl;
-            print();
-            return std::make_unique<ARGS>();
+        bool containsVariable(Variable* variablePtr) override { return false; }
+
+        std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override {
+
+            return std::make_pair(false, nullptr);
         }
 
-        // bool containsVariable(Variable* variablePtr) override {
+        std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override {
 
-        //     return attribScope.containsVariable(variablePtr);
-        // }
-
-        // std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override {
-
-        //     return attribScope.containsDataReference(dataPtr);
-        // }
-
-        // std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override {
-
-        //     return attribScope.containsDataVariableOrReference(dataPtr);
-        // }
+            return std::make_pair(false, nullptr);
+        }
     };
 };

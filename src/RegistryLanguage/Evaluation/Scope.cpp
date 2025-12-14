@@ -14,25 +14,12 @@ Scope::~Scope(){
         
         if(var.isReference()){ continue; }
 
-        std::tie(refExists, refPtr) = parent->containsVariableReference(&var);
-    
-        if(refExists){
-
-            refPtr->reference(&g_nullRefs[refPtr->getData()->getTypeIndex()]);
-
-            _ERROR << "Bei Scope Löschung existiert externe Referenz lokaler Variable " << label << endl;
-            _ERROR << "entsprechende Referenz wird dereferenziert" << endl;
-        }
-    }
-
-    for(auto& [idx, scope] : g_staticScopes){
-
-        for(auto& [label, var] : scope.variableTable){
-        
-            if(var.isReference()){ continue; }
+        refExists = true;
+        while(refExists){
 
             std::tie(refExists, refPtr) = parent->containsVariableReference(&var);
-        
+            LOG << "Checking " << label << " for garbadge Collection" << endl;
+    
             if(refExists){
 
                 refPtr->reference(&g_nullRefs[refPtr->getData()->getTypeIndex()]);
@@ -43,8 +30,32 @@ Scope::~Scope(){
         }
     }
 
+    for(auto& [idx, scope] : g_staticScopes){
+
+        for(auto& [label, var] : scope.variableTable){
+        
+            if(var.isReference()){ continue; }
+
+            refExists = true;
+            while(refExists){
+
+                std::tie(refExists, refPtr) = parent->containsVariableReference(&var);
+        
+                if(refExists){
+
+                    refPtr->reference(&g_nullRefs[refPtr->getData()->getTypeIndex()]);
+
+                    _ERROR << "Bei Scope Löschung existiert externe Referenz lokaler Variable " << label << endl;
+                    _ERROR << "entsprechende Referenz wird dereferenziert" << endl;
+                }
+            }
+        }
+    }
+
     // Löschung nach return dieser Funktion
     // ...
+
+    
 }
 
 bool Scope::IsRootScope(){

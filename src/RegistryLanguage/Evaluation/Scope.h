@@ -79,7 +79,7 @@ struct Scope {
         return getVariable(variableName) != nullptr;
     }
 
-        //
+    //
     bool containsVariableInline(const std::string& variableName){
 
         return variableTable.contains(variableName);

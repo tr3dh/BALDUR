@@ -119,18 +119,9 @@ public:
         return &attribScope.variableTable[attribLabel];
     }
 
-    bool containsVariable(Variable* variablePtr) override {
+    bool containsVariable(Variable* variablePtr) override;
 
-        return attribScope.containsVariable(variablePtr);
-    }
+    std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override;
 
-    std::pair<bool, Variable*> containsDataReference(IObject* dataPtr) override {
-
-        return attribScope.containsDataReference(dataPtr);
-    }
-
-    std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override {
-
-        return attribScope.containsDataVariableOrReference(dataPtr);
-    }
+    std::pair<bool, Variable*> containsDataVariableOrReference(IObject* dataPtr) override;
 };

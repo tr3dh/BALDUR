@@ -65,6 +65,12 @@ struct EvalResult {
         variable.constructByObject(object);
     }
 
+    // //
+    // void constructRValueByUniqueObject(std::unique_ptr<IObject> object){
+
+    //     variable.constructByUniquePtr(std::move(object));
+    // }
+
     //
     void constructRValueByContainedLValue(){
 

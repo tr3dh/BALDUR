@@ -22,6 +22,55 @@ decl handleArgs(args prms){
     return baseMember
 }
 
+struct testStruct{
+
+    int ref [a,b]
+}
+
+decl testStruct(int ref[aIn, bIn]){
+    
+    testStruct str
+    str->[a, b] << aIn, bIn
+
+    return [<-str]
+}
+
+decl test(){
+
+    int ref expRef 
+    void prms
+    void vec
+
+    slog("Scope Init")
+
+    int ref [aref, bref, cref]
+
+    int i = 0
+    int j = 0
+
+    while(j < 3){
+
+        while(i < 10){
+
+            if(i == 5){
+
+                int [a, b, c] = 0,0,0 
+                aref, bref, cref << a, a, a
+                vec = testStruct(a,a)
+            }
+
+            i++
+        }
+
+        j++
+    }
+
+    slog("Scope Löschung")
+
+    slog(aref, bref, cref)
+    slog(vec)
+}
+
 //
 decl main(){
     
@@ -37,12 +86,9 @@ decl main(){
 
     void tmp = 0.5 * (L' + L)
     simplify(tmp)
-
     slog(tmp)
 
-    slog(handleArgs(2,5,9,7))
-
-
+    test()
 
     return 0
 }
