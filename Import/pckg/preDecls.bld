@@ -6,6 +6,10 @@ requires [calledAs(__Include__)] [__script__ + " is an Include and shouldnt be e
 //
 setUnwrapOperands(false)
 
+//
+decl sum(args prms){ return [prms->chainByOperator("+=")] }
+decl product(args prms){ return [prms->chainByOperator("*=")] }
+
 // Dummy tExprs für DiffTemplates
 // Stufe -1 bedeutet arbitary template, hier kann jeder beliebige andere Ausdruck eingesetzt werden
 // eine konkrete Stufe ermöglicht nur das Einsetzen von Ausdrücke dieser konkreten Stufe

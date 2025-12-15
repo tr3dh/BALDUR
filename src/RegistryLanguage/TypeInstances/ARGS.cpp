@@ -97,6 +97,83 @@ namespace types{
         },
         {IObject::ARBITATRY_TYPE});
 
+        // Member
+        registerMemberFunction(ARGS::typeIndex, "chainByFunction", {STRING::typeIndex},
+            [__functionLabel__ = "chainByFunction", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                // Returns | Inputs
+                GET_ARG(STRING, 0);
+                GET_MEMBER(ARGS);
+
+                //
+                auto& argVec = mb->getMember();
+
+                //
+                RETURNING_ASSERT(!argVec.empty(), "",);
+
+                // schreiben in returns
+                returns.emplace_back();
+                returns.back().getVariableRef().clone(argVec[0].getVariableRef());
+
+                //
+                if(argVec.size() < 2){ return; }
+
+                //
+                EvalResultVec tmpRes;
+
+                //
+                for(size_t i = 1; i < argVec.size(); i++){
+
+                    //
+                    callFunction(arg0->getMember(), tmpRes, {&returns.back(), &argVec[i]}, returnToScope);
+                }
+        },
+        {IObject::ARBITATRY_TYPE});
+
+        // Member
+        registerMemberFunction(ARGS::typeIndex, "chainByOperator", {STRING::typeIndex},
+            [__functionLabel__ = "chainByOperator", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                // Returns | Inputs
+                GET_ARG(STRING, 0);
+                GET_MEMBER(ARGS);
+
+                //
+                auto& argVec = mb->getMember();
+
+                //
+                RETURNING_ASSERT(!argVec.empty(), "",);
+
+                // schreiben in returns
+                returns.emplace_back();
+                returns.back().getVariableRef().clone(argVec[0].getVariableRef());
+
+                //
+                if(argVec.size() < 2){ return; }
+
+                //
+                RETURNING_ASSERT(g_TwoArgOperations.contains(arg0->getMember()), "g_TwoArgOperations enthält Operator " + arg0->getMember() + " nicht",);
+
+                //
+                EvalResultVec tmpRes;
+
+                //
+                for(size_t i = 1; i < argVec.size(); i++){
+
+                    //
+                    callFunction(g_TwoArgOperations[arg0->getMember()], tmpRes, {&returns.back(), &argVec[i]}, returnToScope);
+                }
+        },
+        {IObject::ARBITATRY_TYPE});
+
         return true;
     }
 }

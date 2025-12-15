@@ -7,75 +7,6 @@ requires string uniform ExecMode
 requires [ExecMode == "DEBUG"] "..."
 
 //
-decl handleArgs(args prms){
-    
-    //
-    void baseMember = prms->get(0)
-
-    //
-    for(int i = 1, i < prms->size(), i++){
-
-        baseMember += prms->get(i)
-    }
-
-    //
-    return baseMember
-}
-
-struct testStruct{
-
-    int ref [a,b]
-}
-
-decl logInt(int ref i){
-
-}
-
-decl testStruct(int ref[aIn, bIn]){
-    
-    testStruct str
-    str->[a, b] << aIn, bIn
-
-    return [<-str]
-}
-
-decl test(){
-
-    int ref expRef 
-    void prms
-    void vec
-
-    slog("Scope Init")
-
-    int ref [aref, bref, cref]
-
-    int i = 0
-    int j = 0
-
-    while(j < 3){
-
-        while(i < 10){
-
-            if(i == 5){
-
-                int [a, b, c] = 5,0,0
-                prms = args(a)
-            }
-
-            i++
-        }
-
-        j++
-    }
-
-    slog("Scope Löschung")
-
-    slog(aref, bref, cref)
-    slog(vec)
-    slog(prms)
-}
-
-//
 decl main(){
     
     log("Programm '", __script__, "' mit args [", __args__, "] gestartet")
@@ -94,16 +25,8 @@ decl main(){
     simplify(tmp)
     slog(tmp)
 
-    test()
-
-    int [c, d] = 1,9
-    int ref [cref, dref] << c, d
-
-    slog(cref, dref)
-
-    cref << dref
-
-    slog(cref, dref)
+    slog(sum(1,2,5))
+    slog(product(1,2,5))
 
     log("Shutting Down")
 

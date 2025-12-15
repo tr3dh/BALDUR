@@ -2,7 +2,11 @@
 
 #include "InstanceIncludes.h"
 #include "../Evaluation/EvalResult.h"
+
 #include "INT.h"
+#include "STRING.h"
+
+#include "Operations.h"
 
 namespace types{
 
