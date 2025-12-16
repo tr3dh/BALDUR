@@ -161,6 +161,7 @@ namespace types{
 
                 //
                 RETURNING_ASSERT(g_TwoArgOperations.contains(arg0->getMember()), "g_TwoArgOperations enthält Operator " + arg0->getMember() + " nicht",);
+                const std::string funcName = g_TwoArgOperations[arg0->getMember()];
 
                 //
                 EvalResultVec tmpRes;
@@ -169,10 +170,183 @@ namespace types{
                 for(size_t i = 1; i < argVec.size(); i++){
 
                     //
-                    callFunction(g_TwoArgOperations[arg0->getMember()], tmpRes, {&returns.back(), &argVec[i]}, returnToScope);
+                    callFunction(funcName, tmpRes, {&returns.back(), &argVec[i]}, returnToScope);
                 }
         },
         {IObject::ARBITATRY_TYPE});
+
+        // Member
+        registerFunction("combineByFunction", {ARGS::typeIndex, ARGS::typeIndex, STRING::typeIndex},
+            [__functionLabel__ = "combineByFunction", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                // Returns | Inputs
+                GET_ARG(ARGS, 0); GET_ARG(ARGS, 1); GET_ARG(STRING, 2);
+
+                auto& argVec0 = arg0->getMember();
+                auto& argVec1 = arg1->getMember();
+
+                //
+                RETURNING_ASSERT(!argVec0.empty() && !argVec1.empty(), "",);
+
+                // //
+                // RETURNING_ASSERT(g_TwoArgOperations.contains(arg2->getMember()), "g_TwoArgOperations enthält Operator " + arg0->getMember() + " nicht",);
+
+                //
+                EvalResultVec tmpRes;
+
+                //
+                returns.reserve(argVec0.size() * argVec1.size());
+
+                //
+                for(size_t i = 0; i < argVec0.size(); i++){
+                    
+                    for(size_t j = 0; j < argVec1.size(); j++){
+
+                        returns.emplace_back().getVariableRef().clone(argVec0[i].getVariableRef());
+                        callFunction(arg2->getMember(), tmpRes, {&returns.back(), &argVec1[j]}, returnToScope);
+                    }
+                }
+        },
+        {IObject::ARGS_TYPE});
+
+        // Member
+        registerFunction("combineByOperator", {ARGS::typeIndex, ARGS::typeIndex, STRING::typeIndex},
+            [__functionLabel__ = "combineByOperator", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                // Returns | Inputs
+                GET_ARG(ARGS, 0); GET_ARG(ARGS, 1); GET_ARG(STRING, 2);
+
+                auto& argVec0 = arg0->getMember();
+                auto& argVec1 = arg1->getMember();
+
+                //
+                RETURNING_ASSERT(!argVec0.empty() && !argVec1.empty(), "",);
+
+                //
+                RETURNING_ASSERT(g_TwoArgOperations.contains(arg2->getMember()), "g_TwoArgOperations enthält Operator " + arg2->getMember() + " nicht",);
+                const std::string funcName = g_TwoArgOperations[arg2->getMember()];
+
+                //
+                EvalResultVec tmpRes;
+
+                //
+                returns.reserve(argVec0.size() * argVec1.size());
+
+                //
+                for(size_t i = 0; i < argVec0.size(); i++){
+                    
+                    for(size_t j = 0; j < argVec1.size(); j++){
+
+                        returns.emplace_back().getVariableRef().clone(argVec0[i].getVariableRef());
+                        callFunction(funcName, tmpRes, {&returns.back(), &argVec1[j]}, returnToScope);
+                    }
+                }
+        },
+        {IObject::ARGS_TYPE});
+
+        // Member
+        registerFunction("combineInplaceByFunction", {ARGS::typeIndex, ARGS::typeIndex, STRING::typeIndex, STRING::typeIndex},
+            [__functionLabel__ = "combineByFunction", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                // Returns | Inputs
+                GET_ARG(ARGS, 0); GET_ARG(ARGS, 1); GET_ARG(STRING, 2); GET_ARG(STRING, 3);
+
+                auto& argVec0 = arg0->getMember();
+                auto& argVec1 = arg1->getMember();
+                const std::string& mode = arg3->getMember();
+
+                //
+                RETURNING_ASSERT(!argVec0.empty() && !argVec1.empty(), "",);
+
+                //
+                RETURNING_ASSERT(mode == "rowmajor" || mode == "colmajor", 
+                                "Mode muss 'rowmajor' oder 'colmajor' sein, nicht: " + mode,);
+
+                //
+                EvalResultVec tmpRes;
+
+                //
+                if(mode == "rowmajor"){
+                    // i außen, j innen
+                    for(size_t i = 0; i < argVec0.size(); i++){
+                        for(size_t j = 0; j < argVec1.size(); j++){
+                            callFunction(arg2->getMember(), tmpRes, {&argVec0[i], &argVec1[j]}, returnToScope);
+                        }
+                    }
+                } else { // colmajor
+                    // j außen, i innen
+                    for(size_t j = 0; j < argVec1.size(); j++){
+                        for(size_t i = 0; i < argVec0.size(); i++){
+                            callFunction(arg2->getMember(), tmpRes, {&argVec0[i], &argVec1[j]}, returnToScope);
+                        }
+                    }
+                }
+        },
+        {IObject::ARGS_TYPE});
+
+        // Member
+        registerFunction("combineInplaceByOperator", {ARGS::typeIndex, ARGS::typeIndex, STRING::typeIndex, STRING::typeIndex},
+            [__functionLabel__ = "combineByOperator", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                // ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                // Returns | Inputs
+                GET_ARG(ARGS, 0); GET_ARG(ARGS, 1); GET_ARG(STRING, 2); GET_ARG(STRING, 3);
+
+                auto& argVec0 = arg0->getMember();
+                auto& argVec1 = arg1->getMember();
+                const std::string& mode = arg3->getMember();
+
+                //
+                RETURNING_ASSERT(!argVec0.empty() && !argVec1.empty(), "",);
+
+                //
+                RETURNING_ASSERT(g_TwoArgOperations.contains(arg2->getMember()), 
+                                "g_TwoArgOperations enthält Operator " + arg2->getMember() + " nicht",);
+                
+                //
+                RETURNING_ASSERT(mode == "rowmajor" || mode == "colmajor", 
+                                "Mode muss 'rowmajor' oder 'colmajor' sein, nicht: " + mode,);
+
+                const std::string funcName = g_TwoArgOperations[arg2->getMember()];
+
+                //
+                EvalResultVec tmpRes;
+
+                //
+                if(mode == "rowmajor"){
+
+                    // i außen, j innen
+                    for(size_t i = 0; i < argVec0.size(); i++){
+                        for(size_t j = 0; j < argVec1.size(); j++){
+                            callFunction(funcName, tmpRes, {&argVec0[i], &argVec1[j]}, returnToScope);
+                        }
+                    }
+                } else { // colmajor
+                    
+                    // j außen, i innen
+                    for(size_t j = 0; j < argVec1.size(); j++){
+                        for(size_t i = 0; i < argVec0.size(); i++){
+                            callFunction(funcName, tmpRes, {&argVec0[i], &argVec1[j]}, returnToScope);
+                        }
+                    }
+                }
+        },
+        {IObject::ARGS_TYPE});
 
         return true;
     }

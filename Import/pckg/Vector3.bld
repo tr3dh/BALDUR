@@ -19,7 +19,8 @@ struct Vector3{
     
     decl getX(){ return [x] }
     decl getAttribs(){ return[x,y,z] }
-    decl mul(double ref db){ [x,y,z] *= db }
+    decl mul(double ref db){ combineInplaceByOperator(args([x,y,z]), args(db), "*=", "colmajor") }
+    decl print(){ slog(this->getAttribs()) }
 }
 
 decl Vector3(double ref [xIn, yIn, zIn]){

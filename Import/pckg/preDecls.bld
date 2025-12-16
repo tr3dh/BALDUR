@@ -98,6 +98,6 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 
 // template Instanzierungen für Ersetzung durch template Schema
 // Hier muss nich auf Reihenfolge geachtet werden
-// DiffTemplate Logik überlädt eigenständig nach Instanz, Struktur und Tensorstufe
+// DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 setDiffTemplate(tmplScalar * tmplScalarB * tmplA, tmplB, tExpr(1))

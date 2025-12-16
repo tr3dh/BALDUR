@@ -70,11 +70,9 @@ int main(int argc, char* argv[]){
             return 1;
         }
 
-        LOG << ENDL;
-
         std::string line;
         while (std::getline(file, line)) {
-            LOG << "\t" << line << ENDL;
+            LOG << line << ENDL;
         }
     }
 

@@ -474,24 +474,26 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             // }
             else{
 
-                // Könnte etwas verwirrend wirken
-                // wirklich reinnehmen ??
+                RETURNING_ASSERT(TRIGGER_ASSERT, "Seitengrößen für 2 Arg Operation", {});
 
-                // Wenn auf jeder seite der zwei Arg Operation unterschiedlich viele EvalResults sind
-                // Kartesisches Produkt >> Jedes EvalRes links mit jedem EvalRes rechts kombinieren
-                ProcessingResult tmpRes;
+                // // Könnte etwas verwirrend wirken
+                // // wirklich reinnehmen ??
 
-                for(size_t leftIdx = 0; leftIdx < leftSide.evalResults.size(); leftIdx++){
-                    for(size_t rightIdx = 0; rightIdx < rightSide.evalResults.size(); rightIdx++){
+                // // Wenn auf jeder seite der zwei Arg Operation unterschiedlich viele EvalResults sind
+                // // Kartesisches Produkt >> Jedes EvalRes links mit jedem EvalRes rechts kombinieren
+                // ProcessingResult tmpRes;
 
-                        tmpRes.clear();
+                // for(size_t leftIdx = 0; leftIdx < leftSide.evalResults.size(); leftIdx++){
+                //     for(size_t rightIdx = 0; rightIdx < rightSide.evalResults.size(); rightIdx++){
 
-                        callFunction(g_TwoArgOperations[Operator], tmpRes.evalResults,
-                            { &leftSide.evalResults[leftIdx], &rightSide.evalResults[rightIdx] }, scope);
+                //         tmpRes.clear();
 
-                        prcResult.append(tmpRes);
-                    }
-                }
+                //         callFunction(g_TwoArgOperations[Operator], tmpRes.evalResults,
+                //             { &leftSide.evalResults[leftIdx], &rightSide.evalResults[rightIdx] }, scope);
+
+                //         prcResult.append(tmpRes);
+                //     }
+                // }
             }
         }
         // argChainOperators enthält den Operator der Operation die mehrere Argumente verknüpft und die Funktion
@@ -937,6 +939,11 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                         // mit params befüllen
                         ProcessingResult paramRes = evaluateExpression(params, functionScope, returnToScope, Context::NONE);
+
+                        //
+                        Variable* self = functionScope.constructAndReturnVariable("this");
+                        self->reference(member->getVariableRef());
+
                         if(!argsInvolved){ RETURNING_ASSERT(paramRes.evalResults.size() == inputs.size(), "",); }
 
                         //

@@ -1,5 +1,5 @@
 // Beispiel Programm in Baldur
-fetch script ["pckg/preDecls"]
+fetch script ["pckg/preDecls", "pckg/Vector3"]
 
 // main des Skript
 decl main(){
@@ -24,6 +24,8 @@ decl main(){
 
         currentFrameIdx++
     }
+
+    Vector3(1,5,10)->print()
 
     slog("Garbage Collection Destroyed referenced Variable")
 }
