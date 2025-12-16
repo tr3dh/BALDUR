@@ -135,6 +135,7 @@ struct TensorExpression{
 
     //
     size_t getNumOfUniqueNodes() const;
+    size_t getNumOfNodes() const;
 
     //
     std::vector<std::string> getRawLabels();

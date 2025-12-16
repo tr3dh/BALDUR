@@ -4,7 +4,7 @@ fetch script ["pckg/recursiveDemo"]
 
 // Assert Uniforms >> sicherstellen dass bestimmte Referenzen vom Programm ans Skript übergeben werden
 requires string uniform ExecMode
-requires [ExecMode == "DEBUG"] "..."
+assert(ExecMode == "DEBUG", "...")
 
 //
 decl main(){
@@ -12,8 +12,8 @@ decl main(){
     log("Programm '", __script__, "' mit args [", __args__, "] gestartet")
     log(" ")
 
-    logTypeRegister()
-    logNullRefs()
+    // logTypeRegister()
+    // logNullRefs()
     logDiffTemplates()
     logSimplifications()
 
@@ -25,8 +25,7 @@ decl main(){
     simplify(tmp)
     slog(tmp)
 
-    slog(sum(1,2,5))
-    slog(product(1,2,5))
+    slog(diff(tExpr(0.5) * tExpr(0.6) * L, X))
 
     log("Shutting Down")
 

@@ -1,27 +1,52 @@
 // Dieser File dient dem Aufstellen und Übergeben spezifischer Ableitungsregeln
 
-//
-requires [calledAs(__Include__)] [__script__ + " is an Include and shouldnt be executed directly"]
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
 
-//
+// Config
 setUnwrapOperands(false)
 
-//
+// Funktionen
+
+// Arg handling
 decl sum(args prms){ return [prms->chainByOperator("+=")] }
 decl product(args prms){ return [prms->chainByOperator("*=")] }
 
-// Dummy tExprs für DiffTemplates
-// Stufe -1 bedeutet arbitary template, hier kann jeder beliebige andere Ausdruck eingesetzt werden
+// Identitäten für Tensorausdrücke der Stufe <order>
+decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
+decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
+
+// Config Tensorausdrücke
+// . Template Größen 
+// . Standard Instanzen
+// . Simplifizierungen
+// . Ableitungsersetzungen
+// . Ableitugstemplates
+
+// Template Tensorausdrücke
+// Stufe -1 bedeutet Arbitary Template, hier kann jeder beliebige andere Ausdruck eingesetzt werden
 // eine konkrete Stufe ermöglicht nur das Einsetzen von Ausdrücke dieser konkreten Stufe
 
-//
+// Dabei werden die Register überladen nach
+// . Tensorstufe (>> tExprTmpl(tmplA, 0) vor tExprTmpl(tmplA, -1))
+// . TensorInstanz (>> tExpr(A, ?) vor tExprTmpl(A, ?))
+// . Struktur (>> tExprTmpl(A, ?) .. tExprTmpl(A, ?) vor tExprTmpl(A, ?) .. tExprTmpl(B, ?))
+//      . ohne diese Überladung würde ein Ausdruck der durch [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] repräsentiert werden kann
+//        unter Umständen zuerst auf Gleichheit mit [tExprTmpl(A, ?) .. tExprTmpl(B, ?)] überprüft werden und dieses
+//        Template als Repräsentation gewählt werden, obwohl [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] es besser repräsentiert
+// . Ausdruckskomplexität (>> (a . a) . b vor a . b)
+
+// Templates für beliebig stufige Tensoren
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
 
-//
+// Templates für konkret stufige Tensoren
 tExpr [tmplScalar]          = tExprTmpl("tmplSc", 0)
+tExpr [tmplScalarB]         = tExprTmpl("tmplScB", 0)
 tExpr [tmplVector]          = tExprTmpl("tmplVec", 1)
 tExpr [tmplMatrix]          = tExprTmpl("tmplMat", 0)
 tExpr [tmplTensor]          = tExprTmpl("tmplTensor", -1)
+
+// Standard Tensorausdrucks-Instanzen
 
 // Kontinuumsmechanische Tensor Größen
 tExpr [x, X]            = tExpr("x", 1), tExpr("X", 1)                          // Ort in Momentan und Referenz Konfiguration 
@@ -43,14 +68,7 @@ tExpr [epsilon_c]       = tExpr("epsilon_c", 2)                                 
 tExpr [sigma_c, t]      = tExpr("sigma_c", 2), tExpr("t", 2)                    // Cauchy und Kirchhoff Spannung
 tExpr [P, S]            = tExpr("P", 2), tExpr("S", 2)                          // Piola Kirchhof SpannungsTensoren
 
-//
-decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
-decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
-
-// Direkte Ersetzung und Vereinfachung
-setDiff(x, X, F)                                        // Deformationsgradient: ∂x/∂X = F
-setDiff(u, X, H)                                        // Verschiebungsgradient: ∂u/∂X = H
-setDiff(v, x, L)                                        // Geschwindigkeitsgradient: ∂v/∂x = L
+// Simplifizierungen
 
 //
 setEqual(tExprIdentity(2) + H, F)                       // F = I + H
@@ -62,21 +80,21 @@ setEqual(F' . F, C)                                     // C = F^T · F
 setEqual(F . F', B)                                     // B = F · F^T
 
 // Verzerrungsmaße
-// setEqual((C - tExprIdentity(2)) * 0.5, E)           // E = 0.5 * (C - I)
-// setEqual((tExprIdentity(2) - B~) * 0.5, e)          // e = 0.5 * (I - B^(-1))
-// setEqual(epsilon_c, (B - tExprIdentity(2)) * 0.5)   // ε = 0.5 * (B - I)
+setEqual((C - tExprIdentity(2)) * 0.5, E)               // E = 0.5 * (C - I)
+setEqual((tExprIdentity(2) - inverse(B)) * 0.5, e)      // e = 0.5 * (I - B^(-1))
+setEqual(epsilon_c, (B - tExprIdentity(2)) * 0.5)       // ε = 0.5 * (B - I)
 
 // Polare Zerlegung
 setEqual(R . U, F)
 setEqual(V . R, F)
 
+// Direkte Ersetzung und Vereinfachung
+setDiff(x, X, F)                                        // Deformationsgradient: ∂x/∂X = F
+setDiff(u, X, H)                                        // Verschiebungsgradient: ∂u/∂X = H
+setDiff(v, x, L)                                        // Geschwindigkeitsgradient: ∂v/∂x = L
+
 // template Instanzierungen für Ersetzung durch template Schema
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Instanz, Struktur und Tensorstufe
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
-
-setDiffTemplate(0.3 * tmplA, tmplB, tExpr(1) * tmplB)
-setDiffTemplate(0.4 * tmplA, tmplB, tExpr(2))
-setDiffTemplate(time, tmplA, time * tmplA)
-setDiffTemplate(tmplA . tmplB . tmplC, tmplC, time * tmplA)
-setDiffTemplate(tmplA . tmplB . tmplC, tmplTensor, time * tmplA)
+setDiffTemplate(tmplScalar * tmplScalarB * tmplA, tmplB, tExpr(1))

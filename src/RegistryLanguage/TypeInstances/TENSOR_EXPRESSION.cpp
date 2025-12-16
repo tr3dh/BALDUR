@@ -91,6 +91,7 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
         return lhs.label < rhs.label;
     }
 
+    // Überladung nach Tensorstufe
     if(lhs.tensorOrder != rhs.tensorOrder){ return lhs.tensorOrder > rhs.tensorOrder; }
 
     //
@@ -112,7 +113,16 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     //     A .. B .. C auslösen. Sie würden zwar trotzdem beim Substitutionsmap abgleich dann aussortiert werden,
     //     aber die korrekte Überladung spart Zeit 
 
+    // den Teil mit den total nodes evtl auslagern ?? >> nicht nur für templates relevant
     if(lhsIsTemplate && rhsIsTemplate){
+
+        size_t lhsNumOfTotalNodes = lhs.getNumOfNodes();
+        size_t rhsNumOfTotalNodes = rhs.getNumOfNodes();
+
+        if(lhsNumOfTotalNodes != rhsNumOfTotalNodes){
+
+            return lhsNumOfTotalNodes > rhsNumOfTotalNodes;
+        }
 
         //
         size_t lhsNumUniqueNodes = lhs.getNumOfUniqueNodes();
@@ -202,6 +212,18 @@ size_t TensorExpression::getNumOfUniqueNodes() const{
     dfs(*this);
 
     return uniqueNodes.size();
+}
+
+size_t TensorExpression::getNumOfNodes() const{
+
+    size_t numOfNodes = children.size();
+
+    for(const auto& child : children){
+
+        numOfNodes += child.getNumOfNodes();
+    }
+
+    return numOfNodes;
 }
 
 // Statics

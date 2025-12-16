@@ -24,10 +24,11 @@ void SetUpLexer(const std::vector<std::string>& operators = {COLON, "=", "()=", 
 enum class TkType : uint8_t{
 
     None,               // default
-    Operator,           // Operator
-    Function,           // Functionsname
     Argument,           // Substitutionsargument
     Constant,           // ausgeschriebene Zahl
+    Operator,           // Operator
+    Function,           // Funktionsname
+    Container,
     Paren,
     Bracket,
     Brace,
@@ -39,7 +40,6 @@ enum class TkType : uint8_t{
     Params,
     Chain,
     String,
-    Container,
 };
 
 //
