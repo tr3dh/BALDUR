@@ -6,6 +6,9 @@ assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be execu
 // Config
 setUnwrapOperands(false)
 
+//
+double PI = 3.14159
+
 // Funktionen
 
 // Arg handling

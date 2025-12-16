@@ -474,7 +474,24 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
             // }
             else{
 
-                RETURNING_ASSERT(TRIGGER_ASSERT, "ungleiche Seitengrößen bei two side operator Funktion", {});
+                // Könnte etwas verwirrend wirken
+                // wirklich reinnehmen ??
+
+                // Wenn auf jeder seite der zwei Arg Operation unterschiedlich viele EvalResults sind
+                // Kartesisches Produkt >> Jedes EvalRes links mit jedem EvalRes rechts kombinieren
+                ProcessingResult tmpRes;
+
+                for(size_t leftIdx = 0; leftIdx < leftSide.evalResults.size(); leftIdx++){
+                    for(size_t rightIdx = 0; rightIdx < rightSide.evalResults.size(); rightIdx++){
+
+                        tmpRes.clear();
+
+                        callFunction(g_TwoArgOperations[Operator], tmpRes.evalResults,
+                            { &leftSide.evalResults[leftIdx], &rightSide.evalResults[rightIdx] }, scope);
+
+                        prcResult.append(tmpRes);
+                    }
+                }
             }
         }
         // argChainOperators enthält den Operator der Operation die mehrere Argumente verknüpft und die Funktion
