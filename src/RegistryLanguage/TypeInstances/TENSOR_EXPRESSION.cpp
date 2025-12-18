@@ -233,7 +233,7 @@ size_t TensorExpression::getNumOfNodes() const{
 void TensorExpression::replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap){
 
     // Konstanten müssen nicht ersetzt werden
-    if(expr.isConstant){ return; }
+    if(expr.isConstant && !expr.isConstantTemplate()){ return; }
     // if(expr.Relation == TkType::Argument && !expr.isTemplate()){ return; }
     if(!expr.isTemplate()){ return; }
 
@@ -266,7 +266,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
         return true;
     }
 
-    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode();
+    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate();
 
     if(tmplIsTemplatedNode && subsMap.try_emplace(tmplExpr, expr).second){}
     else if(tmplIsTemplatedNode && subsMap[tmplExpr] != expr){
@@ -1224,7 +1224,7 @@ bool TensorExpression::isTemplatedNode() const{
 bool TensorExpression::isTemplate() const{
 
     //
-    if(isTemplatedNode()){
+    if(isTemplatedNode() || isConstantTemplate()){
         return true;
     }
 

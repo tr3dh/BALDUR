@@ -105,5 +105,5 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 setDiffTemplate(tmplScalar * tmplA, tmplB, diff(tmplScalar, tmplB))
 
 //
-setDiffTemplate(tmplCnstScalar, tmplTensor, zeros(tmplTensor))
+setDiffTemplate(tmplCnstScalar, tmplTensor, tmplCnstScalar * zeros(tmplTensor))
 setDiffTemplate(tmplTensor, tmplCnstScalar, zeros(tmplTensor))

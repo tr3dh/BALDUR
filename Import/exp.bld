@@ -19,17 +19,17 @@ decl main(){
 
     void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 3)
 
-    slog(diff(A * 0.9, B))
+    slog(diff(tExpr(0.9), B))
 
-    void tmp = 0.5 * (L' + L)
-    simplify(tmp)
-    slog(tmp)
+    // void tmp = 0.5 * (L' + L)
+    // simplify(tmp)
+    // slog(tmp)
 
-    slog(diff(tExpr(0.5) * tExpr(0.6) * L, X))
+    // slog(diff(tExpr(0.5) * tExpr(0.6) * L, X))
 
-    void tmpExpr = diff(tExpr("Scalar", 0) * L, L')
-    slog((diff(tExpr(0.3), L')))
-    slog(zeros(tmp))
+    // void tmpExpr = diff(tExpr("Scalar", 0) * L, L')
+    // slog((diff(tExpr(0.3), L')))
+    // slog(zeros(tmp))
 
     log("Shutting Down")
 
