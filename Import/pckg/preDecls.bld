@@ -18,6 +18,8 @@ decl product(args prms){ return [prms->chainByOperator("*=")] }
 // Identitäten für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
 decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
+decl tExprZeros(int order){ return [tExpr("Zeros", order)] }
+decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 
 // Config Tensorausdrücke
 // . Template Größen 
@@ -43,6 +45,7 @@ decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
 
 // Templates für konkret stufige Tensoren
+tExpr [tmplCnstScalar]      = tExprCnstTmpl()
 tExpr [tmplScalar]          = tExprTmpl("tmplSc", 0)
 tExpr [tmplScalarB]         = tExprTmpl("tmplScB", 0)
 tExpr [tmplVector]          = tExprTmpl("tmplVec", 1)
@@ -99,5 +102,8 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 // template Instanzierungen für Ersetzung durch template Schema
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
-setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
-setDiffTemplate(tmplScalar * tmplScalarB * tmplA, tmplB, tExpr(1))
+setDiffTemplate(tmplScalar * tmplA, tmplB, diff(tmplScalar, tmplB))
+
+//
+setDiffTemplate(tmplCnstScalar, tmplTensor, zeros(tmplTensor))
+setDiffTemplate(tmplTensor, tmplCnstScalar, zeros(tmplTensor))

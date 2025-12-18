@@ -1,6 +1,12 @@
 // nicht native Vector3 Implementierung
 assert(calledAs(__Include__), __script__ + " ist ein Include und eignet sich nicht zur direkten Ausführung")
 
+double [g_a, g_b]
+
+decl logG(){
+    slog(g_a, g_b)
+}
+
 struct Vector3{
     
     static{
@@ -12,7 +18,7 @@ struct Vector3{
 
         decl printStatics(){ slog(a, b) }
 
-        decl ping(int x){ slog("Vector3 ping", x) }
+        decl ping(int x){ logG(); slog("Vector3 ping", x, g_a) }
     }
     
     double[x,y,z]

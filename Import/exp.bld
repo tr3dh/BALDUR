@@ -27,6 +27,10 @@ decl main(){
 
     slog(diff(tExpr(0.5) * tExpr(0.6) * L, X))
 
+    void tmpExpr = diff(tExpr("Scalar", 0) * L, L')
+    slog((diff(tExpr(0.3), L')))
+    slog(zeros(tmp))
+
     log("Shutting Down")
 
     return 0

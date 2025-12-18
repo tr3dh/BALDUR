@@ -43,12 +43,15 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
     {TensorExpressionOperator::Transposition, &TensorExpression::transposeAssign},
     {TensorExpressionOperator::Section, &TensorExpression::sectionAssign},
     {TensorExpressionOperator::Determinant, &TensorExpression::determinantAssign},
+    {TensorExpressionOperator::Zeros, &TensorExpression::zerosAssign},
 };
 
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffTemplates = {};
 
 std::map<TensorExpression, TensorExpression> tensorExpressionSimplifications = {};
+
+int TensorExpression::minCnstLimit = std::numeric_limits<int>::min();
 
 // Substitutionsmap muss zusätzlich nach den labels der templatierten Nodes unterscheiden sonst
 // kann nur eine templatierte Node einer Stufe (oder einmal -1) in der Map stehen
@@ -83,7 +86,7 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     if (lhs.Relation != rhs.Relation){ return lhs.Relation < rhs.Relation; }
     if (lhs.Operator != rhs.Operator){ return lhs.Operator < rhs.Operator; }
 
-    if(lhs.isConstant && rhs.isConstant && lhs.value != rhs.value){ return lhs.value < rhs.value; }
+    if(lhs.isConstant && rhs.isConstant && lhs.value != rhs.value){ return lhs.value > rhs.value; }
     else if(lhs.isConstant && !rhs.isConstant && rhs.Relation == TkType::Argument){ return true; }
     else if(!lhs.isConstant && lhs.Relation == TkType::Argument && rhs.isConstant){ return false; }
 
@@ -912,6 +915,27 @@ void TensorExpression::sectionAssign(){
     tensorOrder = children.back().tensorOrder;
 }
 
+void TensorExpression::zerosAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Zeros;
+
+    if(tensorOrder < 0){
+
+        //
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = 0;
+    }
+    else{
+        
+        *this = TensorExpression("zeros", tensorOrder);
+    }
+}
+
 bool TensorExpression::isCommutativ() const{
 
     if(Relation != TkType::Operator){ return false; }
@@ -936,7 +960,7 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
 
     if(Relation != other.Relation){ return false; }
     if(Operator != other.Operator){ return false; }
-    if(isConstant && other.isConstant && value != other.value){ return false; }
+    if(isConstant && other.isConstant && !isConstantTemplate() && !other.isConstantTemplate() && (value != other.value)){ return false; }
 
     if(label != other.label){ return false; }
 
@@ -1181,6 +1205,12 @@ void TensorExpression::convertToTemplate(){
     }
 }
 
+void TensorExpression::convertToConstantTemplate(){
+
+    //
+    *this = TensorExpression(minCnstLimit);
+}
+
 bool TensorExpression::isTemplatedNode() const{
 
     if(Relation == TkType::Container && Operator == TensorExpressionOperator::Arbitary){
@@ -1208,6 +1238,13 @@ bool TensorExpression::isTemplate() const{
     return false;
 }
 
+bool TensorExpression::isConstantTemplate() const {
+
+    if(!isConstant){ return false; }
+    
+    return value == minCnstLimit;
+}
+
 //
 std::string TensorExpression::toString(size_t depth) const{
 
@@ -1217,12 +1254,16 @@ std::string TensorExpression::toString(size_t depth) const{
     res += depth == 0 ? "TensorExpression[" + std::to_string(tensorOrder) + "] = " : "";
 
     // Argument node
-    if(Relation == TkType::Argument && children.size() == 0 && !isConstant){
+    if(Relation == TkType::Argument && !isConstant){
 
         res += label + "[" + std::to_string(tensorOrder) + "]";
     }
+    else if(Relation == TkType::Argument && isConstantTemplate()){
+
+        res += "<CnstTmpl>[0]";
+    }
     // Constant node
-    else if(Relation == TkType::Argument && children.size() == 0){
+    else if(Relation == TkType::Argument){
 
         std::ostringstream oss;
         oss << std::fixed << std::setprecision(6) << value;
@@ -1239,7 +1280,15 @@ std::string TensorExpression::toString(size_t depth) const{
     // Container
     else if(Relation == TkType::Operator && children.size() == 1){
 
-        res += "(" + children.begin()->toString(depth+1) + ")" + TensorExpressionOperatorStrings[Operator] + " ";
+        if(TensorExpressionOperatorStrings.contains(Operator)){
+
+            res += "(" + children.begin()->toString(depth+1) + ")" + TensorExpressionOperatorStrings[Operator] + " ";
+        }
+        else{
+
+            res += std::string(magic_enum::enum_name(Operator)) + "(" + children.begin()->toString(depth+1) + ")";
+        }
+        
         res += "[" + std::to_string(tensorOrder) + "]";
     }
     // durch Operator verknüpfte Child nodes
@@ -1384,6 +1433,24 @@ namespace types{
                 // schreiben in returns
                 ret0->getMember() = TensorExpression(arg0->getMember(), arg1->getMember());
                 ret0->getMember().convertToTemplate();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExprCnstTmpl", {},
+            [__functionLabel__ = "tExprCnstTmpl", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression();
+                ret0->getMember().convertToConstantTemplate();
         },
         {TENSOR_EXPRESSION::typeIndex});
 
@@ -1849,6 +1916,23 @@ namespace types{
 
                 GET_RETURN(TENSOR_EXPRESSION, 0);
                 ret0->getMember().transposeAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("zeros", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "zeros", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().zerosAssign();
         },
         {TENSOR_EXPRESSION::typeIndex});
 

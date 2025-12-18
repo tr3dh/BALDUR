@@ -51,6 +51,7 @@ enum class TensorExpressionOperator{
     Transposition,
     Trace,
     Determinant,
+    Zeros,
 
     Section,
 
@@ -89,6 +90,8 @@ struct TensorExpression{
     static bool assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap, bool disableLog = false);
     static bool structurallyEqual(const TensorExpression& a, const TensorExpression& b);
 
+    static int minCnstLimit;
+
     //
     TkType Relation = TkType::None;
     TensorExpressionOperator Operator = TensorExpressionOperator::None;
@@ -124,14 +127,19 @@ struct TensorExpression{
     void crossingDoubleContractionAssign(const TensorExpression& other);
     void transposeAssign();
     void inverseAssign();
+    void zerosAssign();
 
     //
     bool isCommutativ() const;
 
     //
     void convertToTemplate();
+    void convertToConstantTemplate();
+
     bool isTemplatedNode() const;
     bool isTemplate() const;
+
+    bool isConstantTemplate() const;
 
     //
     size_t getNumOfUniqueNodes() const;
@@ -169,6 +177,7 @@ void moveSelfIntoFirstChild(TensorExpression& node);
 
 bool operator<(const TensorExpression& lhs, const TensorExpression& rhs);
 
+//
 struct IndexNotatedTensorExpression{
 
     //
@@ -186,12 +195,13 @@ struct IndexNotatedTensorExpression{
     std::vector<IndexNotatedTensorExpression> children;
 
     //
+    bool isConstant = false;
     float value = 0.0f;
 
     //
     IndexNotatedTensorExpression();
     IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn);
-    // IndexNotatedTensorExpression(float valueIn);
+    IndexNotatedTensorExpression(float valueIn);
 
     //
     void moveSelfIntoFirstChild();

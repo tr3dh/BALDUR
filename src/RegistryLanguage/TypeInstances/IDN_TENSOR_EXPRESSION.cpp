@@ -27,6 +27,13 @@ IndexNotatedTensorExpression::IndexNotatedTensorExpression(const std::string& la
     fillIndices();
 }
 
+IndexNotatedTensorExpression::IndexNotatedTensorExpression(float valueIn) : value(valueIn){
+
+    Relation = TkType::Argument;
+    tensorOrder = 0;
+    isConstant = true;
+}
+
 bool IndexNotatedTensorExpression::isValid(){
 
     return label != NULLSTR && tensorOrder >= 0;
@@ -752,7 +759,21 @@ std::string IndexNotatedTensorExpression::toString(size_t depth) const {
         result += "] = ";
     }
 
-    if(Relation == TkType::Argument){
+    if(isConstant){
+        
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(6) << value;
+        std::string str = oss.str();
+
+        // Entferne trailing zeros
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+
+        // Entferne trailing '.' wenn vorhanden
+        if(str.back() == '.') str.pop_back();
+
+        result += str;
+    }
+    else if(Relation == TkType::Argument){
 
         result += label + "[";
 
@@ -940,8 +961,15 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
     switch(expr.Relation){
         
         case (TkType::Argument):{
-            
-            res = IndexNotatedTensorExpression(expr.label, expr.tensorOrder);
+
+            if(expr.isConstant){
+
+                res = IndexNotatedTensorExpression(expr.value);
+            }
+            else{
+
+                res = IndexNotatedTensorExpression(expr.label, expr.tensorOrder);
+            }
 
             break;
         }
