@@ -51,7 +51,9 @@ enum class TensorExpressionOperator{
     Transposition,
     Trace,
     Determinant,
+    Ones,
     Zeros,
+    Identity,
 
     Section,
 
@@ -87,6 +89,7 @@ struct TensorExpression{
 
     //
     static void replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap);
+    static void rawReplaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap);
     static bool assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap, bool disableLog = false);
     static bool structurallyEqual(const TensorExpression& a, const TensorExpression& b);
 
@@ -128,6 +131,11 @@ struct TensorExpression{
     void transposeAssign();
     void inverseAssign();
     void zerosAssign();
+    void onesAssign();
+    void identityAssign();
+
+    //
+    bool isValid() const;
 
     //
     bool isCommutativ() const;
@@ -140,6 +148,7 @@ struct TensorExpression{
     bool isTemplate() const;
 
     bool isConstantTemplate() const;
+    bool isInstanceTemplate() const;
 
     //
     size_t getNumOfUniqueNodes() const;
@@ -151,6 +160,7 @@ struct TensorExpression{
     //
     void rawDiffAssign(const TensorExpression& other);
     void diffAssign(const TensorExpression& other);
+    void diffAssign(const TensorExpression& other, int times);
 
     void traceAssign(int contractIndices);
     void traceAssign();

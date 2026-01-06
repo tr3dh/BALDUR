@@ -9,10 +9,10 @@ assert(ExecMode == "DEBUG", "...")
 //
 decl main(){
     
-    // Header
-    logSeparator()
-    log("Programm '", __script__, "' mit args [", __args__, "] gestartet")
-    logSeparator()
+    // // Header
+    // logSeparator()
+    // log("Programm '", __script__, "' mit args [", __args__, "] gestartet")
+    // logSeparator()
 
     // Check Registers
 
@@ -21,24 +21,34 @@ decl main(){
     // logDiffTemplates(); logSeparator()
     // logSimplifications(); logSeparator()
 
+    // variablen
+    void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
+    void [x, xi, xi0] = tExpr("x", 0), tExpr("xi", 0), tExpr("xi0", 0)
+
     //
-    void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 3)
+    // void [E_TSM] = (1 + xi) * E0
+    void [E_TSM] = E + D
+    void [sigma0, sigmaFl] = (E0 . epsilon, D . epsilon)
+    void [sigma] = E0 . epsilon + D . epsilon
 
-    slog(diff(tExpr(0.9), B))
+    //
+    // void [sigma_TSM] = sigma0 + sigmaFl
 
-    void tmp = 0.5 * (L' + L)
+    //
+    void tmp = epsilon . inverse(epsilon)
     simplify(tmp)
     slog(tmp)
 
-    // slog(diff(tExpr(0.5) * tExpr(0.6) * L, X))
+    //
+    // void [u_TSM, epsilon_TSM, sigma_TSM] = (u + xi * diff(u, t), epsilon + xi * diff(epsilon, t), sigma + xi * diff(sigma, t)) 
+    // auch möglich über taylorSeries(u, xi, xi0, 2)
 
-    // void tmpExpr = diff(tExpr("Scalar", 0) * L, L')
-    slog((diff(tExpr(0.3), L')))
-    // slog(zeros(tmp))
+    //
+    // slog(u_TSM)
 
-    logSeparator()
-    log("Shutting Down")
-    logSeparator()
+    // logSeparator()
+    // log("Shutting Down")
+    // logSeparator()
 
     return 0
 }

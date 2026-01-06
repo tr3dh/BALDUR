@@ -44,6 +44,8 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
     {TensorExpressionOperator::Section, &TensorExpression::sectionAssign},
     {TensorExpressionOperator::Determinant, &TensorExpression::determinantAssign},
     {TensorExpressionOperator::Zeros, &TensorExpression::zerosAssign},
+    {TensorExpressionOperator::Ones, &TensorExpression::onesAssign},
+    {TensorExpressionOperator::Identity, &TensorExpression::identityAssign},
 };
 
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
@@ -253,6 +255,25 @@ void TensorExpression::replaceBySubstitutions(TensorExpression& expr, const subs
     }
 }
 
+// Statics
+void TensorExpression::rawReplaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap){
+
+    for(const auto& [subsKey, subsVal] : subsMap){
+        
+        //
+        if(expr == subsKey){
+
+            expr = subsVal;
+            return;
+        }
+    }
+
+    for(auto& child : expr.children){
+
+        rawReplaceBySubstitutions(child, subsMap);
+    }
+}
+
 bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr, const TensorExpression& expr, substitutionMap& subsMap, bool disableLog){
 
     bool res = true;
@@ -266,7 +287,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
         return true;
     }
 
-    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate();
+    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate() || tmplExpr.isInstanceTemplate();
 
     if(tmplIsTemplatedNode && subsMap.try_emplace(tmplExpr, expr).second){}
     else if(tmplIsTemplatedNode && subsMap[tmplExpr] != expr){
@@ -471,16 +492,60 @@ void TensorExpression::simplify(){
 //
 bool TensorExpression::simplifyOnce(){
 
+    bool IsRepresentableByTemplate;
+
     for(const auto& [k, v] : tensorExpressionSimplifications){
 
         if(k == *this){
 
             auto prevOrder = tensorOrder;
-            
-            RETURNING_ASSERT(prevOrder == v.tensorOrder, "Inkonsistentes Umformungstemplate", false);
-            
-            *this = v;
-            return true;
+
+            if(!k.isTemplate()){
+
+                RETURNING_ASSERT(prevOrder == v.tensorOrder, "Inkonsistentes Umformungstemplate", false);
+                *this = v;
+
+                return true;
+            }
+            else{
+
+                IsRepresentableByTemplate = true;
+
+                // Checke ob der Ausdruck durch das Template auch für mehrfache Vorkommen einzelner TemplateInstanzen
+                // zb. <A> .. <B> .. <A> repräsentiert werden kann
+                static substitutionMap subsMap = {};
+                subsMap.clear();
+
+                bool isRepresentationConsistent = true
+                    && assembleSubstitutionMap(k, *this, subsMap);
+
+                if(!isRepresentationConsistent){
+
+                    continue;
+                }
+
+                // Aufstellen einer Substitutionstabelle mit <template label : Ersetzungs TensorExpression>
+                // Kopie des Template Ausdrucks, in diesem findet die Ersetzung statt
+                // >> Rebuild der ursprünglichen Kopie (nicht mehr templatiert)
+
+                // *this <> k | result <> v
+
+                // result rekursiv durchlaufen und substituieren wenn nötig
+                TensorExpression res = v;
+
+                // for(const auto& [k, v] : subsMap){
+
+                //     LOG << k.toString() << " <> " << v.toString() << endl;
+                // }
+
+                //
+                replaceBySubstitutions(res, subsMap);
+
+                //
+                *this = res.rebuild();
+
+                return false;
+            }
         }
     }
 
@@ -502,6 +567,17 @@ void TensorExpression::addAssign(const TensorExpression& other){
 
     // ASSERTS
     RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1, "Addition von Tensoren unterschiedlicher Stufe versucht",);
+
+    //
+    if(!isValid()){
+
+        *this = other;
+        return;
+    }
+    else if(!other.isValid())
+    {
+        return;
+    }
 
     //
     bool copySelf = false;
@@ -554,6 +630,17 @@ void TensorExpression::subAssign(const TensorExpression& other){
     RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1, "Addition von Tensoren unterschiedlicher Stufe versucht",);
 
     //
+    if(!isValid()){
+
+        *this = other;
+        return;
+    }
+    else if(!other.isValid())
+    {
+        return;
+    }
+
+    //
     bool copySelf = false;
 
     //
@@ -592,6 +679,17 @@ void TensorExpression::mulAssign(const TensorExpression& other){
 
     // ASSERTS
     RETURNING_ASSERT(tensorOrder == 0 || other.tensorOrder == 0 || tensorOrder == -1 || other.tensorOrder == -1, "Skalar Multiplikation ohne Skalar versucht",);
+
+    //
+    if(!isValid()){
+
+        *this = other;
+        return;
+    }
+    else if(!other.isValid())
+    {
+        return;
+    }
 
     //
     bool copySelf = false;
@@ -936,6 +1034,53 @@ void TensorExpression::zerosAssign(){
     }
 }
 
+void TensorExpression::onesAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Ones;
+
+    if(tensorOrder < 0){
+
+        //
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = 0;
+    }
+    else{
+        
+        *this = TensorExpression("ones", tensorOrder);
+    }
+}
+
+void TensorExpression::identityAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Identity;
+
+    if(tensorOrder < 0){
+
+        //
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = 0;
+    }
+    else{
+        
+        *this = TensorExpression("Identity", tensorOrder);
+    }
+}
+
+bool TensorExpression::isValid() const{
+
+    return Relation != TkType::None;
+}
+
 bool TensorExpression::isCommutativ() const{
 
     if(Relation != TkType::Operator){ return false; }
@@ -1099,7 +1244,7 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     }
     else if(*this == other){
 
-        *this = TensorExpression("Identity", this->tensorOrder);
+        *this = TensorExpression("Identity", 2 * this->tensorOrder);
     }
     else if(((Relation == TkType::Argument && other.Relation == TkType::Argument) ||
             (Operator == TensorExpressionOperator::Diff || Operator == TensorExpressionOperator::Multiplication))){
@@ -1189,6 +1334,18 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     }
 }
 
+void TensorExpression::diffAssign(const TensorExpression& other, int times){
+
+    //
+    RETURNING_ASSERT(times >= 0, "Angabe der Ableitungsanzahl muss >= 0 sein",);
+
+    //
+    for(int i = 0; i < times; i++){
+
+        diffAssign(other);
+    }
+}
+
 //
 void TensorExpression::convertToTemplate(){
 
@@ -1224,7 +1381,7 @@ bool TensorExpression::isTemplatedNode() const{
 bool TensorExpression::isTemplate() const{
 
     //
-    if(isTemplatedNode() || isConstantTemplate()){
+    if(isTemplatedNode() || isConstantTemplate() || isInstanceTemplate()){
         return true;
     }
 
@@ -1243,6 +1400,11 @@ bool TensorExpression::isConstantTemplate() const {
     if(!isConstant){ return false; }
     
     return value == minCnstLimit;
+}
+
+bool TensorExpression::isInstanceTemplate() const {
+
+    return Relation == TkType::Argument && tensorOrder < 0;
 }
 
 //
@@ -1433,6 +1595,24 @@ namespace types{
                 // schreiben in returns
                 ret0->getMember() = TensorExpression(arg0->getMember(), arg1->getMember());
                 ret0->getMember().convertToTemplate();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExprInstcTmpl", {STRING::typeIndex},
+            [__functionLabel__ = "tExprInstcTmpl", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), -1);
         },
         {TENSOR_EXPRESSION::typeIndex});
 
@@ -1937,6 +2117,40 @@ namespace types{
         {TENSOR_EXPRESSION::typeIndex});
 
         //
+        registerFunction("ones", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "ones", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().onesAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("identity", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "identity", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().identityAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
         registerFunction("__traceAssign__", {TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__traceAssign__", __numArgs__ = 1](FREG_ARGS){
 
@@ -2103,6 +2317,26 @@ namespace types{
                 GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
 
                 ret0->getMember().diffAssign(arg1->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("diff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "diff", __numArgs__ = 3](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                returns[0].getVariableRef().clone(inputs[0]->getVariableRef());
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1); GET_ARG(INT, 2);
+
+                ret0->getMember().diffAssign(arg1->getMember(), arg2->getMember());
         },
         {TENSOR_EXPRESSION::typeIndex});
 
@@ -2368,6 +2602,67 @@ namespace types{
                 ret0->getMember() = arg0->getMember() < arg1->getMember();
         },
         {BOOL::typeIndex});
+
+        // Operatoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "replace", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "replace", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                //
+                TensorExpression::substitutionMap subsMap;
+                subsMap.try_emplace(arg0->getMember(), arg1->getMember());
+
+                // schreiben in returns
+                TensorExpression::rawReplaceBySubstitutions(mb->getMember(), subsMap);
+        },
+        {});
+
+        // Operatoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getReplaced", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "getReplaced", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                //
+                TensorExpression::substitutionMap subsMap;
+                subsMap.try_emplace(arg0->getMember(), arg1->getMember());
+
+                //
+                ret0->getMember() = mb->getMember();
+
+                // schreiben in returns
+                TensorExpression::rawReplaceBySubstitutions(ret0->getMember(), subsMap);
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Operatoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getOrder", {},
+            [__functionLabel__ = "getReplaced", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(INT, 0);
+
+                ret0->getMember() = mb->getMember().tensorOrder;
+        },
+        {INT::typeIndex});
 
         return true;
     }

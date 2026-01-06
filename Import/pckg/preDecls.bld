@@ -6,10 +6,13 @@ assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be execu
 // Config
 setUnwrapOperands(false)
 
+// Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
+// DISABLE_AUTOMATIC_DREF()
+
 // Constanten
 double PI = 3.14159
 
-int separatorWidth = 100
+int separatorWidth = 90
 string [space, separatorSequence] = " ", "="
 string separator = separatorWidth * separatorSequence
 
@@ -66,7 +69,7 @@ tExpr [tmplTensor]          = tExprTmpl("tmplTensor", -1)
 tExpr [x, X]            = tExpr("x", 1), tExpr("X", 1)                          // Ort in Momentan und Referenz Konfiguration 
 tExpr [u, v]            = tExpr("u", 1), tExpr("v", 1)                          // Verschiebung und Geschwindigkeit
 tExpr [epsilon, sigma]  = tExpr("epsilon", 1), tExpr("sigma", 1)                // Dehnungs- und Spannungsvektoren
-tExpr [time]            = tExpr("time", 0)                                      // Zeit
+tExpr [t, time]         = tExpr("time", 0), tExpr("time", 0)                    // Zeit
 
 // Kinematische Tensor Größen
 tExpr [F, H, L]         = tExpr("F", 2), tExpr("H", 2), tExpr("L", 2)           // Deformations-, Verschiebungs- und Geschwindigkeitsgradient
@@ -79,7 +82,7 @@ tExpr [E, e]            = tExpr("E", 2), tExpr("e", 2)                          
 tExpr [epsilon_c]       = tExpr("epsilon_c", 2)                                 // Cauchy Verzerrung
 
 // SpannungsTensoren
-tExpr [sigma_c, t]      = tExpr("sigma_c", 2), tExpr("t", 2)                    // Cauchy und Kirchhoff Spannung
+tExpr [sigma_c, sigma_k] = tExpr("sigma_c", 2), tExpr("sigma_k", 2)             // Cauchy und Kirchhoff Spannung
 tExpr [P, S]            = tExpr("P", 2), tExpr("S", 2)                          // Piola Kirchhof SpannungsTensoren
 
 // Simplifizierungen
@@ -98,6 +101,17 @@ setEqual((C - tExprIdentity(2)) * 0.5, E)               // E = 0.5 * (C - I)
 setEqual((tExprIdentity(2) - inverse(B)) * 0.5, e)      // e = 0.5 * (I - B^(-1))
 setEqual(epsilon_c, (B - tExprIdentity(2)) * 0.5)       // ε = 0.5 * (B - I)
 
+// neutrale Elemente
+setEqual(tExprInstcTmpl("Identity") . tmplA, tmplA)
+setEqual(tmplA . tExprInstcTmpl("Identity"), tmplA)
+setEqual(tmplA * 1, tmplA)
+setEqual(tmplA + 0, tmplA)
+setEqual(0 - tmplA, (-1) * tmplA)
+setEqual(tmplA - 0, tmplA)
+
+//
+setEqual(tmplA . inverse(tmplA), identity(tmplA))
+
 // Polare Zerlegung
 setEqual(R . U, F)
 setEqual(V . R, F)
@@ -110,8 +124,39 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 // template Instanzierungen für Ersetzung durch template Schema
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
-setDiffTemplate(tmplScalar * tmplA, tmplB, diff(tmplScalar, tmplB))
+setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 
 //
 setDiffTemplate(tmplCnstScalar, tmplTensor, zeros(tmplTensor))
 setDiffTemplate(tmplTensor, tmplCnstScalar, zeros(tmplTensor))
+
+//
+decl factorial(int ref member){
+    
+    if(member <= 1){ 
+        return 1 
+    }
+    return [member * faculty(member - 1)]
+}
+
+//
+decl taylorSeries(tExpr ref function, tExpr ref x, tExpr ref x0, int seriesOrder){
+
+    //
+    tExpr res
+
+    //
+    for(int order = 0, order < seriesOrder + 1, order++){
+        
+        static{ tExpr tmp }
+        tmp = tExpr()
+
+        // momentane Lösung statt exponential Funktion
+        for(int i = 0, i < order, i++){ tmp *= (x - x0) }
+
+        // Hier wird x durch konkreten Wert x0 ersetzt
+        res += (1.0/factorial(order)) * diff(function->getReplaced(x, x0), x, order) * tmp
+    }
+
+    return res
+}

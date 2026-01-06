@@ -42,10 +42,21 @@ public:
         // Plätze in statics und memberfunktionsregistermaps anlegen
         g_StaticFunctionRegisters.emplace(typeIndex, FunctionRegister());
         g_MemberFunctionRegisters.emplace(typeIndex, FunctionRegister());
-        
+
         //
         g_nullRefs.emplace(typeIndex, std::make_unique<Tag>());
 
+        // Konstruktoren
+        registerFunction(keyword, {},
+            [__functionLabel__ = keyword, __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+        },
+        {typeIndex});
+    
         //
         return true;
     }
