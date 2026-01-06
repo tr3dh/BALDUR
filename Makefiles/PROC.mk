@@ -17,7 +17,7 @@ ifeq ($(BUILD_MODE),DEBUG)
     CXXFLAGS += -g -DDEBUG
 	SUFFIX = _d
 else
-    CXXFLAGS += -O3 -DNDEBUG -march=native -funroll-loops -flto -ffunction-sections -fdata-sections
+    CXXFLAGS += -O3 -DNDEBUG -march=native -ffast-math -funroll-loops -flto -ffunction-sections -fdata-sections
 	LDFLAGS += $(NATIVEWIN_FLAGS) -flto -fuse-linker-plugin -Wl,-O2 -Wl,--gc-sections -Wl,--as-needed
 endif
 

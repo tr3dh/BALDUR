@@ -6,8 +6,16 @@ assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be execu
 // Config
 setUnwrapOperands(false)
 
-//
+// Constanten
 double PI = 3.14159
+
+int separatorWidth = 100
+string [space, separatorSequence] = " ", "="
+string separator = separatorWidth * separatorSequence
+
+//
+decl logSpace(){ log(space) }
+decl logSeparator(){ log(separator) }
 
 // Funktionen
 
@@ -15,7 +23,7 @@ double PI = 3.14159
 decl sum(args prms){ return [prms->chainByOperator("+=")] }
 decl product(args prms){ return [prms->chainByOperator("*=")] }
 
-// Identitäten für Tensorausdrücke der Stufe <order>
+// Standardmatritzen für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
 decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
 decl tExprZeros(int order){ return [tExpr("Zeros", order)] }
@@ -39,7 +47,7 @@ decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 //      . ohne diese Überladung würde ein Ausdruck der durch [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] repräsentiert werden kann
 //        unter Umständen zuerst auf Gleichheit mit [tExprTmpl(A, ?) .. tExprTmpl(B, ?)] überprüft werden und dieses
 //        Template als Repräsentation gewählt werden, obwohl [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] es besser repräsentiert
-// . Ausdruckskomplexität (>> (a . a) . b vor a . b)
+// . Ausdruckskomplexität bzw. Spezifizierungen (>> (a . a) . b vor a . b)
 
 // Templates für beliebig stufige Tensoren
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
@@ -105,5 +113,5 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 setDiffTemplate(tmplScalar * tmplA, tmplB, diff(tmplScalar, tmplB))
 
 //
-setDiffTemplate(tmplCnstScalar, tmplTensor, tmplCnstScalar * zeros(tmplTensor))
+setDiffTemplate(tmplCnstScalar, tmplTensor, zeros(tmplTensor))
 setDiffTemplate(tmplTensor, tmplCnstScalar, zeros(tmplTensor))

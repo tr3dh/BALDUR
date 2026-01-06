@@ -164,5 +164,5 @@
         "<C-z>": false,
         "<C-y>": false,
 },
-"cmake.sourceDirectory": "C:/Uni/IKM/TensorProc/thirdParty/enet"
+"cmake.sourceDirectory": "C:/Uni/IKM/BALDUR/thirdParty/bullet3"
 }

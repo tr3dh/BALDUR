@@ -81,6 +81,64 @@ namespace types{
         },
         {});
 
+        //
+        registerFunction("__mulAssign__", {INT::typeIndex, STRING::typeIndex},
+            [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                int multiplier = static_cast<INT*>(inputs[0]->getData())->getMember();
+
+                //
+                RECAST_INPUT_INPLACE(STRING, INT, 0);
+
+                // Returns | Inputs
+                GET_ARG(STRING, 0); GET_ARG(STRING, 1);
+
+                // schreiben in returns
+                arg0->getMember() = std::string();
+
+                //
+                arg0->getMember().reserve(arg1->getMember().size() * multiplier);
+                for (int i = 0; i < multiplier; i++){
+
+                    arg0->getMember().append(arg1->getMember());
+                }
+        },
+        {});
+
+        //
+        registerFunction("__mulAssign__", {STRING::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__mulAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_ARG(STRING, 0); GET_ARG(INT, 1);
+
+                //
+                std::string sequence = arg0->getMember();
+                int multiplier = arg1->getMember();
+
+                // schreiben in returns
+                arg0->getMember() = std::string();
+
+                //
+                arg0->getMember().reserve(sequence.size() * multiplier);
+                for (int i = 0; i < multiplier; i++){
+
+                    arg0->getMember().append(sequence);
+                }
+        },
+        {});
+
         // Operatoren
         registerFunction("__equal__", {STRING::typeIndex, STRING::typeIndex},
             [__functionLabel__ = "__equal__", __numArgs__ = 2](FREG_ARGS){

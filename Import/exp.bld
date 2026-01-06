@@ -9,29 +9,36 @@ assert(ExecMode == "DEBUG", "...")
 //
 decl main(){
     
+    // Header
+    logSeparator()
     log("Programm '", __script__, "' mit args [", __args__, "] gestartet")
-    log(" ")
+    logSeparator()
+
+    // Check Registers
 
     // logTypeRegister()
     // logNullRefs()
-    logDiffTemplates()
-    logSimplifications()
+    // logDiffTemplates(); logSeparator()
+    // logSimplifications(); logSeparator()
 
+    //
     void [scalar, A, B] = tExpr("scalar", 0), tExpr("A", 3), tExpr("B", 3)
 
     slog(diff(tExpr(0.9), B))
 
-    // void tmp = 0.5 * (L' + L)
-    // simplify(tmp)
-    // slog(tmp)
+    void tmp = 0.5 * (L' + L)
+    simplify(tmp)
+    slog(tmp)
 
     // slog(diff(tExpr(0.5) * tExpr(0.6) * L, X))
 
     // void tmpExpr = diff(tExpr("Scalar", 0) * L, L')
-    // slog((diff(tExpr(0.3), L')))
+    slog((diff(tExpr(0.3), L')))
     // slog(zeros(tmp))
 
+    logSeparator()
     log("Shutting Down")
+    logSeparator()
 
     return 0
 }
