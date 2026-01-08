@@ -56,12 +56,13 @@ decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
 
 // Templates für konkret stufige Tensoren
-tExpr [tmplCnstScalar]      = tExprCnstTmpl()
-tExpr [tmplScalar]          = tExprTmpl("tmplSc", 0)
-tExpr [tmplScalarB]         = tExprTmpl("tmplScB", 0)
-tExpr [tmplVector]          = tExprTmpl("tmplVec", 1)
-tExpr [tmplMatrix]          = tExprTmpl("tmplMat", 0)
-tExpr [tmplTensor]          = tExprTmpl("tmplTensor", -1)
+tExpr [tmplCnstScalar]              = tExprCnstTmpl()
+tExpr [CnstTmplA, CnstTmplB]        = tExprCnstTmpl("CnstTmpA"), tExprCnstTmpl("CnstTmpB")
+tExpr [tmplScalar]                  = tExprTmpl("tmplSc", 0)
+tExpr [tmplScalarA, tmplScalarB]    = tExprTmpl("tmplScA", 0), tExprTmpl("tmplScB", 0)
+tExpr [tmplVector]                  = tExprTmpl("tmplVec", 1)
+tExpr [tmplMatrix]                  = tExprTmpl("tmplMat", 0)
+tExpr [tmplTensor]                  = tExprTmpl("tmplTensor", -1)
 
 // Standard Tensorausdrucks-Instanzen
 
@@ -125,10 +126,6 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
-
-//
-setDiffTemplate(tmplCnstScalar, tmplTensor, zeros(tmplTensor))
-setDiffTemplate(tmplTensor, tmplCnstScalar, zeros(tmplTensor))
 
 //
 decl factorial(int ref member){

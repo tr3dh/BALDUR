@@ -308,7 +308,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
 
         for(size_t i = 0; i < tmplExpr.children.size(); i++){
 
-            res = res && assembleSubstitutionMap(tmplExpr.children[i], expr.children[i], subsMap);
+            res = res && assembleSubstitutionMap(tmplExpr.children[i], expr.children[i], subsMap, true);
         }
     }
     else{
@@ -359,7 +359,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
 
             for(size_t i = 0; i < tmplExpr.children.size(); i++){
 
-                res = res && assembleSubstitutionMap(tmplExpr.children[i], expr.children[allPermutations[matchingPermutation][i]], subsMap);
+                res = res && assembleSubstitutionMap(tmplExpr.children[i], expr.children[allPermutations[matchingPermutation][i]], subsMap, true);
             }
         }
     }
@@ -517,7 +517,7 @@ bool TensorExpression::simplifyOnce(){
                 subsMap.clear();
 
                 bool isRepresentationConsistent = true
-                    && assembleSubstitutionMap(k, *this, subsMap);
+                    && assembleSubstitutionMap(k, *this, subsMap, true);
 
                 if(!isRepresentationConsistent){
 
@@ -1106,6 +1106,7 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     if(Relation != other.Relation){ return false; }
     if(Operator != other.Operator){ return false; }
     if(isConstant && other.isConstant && !isConstantTemplate() && !other.isConstantTemplate() && (value != other.value)){ return false; }
+    if(isConstant && other.isConstantTemplate() || isConstantTemplate() && other.isConstant){ return true; }
 
     if(label != other.label){ return false; }
 
@@ -1184,6 +1185,9 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     bool copySelf = false;
     
     //
+    static substitutionMap subsMap = {};
+
+    //
     bool IsRepresentableByTemplate = false;
     auto it = tensorExpressionDiffTemplates.begin();
 
@@ -1196,12 +1200,12 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
             // Checke ob der Ausdruck durch das Template auch für mehrfache Vorkommen einzelner TemplateInstanzen
             // zb. <A> .. <B> .. <A> repräsentiert werden kann
-            static substitutionMap subsMap = {};
+            // static substitutionMap subsMap = {};
             subsMap.clear();
 
             bool isRepresentationConsistent = true
-                && assembleSubstitutionMap(it->first.first, *this, subsMap)
-                && assembleSubstitutionMap(it->first.second, other, subsMap);
+                && assembleSubstitutionMap(it->first.first, *this, subsMap, true)
+                && assembleSubstitutionMap(it->first.second, other, subsMap, true);
 
             if(isRepresentationConsistent){ 
 
@@ -1227,9 +1231,9 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         TensorExpression res = it->second;
 
         //
-        substitutionMap subsMap;
-        assembleSubstitutionMap(it->first.first, *this, subsMap);
-        assembleSubstitutionMap(it->first.second, other, subsMap);
+        // substitutionMap subsMap;
+        // assembleSubstitutionMap(it->first.first, *this, subsMap);
+        // assembleSubstitutionMap(it->first.second, other, subsMap);
 
         // for(const auto& [k, v] : subsMap){
 
@@ -1368,6 +1372,13 @@ void TensorExpression::convertToConstantTemplate(){
     *this = TensorExpression(minCnstLimit);
 }
 
+void TensorExpression::convertToConstantTemplate(const std::string& labelIn){
+
+    //
+    *this = TensorExpression(minCnstLimit);
+    label = labelIn;
+}
+
 bool TensorExpression::isTemplatedNode() const{
 
     if(Relation == TkType::Container && Operator == TensorExpressionOperator::Arbitary){
@@ -1422,7 +1433,7 @@ std::string TensorExpression::toString(size_t depth) const{
     }
     else if(Relation == TkType::Argument && isConstantTemplate()){
 
-        res += "<CnstTmpl>[0]";
+        res += "<CnstTmpl<" + label + ">>[0]";
     }
     // Constant node
     else if(Relation == TkType::Argument){
@@ -1631,6 +1642,25 @@ namespace types{
                 // schreiben in returns
                 ret0->getMember() = TensorExpression();
                 ret0->getMember().convertToConstantTemplate();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExprCnstTmpl", {STRING::typeIndex},
+            [__functionLabel__ = "tExprCnstTmpl", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(STRING, 0);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression();
+                ret0->getMember().convertToConstantTemplate(arg0->getMember());
         },
         {TENSOR_EXPRESSION::typeIndex});
 

@@ -143,6 +143,7 @@ struct TensorExpression{
     //
     void convertToTemplate();
     void convertToConstantTemplate();
+    void convertToConstantTemplate(const std::string& labelIn);
 
     bool isTemplatedNode() const;
     bool isTemplate() const;

@@ -18,8 +18,8 @@ decl main(){
 
     // logTypeRegister()
     // logNullRefs()
-    // logDiffTemplates(); logSeparator()
-    // logSimplifications(); logSeparator()
+    logDiffTemplates(); logSeparator()
+    logSimplifications(); logSeparator()
 
     // variablen
     void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
@@ -35,9 +35,16 @@ decl main(){
     // void [sigma_TSM] = sigma0 + sigmaFl
 
     //
-    void tmp = epsilon . inverse(epsilon)
+    void tmp = tExpr(0.4) * tExpr(0.3)
     simplify(tmp)
     slog(tmp)
+
+    tmp = E + D
+    slog(diff(E + D, D))
+
+    // logSeparator()
+    // slog(tExpr(0.4) == CnstTmplA)
+    // slog(tExprInstcTmpl("Identity") == tExpr("Identity", 4))
 
     //
     // void [u_TSM, epsilon_TSM, sigma_TSM] = (u + xi * diff(u, t), epsilon + xi * diff(epsilon, t), sigma + xi * diff(sigma, t)) 
