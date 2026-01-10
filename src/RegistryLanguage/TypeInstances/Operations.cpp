@@ -4,11 +4,18 @@
 std::vector<std::string> g_UsedOperators = {
     
     COLON,
+
+    // Zuwisungen und Memory Management
     "=", "<<", "<>", "<-", "<+",                            // Memory Management Semantik
     "+=", "-=", "*=", "/=", "^=",                           // Ops für 2 Arg Operationen
     ".=", ".n=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
     "\\diff=",
-    "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen 
+    "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen
+
+    // Walrus Operator
+    "=>",
+
+    // Inline Operatoren
     "&&", "!&", "||", "!|", "x|", "!x|",            // ...
     "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
     "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
@@ -56,6 +63,8 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"*=", "__mulAssign__"},
     {"/=", "__divAssign__"},
     {"^=", "__expAssign__"},
+
+    {"=>", "__walrusAssign__"},
 
     {"==", "__equal__"},
     {"!=", "__notEqual__"},
@@ -332,6 +341,55 @@ void emplaceStdOperations(){
             recipient.getVariableRef().swap(source.getVariableRef());
     },
     {});
+
+    registerFunction("__walrusAssign__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__walrusAssign__", __numArgs__ = 2](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            //
+            EvalResult& recipient = *inputs[0];
+            EvalResult& source = *inputs[1];
+
+            //
+            bool recipientIsRValue = recipient.isRValue();
+            bool sourceIsRValue = source.isRValue();
+
+            //
+            RETURNING_ASSERT(!recipientIsRValue, "Variable der Wert zuwewiesen wird ist Rvalue",);
+
+            ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
+                "narrowing conversion");
+
+            //
+            if(recipient.getVariableRef().isReference()){
+
+                RETURNING_ASSERT(IsReferenceValid(recipient.getVariableRef().getUniqueData()), "Nicht initialisierte Recipient Referenz",);
+            }
+
+            if(source.getVariableRef().isReference()){
+
+                RETURNING_ASSERT(IsReferenceValid(source.getVariableRef().getUniqueData()), "Nicht initialisierte Source Referenz",);
+            }
+
+            //
+            if(sourceIsRValue){
+                
+                // RValue wird gemovt, da er eh nur temporär vorhanden ist
+                recipient.getVariableRef().move(source.getVariableRef());
+            }
+            else{
+
+                // deepcopy vom lvalue
+                recipient.getVariableRef().clone(source.getVariableRef());
+            }
+
+            //
+            returns.emplace_back().setLValue(&recipient.getVariableRef());
+    },
+    {IObject::ARBITATRY_TYPE});
 
     registerFunction("countArgs", {IObject::ARGS_TYPE},
         [__functionLabel__ = "countArgs", __numArgs__ = 0](FREG_ARGS){
