@@ -41,6 +41,7 @@ enum class TensorExpressionOperator{
     Multiplication,
 
     DotProduct,
+    ContractingDotProduct,
     CrossProduct,
     DyadicProduct,
     CrossingDoubleContraction,
@@ -124,6 +125,7 @@ struct TensorExpression{
     void subAssign(const TensorExpression& other);
     void mulAssign(const TensorExpression& other);
     void dotProductAssign(const TensorExpression& other);
+    void contractingDotProductAssign(const TensorExpression& other);
     void crossProductAssign(const TensorExpression& other);
     void dyadProductAssign(const TensorExpression& other);
     void mirroringDoubleContractionAssign(const TensorExpression& other);
@@ -232,6 +234,7 @@ struct IndexNotatedTensorExpression{
     void subAssign(const IndexNotatedTensorExpression& other);
     void mulAssign(const IndexNotatedTensorExpression& other);
     void dotProductAssign(const IndexNotatedTensorExpression& other);
+    void contractingDotProductAssign(const IndexNotatedTensorExpression& other);
     void crossProductAssign(const IndexNotatedTensorExpression& other);
     void dyadProductAssign(const IndexNotatedTensorExpression& other);
     void mirroringDoubleContractionAssign(const IndexNotatedTensorExpression& other);

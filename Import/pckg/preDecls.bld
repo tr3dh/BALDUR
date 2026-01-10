@@ -3,14 +3,33 @@
 // Requires / Asserts für uniforms, args, aufruf, etc.
 assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
 
+// Assert uniforms
+requires string uniform ExecMode
+
 // Config
 setUnwrapOperands(false)
 
 // Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
 // DISABLE_AUTOMATIC_DREF()
 
-// Constanten
-double PI = 3.14159
+// Konstanten
+double PI                  = 3.1415926535897930                 // π (Kreiszahl, dimensionlos)
+double EULER               = 2.7182818284590450                 // e (Euler'sche Zahl, dimensionlos)
+double PLANCK              = 6.62607015*10.0^(-34.0)            // Plancksches Wirkungsquantum h [J·s]
+double HBAR                = PLANCK / (2.0*3.1415926535897930)  // reduziertes Plancksches Wirkungsquantum ħ [J·s]
+double SPEED_OF_LIGHT      = 2.99792458*10.0^(8.0)              // Lichtgeschwindigkeit c [m/s]
+double GRAVITATIONAL_CONST = 6.67430*10.0^(-11.0)               // Gravitationskonstante G [m^3/kg/s^2]
+double BOLTZMANN           = 1.380649*10.0^(-23.0)              // Boltzmann-Konstante k_B [J/K]
+double AVOGADRO            = 6.02214076*10.0^(23.0)             // Avogadro-Konstante N_A [1/mol]
+double GAS_CONST           = 8.3144626180                       // Universelle Gaskonstante R [J/mol/K]
+double ELEMENTARY_CHARGE   = 1.602176634*10.0^(-19.0)           // Elementarladung e [C]
+double ELECTRON_MASS       = 9.1093837015*10.0^(-31.0)          // Elektronenmasse m_e [kg]
+double PROTON_MASS         = 1.67262192369*10.0^(-27.0)         // Protonenmasse m_p [kg]
+double NEUTRON_MASS        = 1.67492749804*10.0^(-27.0)         // Neutronenmasse m_n [kg]
+double EPSILON_0           = 8.8541878128*10.0^(-12.0)          // elektrische Feldkonstante ε₀ [F/m]
+double MU_0                = 1.25663706212*10.0^(-6.0)          // magnetische Feldkonstante μ₀ [H/m]
+double FINE_STRUCTURE      = 7.2973525693*10.0^(-3.0)           // Feinstrukturkonstante α (dimensionlos)
+double GRAVITY_EARTH       = 9.80665                            // Normale Erdbeschleunigung g [m/s²]
 
 int separatorWidth = 90
 string [space, separatorSequence] = " ", "="
@@ -38,11 +57,11 @@ decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 // . Simplifizierungen
 // . Ableitungsersetzungen
 // . Ableitugstemplates
-
+//
 // Template Tensorausdrücke
 // Stufe -1 bedeutet Arbitary Template, hier kann jeder beliebige andere Ausdruck eingesetzt werden
 // eine konkrete Stufe ermöglicht nur das Einsetzen von Ausdrücke dieser konkreten Stufe
-
+//
 // Dabei werden die Register überladen nach
 // . Tensorstufe (>> tExprTmpl(tmplA, 0) vor tExprTmpl(tmplA, -1))
 // . TensorInstanz (>> tExpr(A, ?) vor tExprTmpl(A, ?))
@@ -51,17 +70,35 @@ decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 //        unter Umständen zuerst auf Gleichheit mit [tExprTmpl(A, ?) .. tExprTmpl(B, ?)] überprüft werden und dieses
 //        Template als Repräsentation gewählt werden, obwohl [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] es besser repräsentiert
 // . Ausdruckskomplexität bzw. Spezifizierungen (>> (a . a) . b vor a . b)
+// . Ausdruckstyp (>> Instanzen, Constanttemplates, Instancetemplates, Standardtemplates)
+//
+// | Template Typen               | repräsentierte Objekte                                        | Syntax                                    |
+// | -----------------------------------------------------------------------------------------------------------------------------------------|
+// | Tensor Standard Templates    | alle Tensor Ausdrücke (inkl. Nodes, Konstanten, ...)          | tExprTmpl("label", order)                 |
+// |                              | bei order = -1 werden beliebig stufige Ausdrücke              |                                           |
+// |                              | repräsentiert bei order > -1 Ausdrücke der konkreten Stufe    |                                           |
+// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
+// | Tensor Instance Tempates     | alle beliebig stufigen Tensorausdrucksargumente mit dem       | tExprInstcTmpl("label")                   |
+// |                              | gleichen label der template Instanz                           |                                           |
+// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
+// | Tensor Constant Templates    | repräsentieren beliebige Konstanten                           | tExprCnstTmpl("label") || tExprCnstTmpl() |
+// |                              | die Angabe des labels dient nur der Unterscheidung innerhalb  |                                           |
+// |                              | innerhalb eines template Ausdrucks                            |                                           | 
+// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
 
 // Templates für beliebig stufige Tensoren
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
 
-// Templates für konkret stufige Tensoren
-tExpr [tmplCnstScalar]              = tExprCnstTmpl()
+// Templates für Tensoren spezifischer Stufe
+tExpr [CnstTmpl]                    = tExprCnstTmpl()
 tExpr [CnstTmplA, CnstTmplB]        = tExprCnstTmpl("CnstTmpA"), tExprCnstTmpl("CnstTmpB")
 tExpr [tmplScalar]                  = tExprTmpl("tmplSc", 0)
 tExpr [tmplScalarA, tmplScalarB]    = tExprTmpl("tmplScA", 0), tExprTmpl("tmplScB", 0)
+tExpr [zerosInstanceTemplate]       = tExprInstcTmpl("zeros")
+tExpr [onesInstanceTemplate]        = tExprInstcTmpl("ones")
+tExpr [identityInstanceTemplate]    = tExprInstcTmpl("Identity")
 tExpr [tmplVector]                  = tExprTmpl("tmplVec", 1)
-tExpr [tmplMatrix]                  = tExprTmpl("tmplMat", 0)
+tExpr [tmplMatrix]                  = tExprTmpl("tmplMat", 2)
 tExpr [tmplTensor]                  = tExprTmpl("tmplTensor", -1)
 
 // Standard Tensorausdrucks-Instanzen
@@ -88,6 +125,45 @@ tExpr [P, S]            = tExpr("P", 2), tExpr("S", 2)                          
 
 // Simplifizierungen
 
+// ZEROS Vereinfachungen
+setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
+setEqual(tmplA + zerosInstanceTemplate, tmplA)
+setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
+setEqual(tmplA - zerosInstanceTemplate, tmplA)
+setEqual(zerosInstanceTemplate * tmplA, zeros(zerosInstanceTemplate * tmplA))           // *
+setEqual(tmplA * zerosInstanceTemplate, zeros(tmplA * zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
+setEqual(tmplA . zerosInstanceTemplate, zeros(tmplA . zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate .n tmplA, zeros(zerosInstanceTemplate .n tmplA))         // .n
+setEqual(tmplA .n zerosInstanceTemplate, zeros(tmplA .n zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate \x tmplA, zeros(zerosInstanceTemplate \x tmplA))         // \x
+setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
+setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplate))
+
+//
+setEqual(identityInstanceTemplate . tmplA, tmplA)
+setEqual(tmplA . identityInstanceTemplate, tmplA)
+
+//
+setEqual(tmplA * 1, tmplA)
+setEqual(1 * tmplA, tmplA)
+setEqual(tmplA * 0, zeros(tmplA))
+setEqual(0 * tmplA, zeros(tmplA))
+setEqual(tmplA + 0, tmplA)
+setEqual(0 + tmplA, tmplA)
+setEqual(tmplA - 0, tmplA)
+setEqual(0 - tmplA, (-1) * tmplA)
+
+//
+setEqual(tmplA . inverse(tmplA), identity(tmplA))
+
+//
+setEqual(tmplA + tmplA, 2 * tmplA)
+setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
+setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
+setEqual(tmplA - tmplA, zeros(tmplA))
+
 //
 setEqual(tExprIdentity(2) + H, F)                       // F = I + H
 setEqual((L + L') * 0.5, D)                             // D = 0.5 * (L + L^T)
@@ -101,17 +177,6 @@ setEqual(F . F', B)                                     // B = F · F^T
 setEqual((C - tExprIdentity(2)) * 0.5, E)               // E = 0.5 * (C - I)
 setEqual((tExprIdentity(2) - inverse(B)) * 0.5, e)      // e = 0.5 * (I - B^(-1))
 setEqual(epsilon_c, (B - tExprIdentity(2)) * 0.5)       // ε = 0.5 * (B - I)
-
-// neutrale Elemente
-setEqual(tExprInstcTmpl("Identity") . tmplA, tmplA)
-setEqual(tmplA . tExprInstcTmpl("Identity"), tmplA)
-setEqual(tmplA * 1, tmplA)
-setEqual(tmplA + 0, tmplA)
-setEqual(0 - tmplA, (-1) * tmplA)
-setEqual(tmplA - 0, tmplA)
-
-//
-setEqual(tmplA . inverse(tmplA), identity(tmplA))
 
 // Polare Zerlegung
 setEqual(R . U, F)

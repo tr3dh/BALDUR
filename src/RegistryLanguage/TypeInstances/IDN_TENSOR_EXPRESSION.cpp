@@ -388,6 +388,76 @@ void IndexNotatedTensorExpression::dotProductAssign(const IndexNotatedTensorExpr
     tensorOrder = notatedIndices.size();
 }
 
+void IndexNotatedTensorExpression::contractingDotProductAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::ContractingDotProduct;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0,
+                    "Skalarproduktbildung mit skalaren Operanden funktioniert nicht",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument){ fillIndices(); }
+
+    //
+    if(Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+    int contractIndices = std::min(operand0Indices.size(), operand1Indices.size());
+    
+    // >> n erste Indices von other werden mit n letzten Indices von A überschreiben 
+
+    // Kontrahiere die letzten contractIndices von operand0 
+    // mit den ersten contractIndices von operand1
+    for(int i = 0; i < contractIndices; i++) {
+
+        static const NotationIndex* op0_idx;
+        static const NotationIndex* op1_idx;
+
+        op0_idx = &operand0Indices[operand0Indices.size() - contractIndices + i];
+        op1_idx = &operand1Indices[i];
+
+        children.back().replaceIndex(*op1_idx, *op0_idx);
+    }
+
+    // unwrap (nur für assoziative Operatoren)
+    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+}
+
 void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorExpression& other){
 
     //
@@ -903,6 +973,7 @@ std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const I
     {TensorExpressionOperator::Subtraction, &IndexNotatedTensorExpression::subAssign},
     {TensorExpressionOperator::Multiplication, &IndexNotatedTensorExpression::mulAssign},
     {TensorExpressionOperator::DotProduct, &IndexNotatedTensorExpression::dotProductAssign},
+    {TensorExpressionOperator::ContractingDotProduct, &IndexNotatedTensorExpression::contractingDotProductAssign},
     {TensorExpressionOperator::CrossProduct, &IndexNotatedTensorExpression::crossProductAssign},
     {TensorExpressionOperator::DyadicProduct, &IndexNotatedTensorExpression::dyadProductAssign},
     {TensorExpressionOperator::MirroringDoubleContraction, &IndexNotatedTensorExpression::mirroringDoubleContractionAssign},

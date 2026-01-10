@@ -1,0 +1,80 @@
+// Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
+// "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
+// von Hedrik Geisler, 2025
+// Kapitel : 3.2.1, Example A : TSM - Modelling Stress, S.34
+//
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/ProcLang_d execute Import/3_2_1_Example_A_Stress.bld
+
+// Includes
+fetch script ["pckg/preDecls"]
+
+//
+string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
+
+//
+decl main(){
+
+    // Check Registers
+
+    // logTypeRegister()
+    // logNullRefs()
+    // logDiffTemplates(); logSeparator()
+    // logSimplifications(); logSeparator()
+
+    //
+    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+
+    // variablen
+    void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
+
+    //
+    // void [ETSM] = (1 + xi) * E0
+    void [ETSM] = E + D
+    void [sigma0, sigmaFl] = (E0 . epsilon, D . epsilon)
+    void [sigmaTSM] = sigma0 + sigmaFl
+
+    //
+    setDiffTemplate(E0, tmplA, zeros(E0 \(x) tmplA))
+    setEqual(diff(sigmaTSM, D) .n D, D .n epsilon)
+
+    //
+    void epsilonv = tExpr("epsilonv", 1)
+    void sigmav = E . (epsilon - epsilonv)
+
+    //
+    void epsilonv_t = epsilonv + diff(epsilonv, D) : D + (1.0/2.0) * (diff(epsilonv, D, 2) : D) : D
+    void sigma_t = ETSM . (epsilon - epsilonv_t)
+    void sigmaTSM_t = sigma_t + diff(sigma_t, D) : D + (1.0/2.0) * (diff(sigma_t, D, 2) : D) : D
+
+    //
+    logSeparator()
+    slog("Modellierte Spannung in Ausdrucksnotation")
+    logSeparator()
+
+    //
+    slog(sigmaTSM_t)
+
+    //
+    logSeparator()
+    slog("Modellierte Spannung in Indexnotation")
+    logSeparator()
+
+    //
+    slog(toIDN(sigmaTSM_t))
+
+    //
+    logSeparator()
+
+    return 0
+}
+
+// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
+if(calledAs(__MainProc__)){
+
+    return [main()]
+}

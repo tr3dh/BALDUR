@@ -4,15 +4,15 @@
 std::vector<std::string> g_UsedOperators = {
     
     COLON,
-    "=", "<<", "<>", "<-", "<+",                    // Memory Management Semantik
-    "+=", "-=", "*=", "/=", "^=",                   // Ops für 2 Arg Operationen
-    ".=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
+    "=", "<<", "<>", "<-", "<+",                            // Memory Management Semantik
+    "+=", "-=", "*=", "/=", "^=",                           // Ops für 2 Arg Operationen
+    ".=", ".n=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
     "\\diff=",
     "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen 
     "&&", "!&", "||", "!|", "x|", "!x|",            // ...
     "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
     "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
-    ".", "..", ":", "\\x", "\\(x)", "°=",           // für verkettung über Matrix ops
+    ".", ".n", "..", ":", "\\x", "\\(x)", "°=",     // für verkettung über Matrix ops
     "\\diff",
     "++", "--", "!",                                // Single Argument Ops
     KOMMA,                                          //
@@ -72,8 +72,8 @@ std::map<std::string, std::string> g_TwoArgOperations = {
     {"!x|=", "__nxorAssign__"},
 
     {"%", "__modulo__"},
-
     {".=", "__dotProductAssign__"},
+    {".n=", "__contractingDotProductAssign__"},
     {"..=", "__mirroringDoubleContractionAssign__"},
     {":=", "__crossingDoubleContractionAssign__"},
     {"\\x=", "__crossProductAssign__"},
@@ -115,6 +115,7 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {"nxor", "__nxorAssign__"},
 
     {".", "__dotProductAssign__"},
+    {".n", "__contractingDotProductAssign__"},
     {"..", "__mirroringDoubleContractionAssign__"},
     {":", "__crossingDoubleContractionAssign__"},
     {"\\x", "__crossProductAssign__"},

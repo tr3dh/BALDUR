@@ -12,6 +12,7 @@ std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings 
     {TensorExpressionOperator::Multiplication, "*"},
 
     {TensorExpressionOperator::DotProduct, "."},
+    {TensorExpressionOperator::ContractingDotProduct, ".n"},
     {TensorExpressionOperator::CrossProduct, "x"},
     {TensorExpressionOperator::DyadicProduct, "(x)"},
     {TensorExpressionOperator::CrossingDoubleContraction, ":"},
@@ -28,6 +29,7 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpres
     {TensorExpressionOperator::Addition, &TensorExpression::addAssign},
     {TensorExpressionOperator::Subtraction, &TensorExpression::subAssign},
     {TensorExpressionOperator::DotProduct, &TensorExpression::dotProductAssign},
+    {TensorExpressionOperator::ContractingDotProduct, &TensorExpression::contractingDotProductAssign},
     {TensorExpressionOperator::CrossProduct, &TensorExpression::crossProductAssign},
     {TensorExpressionOperator::DyadicProduct, &TensorExpression::dyadProductAssign},
     {TensorExpressionOperator::Multiplication, &TensorExpression::mulAssign},
@@ -92,7 +94,7 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     else if(lhs.isConstant && !rhs.isConstant && rhs.Relation == TkType::Argument){ return true; }
     else if(!lhs.isConstant && lhs.Relation == TkType::Argument && rhs.isConstant){ return false; }
 
-    if(!lhsIsTemplate && !rhsIsTemplate && lhs.label != rhs.label){
+    if((!lhsIsTemplate && !rhsIsTemplate && lhs.label != rhs.label) || (lhs.isInstanceTemplate() && rhs.isInstanceTemplate())){
         return lhs.label < rhs.label;
     }
 
@@ -152,6 +154,9 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
 
     //
     // _ERROR << lhs.toString() << " < " << rhs.toString() << " kann nicht aufgelöst werden" << endl;
+
+    //
+    return lhs.label < rhs.label;
 
     //
     return false;
@@ -502,7 +507,7 @@ bool TensorExpression::simplifyOnce(){
 
             if(!k.isTemplate()){
 
-                RETURNING_ASSERT(prevOrder == v.tensorOrder, "Inkonsistentes Umformungstemplate", false);
+                // RETURNING_ASSERT(prevOrder == v.tensorOrder, "Inkonsistentes Umformungstemplate", false);
                 *this = v;
 
                 return true;
@@ -770,6 +775,47 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
     else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
     else{
         tensorOrder = tensorOrder + otherMember.tensorOrder - 2;
+    }
+}
+
+void TensorExpression::contractingDotProductAssign(const TensorExpression& other){
+    
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::ContractingDotProduct;
+
+    // ASSERTS
+    RETURNING_ASSERT((tensorOrder > 0 && other.tensorOrder > 0) || tensorOrder == -1 || other.tensorOrder == -1, "Tensoren mit Stufe kleiner 1 and Skalarprodukt beteiligt",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(!unwrapOperands || (Relation != TkType::Operator || (Relation == TkType::Operator && Operator != operation))){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+
+    //
+    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(tensorOrder == -1){}
+    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    else{
+
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 2 * std::min(tensorOrder, otherMember.tensorOrder);
     }
 }
 
@@ -1989,6 +2035,24 @@ namespace types{
         },
         {});
 
+        registerFunction("__contractingDotProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__contractingDotProductAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.contractingDotProductAssign(member1);
+        },
+        {});
+
         registerFunction("__crossProductAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "__crossProductAssign__", __numArgs__ = 2](FREG_ARGS){
 
@@ -2578,6 +2642,22 @@ namespace types{
                 arg0->getMember().simplify();
         },
         {});
+
+        //
+        registerFunction("simplified", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "simplified", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_RETURN(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 0)
+
+                ret0->getMember() = arg0->getMember();
+                ret0->getMember().simplify();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
 
         //
         registerFunction("setUnwrapOperands", {BOOL::typeIndex},

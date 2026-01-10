@@ -33,8 +33,7 @@
             std::ostringstream oss;\
             oss << "Assertion failed:\n"\
                 << "\t\\ Debug Instruction : " << message << "\n"\
-                << "\t\\ File: " << __FILE__ << "\n"\
-                << "\t\\ Line: " << __LINE__ << "\n"\
+                << "\t\\ " << __FILE__ << ":" << __LINE__ << "\n"\
                 << "\t\\ Function: " << __FUNCTION__;\
             _ERROR << oss.str() << "\n" << ENDL;\
         }}\

@@ -10,9 +10,10 @@ all:
 	@echo "-------------------"
 
 TARGET = build/Proc
+SCRIPT = ../Import/exp.bld
 exec:
 	@echo "Wechsel in: $(dir $(TARGET))"
-	cd $(dir $(TARGET)) && ./$(notdir $(TARGET)$(SUFFIX))
+	cd $(dir $(TARGET)) && ./$(notdir $(TARGET)$(SUFFIX)) $(SCRIPT)
 
 execr:
 	@make exec SUFFIX=
