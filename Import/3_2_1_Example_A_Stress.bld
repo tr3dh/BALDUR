@@ -38,6 +38,8 @@ decl main(){
     void [sigma0, sigmaFl] = (E0 . epsilon, D . epsilon)
     void [sigmaTSM] = sigma0 + sigmaFl
 
+    slog("Hallo")
+
     //
     setDiffTemplate(E0, tmplA, zeros(E0 \(x) tmplA))
     setEqual(diff(sigmaTSM, D) .n D, D .n epsilon)
