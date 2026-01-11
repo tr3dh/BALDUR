@@ -2496,6 +2496,24 @@ namespace types{
         {TENSOR_EXPRESSION::typeIndex});
 
         //
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getNumOfNodes", {},
+            [__functionLabel__ = "getNumOfNodes", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(INT, 0);
+
+                //
+                ret0->getMember() = static_cast<int>(mb->getMember().getNumOfNodes());
+        },
+        {INT::typeIndex});
+
+        //
         registerFunction("setDiff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "setDiff", __numArgs__ = 3](FREG_ARGS){
 

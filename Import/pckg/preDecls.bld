@@ -7,7 +7,7 @@ assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be execu
 requires string uniform ExecMode
 
 // Config
-setUnwrapOperands(false)
+setUnwrapOperands(true)
 
 // Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
 // DISABLE_AUTOMATIC_DREF()
@@ -136,6 +136,10 @@ setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))   
 setEqual(tmplA . zerosInstanceTemplate, zeros(tmplA . zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate .n tmplA, zeros(zerosInstanceTemplate .n tmplA))         // .n
 setEqual(tmplA .n zerosInstanceTemplate, zeros(tmplA .n zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate .. tmplA, zeros(zerosInstanceTemplate .. tmplA))         // ..
+setEqual(tmplA .. zerosInstanceTemplate, zeros(tmplA .. zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate : tmplA, zeros(zerosInstanceTemplate : tmplA))           // :
+setEqual(tmplA : zerosInstanceTemplate, zeros(tmplA : zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \x tmplA, zeros(zerosInstanceTemplate \x tmplA))         // \x
 setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
@@ -192,13 +196,19 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 // DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 
+// Inverse
+setDiffTemplate(inverse(tmplA), tmplB, (-1) * inverse(tmplA) . diff(tmplA, tmplB) . inverse(tmplA))
+setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
+setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmplA, tmplB)))
+setDiffTemplate(trace(tmplA), tmplB, trace(diff(tmplA, tmplB)))
+
 //
 decl factorial(int ref member){
     
     if(member <= 1){ 
         return 1 
     }
-    return [member * faculty(member - 1)]
+    return [member * factorial(member - 1)]
 }
 
 //
@@ -218,6 +228,28 @@ decl taylorSeries(tExpr ref function, tExpr ref x, tExpr ref x0, int seriesOrder
 
         // Hier wird x durch konkreten Wert x0 ersetzt
         res += (1.0/factorial(order)) * diff(function->getReplaced(x, x0), x, order) * tmp
+    }
+
+    return res
+}
+
+//
+decl tExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
+
+    //
+    tExpr res
+
+    //
+    for(int order = 0, order < seriesOrder + 1, order++){
+        
+        static{ tExpr tmp }
+        tmp = (1.0/factorial(order)) * diff(function, x, order)
+
+        // momentane Lösung statt exponential Funktion
+        for(int i = 0, i < order, i++){ tmp := x }
+
+        // Hier wird x durch konkreten Wert x0 ersetzt
+        res += simplified(tmp)
     }
 
     return res

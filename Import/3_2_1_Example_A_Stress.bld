@@ -9,14 +9,60 @@
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_1_Example_A_Stress.bld
+//
+// Benchmark
+//
+// Ausführung dieses Skript mit Angabe verschiedener Stufen für die TSM
+// Standard Overhead der Umgebung : 0.05 s - 0.2 s
+//
+// Verwendete Hardware :
+// - RAM : 32 GB
+// - Prozessor : Intel i-7 13th Gen
+//
+// Konfiguration :
+// - setUnwrapOperands(true)
+//
+// | TSM Order []   | Benötigte Zeit [s]    |       Nodes []    |
+// |----------------|-----------------------|-------------------|
+// |        0       |      0.18             |          6        |
+// |        1       |      0.06             |       ~ 50        |
+// |        2       |      0.12             |       ~ 400       |
+// |        3       |      0.18             |       ~ 4 K       |
+// |        4       |       0.8             |      ~ 45 K       |
+// |        5       |        12             |      ~ 70 K       |
+// |        6       |       232             |      ~ 20 Mio     |
+// |----------------|-----------------------|-------------------|
+//
+// Für die Auswertung des Skripts für die TSM 7. Ordnung haben die 32 GB RAM nicht mehr ausgereicht
+// 
+// Für setUnwrapOperands(false) wird der Ausdruck Aufgrund wahrscheinlicherer Übereinstimmung mit den vorhandenen Templates
+// häufig stärker vereinfacht, doch die entstehende Node ist deutlich komplexer und verschachtelter weshalb die Ableitung einen deutlich
+// höheren Aufwand verursacht
+//
+// Vergleich :
+//
+// | TSM Order []   | Benötigte Zeit [s]    |       Nodes []    |   unwrapOperands  |
+// |----------------|-----------------------|-------------------|-------------------|
+// |        3       |      0.18 (~ 0)       |       ~ 4 K       |       true        |
+// |        3       |       1.2             |       ~ 4 K       |       false       |
+// |        4       |       0.8             |      ~ 45 K       |       true        |
+// |        4       |       145             |      ~ 45 K       |       false       |
+// |----------------|-----------------------|-------------------|-------------------|
 
 // Includes
 fetch script ["pckg/preDecls"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
+int [orderTSM] = 4
 
 //
+assert(orderTSM < 7, "Evaluierung des Ausdrucks kann für Ordnung > 6 sehr langsam werden und den vorhandenen RAM bei weitem übersteigen")
+
+//
+// setUnwrapOperands(true)
+
+//W
 decl main(){
 
     // Check Registers
@@ -27,50 +73,45 @@ decl main(){
     // logSimplifications(); logSeparator()
 
     //
+    logSeparator()
     log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
 
-    // variablen
+    // Anteile des E Tensors
     void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
-
-    //
-    // void [ETSM] = (1 + xi) * E0
     void [ETSM] = E + D
+
+    // Anteile der Spannung
     void [sigma0, sigmaFl] = (E0 . epsilon, D . epsilon)
     void [sigmaTSM] = sigma0 + sigmaFl
-
-    slog("Hallo")
 
     //
     setDiffTemplate(E0, tmplA, zeros(E0 \(x) tmplA))
     setEqual(diff(sigmaTSM, D) .n D, D .n epsilon)
 
-    //
+    // Modell für viskoelastische Dehnung
     void epsilonv = tExpr("epsilonv", 1)
     void sigmav = E . (epsilon - epsilonv)
 
-    //
-    void epsilonv_t = epsilonv + diff(epsilonv, D) : D + (1.0/2.0) * (diff(epsilonv, D, 2) : D) : D
+    // interne Variable wird über Taylorreihe entwickelt
+    void epsilonv_t = tExprTaylorSeries(epsilonv, D, orderTSM)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
-    void sigmaTSM_t = sigma_t + diff(sigma_t, D) : D + (1.0/2.0) * (diff(sigma_t, D, 2) : D) : D
+    void sigmaTSM_t = tExprTaylorSeries(sigma_t, D, orderTSM)
 
     //
-    logSeparator()
-    slog("Modellierte Spannung in Ausdrucksnotation")
-    logSeparator()
+    slog("Modellierte Spannung in Ausdrucksnotation mit", sigmaTSM_t->getNumOfNodes(), "Nodes")
+    // logSeparator()
 
     //
-    slog(sigmaTSM_t)
+    // slog(sigmaTSM_t)
+    // logSeparator()
 
-    //
-    logSeparator()
-    slog("Modellierte Spannung in Indexnotation")
+    slog("Modellierte Spannung in Indexnotation mit", toIDN(sigmaTSM_t)->getNumOfNodes(), "Nodes")
     logSeparator()
 
     //
-    slog(toIDN(sigmaTSM_t))
-
-    //
-    logSeparator()
+    // slog(toIDN(sigmaTSM_t))
+    // logSeparator()
 
     return 0
 }

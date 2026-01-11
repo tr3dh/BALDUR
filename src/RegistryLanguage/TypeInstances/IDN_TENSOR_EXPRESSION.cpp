@@ -34,6 +34,18 @@ IndexNotatedTensorExpression::IndexNotatedTensorExpression(float valueIn) : valu
     isConstant = true;
 }
 
+size_t IndexNotatedTensorExpression::getNumOfNodes() const{
+
+    size_t numOfNodes = children.size();
+
+    for(const auto& child : children){
+
+        numOfNodes += child.getNumOfNodes();
+    }
+
+    return numOfNodes;
+}
+
 bool IndexNotatedTensorExpression::isValid(){
 
     return label != NULLSTR && tensorOrder >= 0;
@@ -1160,6 +1172,24 @@ namespace types{
                 ret0->getMember() = convertToIndexNotation(arg0->getMember());
         },
         {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "getNumOfNodes", {},
+            [__functionLabel__ = "getNumOfNodes", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_RETURN(INT, 0);
+
+                //
+                ret0->getMember() = static_cast<int>(mb->getMember().getNumOfNodes());
+        },
+        {INT::typeIndex});
 
         // Member
         registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toString", {},

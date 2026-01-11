@@ -217,6 +217,9 @@ struct IndexNotatedTensorExpression{
     IndexNotatedTensorExpression(float valueIn);
 
     //
+    size_t getNumOfNodes() const;
+
+    //
     void moveSelfIntoFirstChild();
 
     bool isValid();
