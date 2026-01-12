@@ -1,22 +1,22 @@
 // Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
 // "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
 // von Hedrik Geisler, 2025
-// Kapitel : 3.2.1, Example B : TSM - Modelling ReactionForce, S.34 ff
+// Kapitel : 3.2.1, Example C : TSM - Modelling Steady State balance of linear momentum, S.34 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
+// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_C_SteadyState_Balance.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_C_SteadyState_Balance.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
-// $ ./build/ProcLang_d execute Import/3_2_1_Example_B_ReactionForce.bld
+// $ ./build/ProcLang_d execute Import/3_2_1_Example_C_SteadyState_Balance.bld
 
 // Includes
 fetch script ["pckg/preDecls"]
 
 //
-string [examplePrefix, exampleChapter, exampleTitle] = "B", "3.2.1", "TSM - Modelling ReactionForce"
+string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.1", "TSM - Modelling Steady State balance of linear momentum"
 
-int orderTSM = 14
+int orderTSM = 15
 
 //
 // setUnwrapOperands(true)
@@ -28,21 +28,29 @@ decl evaluateExample(int orderTSM){
     tExpr ref result
 
     //
-    tExpr Xi = tExpr("Xi", 2)
+    void [E0, Xi] = tExpr("E0", 2), tExpr("Xi", 2)
+    void [ETSM] = E + D
+
     tExpr [BMat, NMat] = tExpr("BMat", 2), tExpr("NMat", 2)
     tExpr DMat = tExpr("DMat", 2)
+    tExpr bstar = tExpr("bstar", 1)
 
     //
     setDiffTemplate(DMat, tmplA, zeros(DMat \(x) tmplA))
 
     //
-    tExpr F = DMat . sigma + rho * diff(u, t, 2)
+    tExpr F = DMat . sigma - bstar
+    tExpr [uTSM, epsilonTSM] = tExprTaylorSeries(u, Xi, orderTSM), tExprTaylorSeries(epsilon, Xi, orderTSM)
 
     //
-    void du2TSM = tExprTaylorSeries(diff(u, t, 2), Xi, orderTSM)  
+    tExpr sigmaTSM = ETSM . (BMat . u)
+    tExpr FTSM = F->getReplaced(sigma, sigmaTSM)
 
-    void FTSM = tExprTaylorSeries(F, Xi, orderTSM)
-    result << FTSM
+    //
+    tExpr [dFdXi, d2Fd2Xi]  = diff(FTSM, Xi), diff(FTSM, Xi, 2)
+
+    //
+    result << d2Fd2Xi
 
     //
     slog("Skript wird fuer TSM", orderTSM, "ter Stufe ausgefuehrt")

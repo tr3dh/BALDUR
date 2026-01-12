@@ -1,7 +1,7 @@
 // Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
 // "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
 // von Hedrik Geisler, 2025
-// Kapitel : 3.2.1, Example A : TSM - Modelling Stress, S.34
+// Kapitel : 3.2.1, Example A : TSM - Modelling Stress, S.34 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
 // - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
@@ -54,28 +54,16 @@ fetch script ["pckg/preDecls"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM] = 4
-
-//
-assert(orderTSM < 7, "Evaluierung des Ausdrucks kann für Ordnung > 6 sehr langsam werden und den vorhandenen RAM bei weitem übersteigen")
+int orderTSM = 3
 
 //
 // setUnwrapOperands(true)
 
-//W
-decl main(){
-
-    // Check Registers
-
-    // logTypeRegister()
-    // logNullRefs()
-    // logDiffTemplates(); logSeparator()
-    // logSimplifications(); logSeparator()
+//
+decl evaluateExample(int orderTSM){
 
     //
-    logSeparator()
-    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
-    logSeparator()
+    tExpr ref result
 
     // Anteile des E Tensors
     void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
@@ -97,22 +85,45 @@ decl main(){
     void epsilonv_t = tExprTaylorSeries(epsilonv, D, orderTSM)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
     void sigmaTSM_t = tExprTaylorSeries(sigma_t, D, orderTSM)
+    result << sigmaTSM_t
 
     //
-    slog("Modellierte Spannung in Ausdrucksnotation mit", sigmaTSM_t->getNumOfNodes(), "Nodes")
+    slog("Skript wird fuer TSM", orderTSM, "ter Stufe ausgefuehrt")
+
+    //
+    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes")
     // logSeparator()
 
     //
     // slog(sigmaTSM_t)
     // logSeparator()
 
-    slog("Modellierte Spannung in Indexnotation mit", toIDN(sigmaTSM_t)->getNumOfNodes(), "Nodes")
+    slog("Ergebnis Indexnotation mit", toIDN(result)->getNumOfNodes(), "Nodes")
     logSeparator()
 
     //
     // slog(toIDN(sigmaTSM_t))
     // logSeparator()
+}
 
+//
+decl main(){
+
+    // Check Registers
+
+    // logTypeRegister()
+    // logNullRefs()
+    // logDiffTemplates(); logSeparator()
+    // logSimplifications(); logSeparator()
+
+    //
+    logSeparator()
+    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
+
+    //
+    evaluateExample(orderTSM)
+    
     return 0
 }
 

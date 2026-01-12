@@ -102,6 +102,8 @@ tExpr [tmplMatrix]                  = tExprTmpl("tmplMat", 2)
 tExpr [tmplTensor]                  = tExprTmpl("tmplTensor", -1)
 
 // Standard Tensorausdrucks-Instanzen
+tExpr [nabla] = tExpr("nabla", 1)
+tExpr [rho] = tExpr("rho", 0)
 
 // Kontinuumsmechanische Tensor Größen
 tExpr [x, X]            = tExpr("x", 1), tExpr("X", 1)                          // Ort in Momentan und Referenz Konfiguration 
