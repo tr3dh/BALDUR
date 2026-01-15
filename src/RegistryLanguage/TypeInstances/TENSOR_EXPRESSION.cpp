@@ -156,7 +156,16 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     // _ERROR << lhs.toString() << " < " << rhs.toString() << " kann nicht aufgelöst werden" << endl;
 
     //
-    return lhs.label < rhs.label;
+    if(lhs.label != rhs.label){
+
+        return lhs.label < rhs.label;
+    }
+
+    //
+    if(lhs.containsDimensions() && rhs.containsDimensions()){
+        
+        return lhs.dimensions < rhs.dimensions;
+    }
 
     //
     return false;
@@ -406,11 +415,26 @@ TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn
     Relation = TkType::Argument;
 }
 
+TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn) :
+    label(labelIn), tensorOrder(tensorOrderIn), dimensions(dimensionsIn){
+
+    //
+    RETURNING_ASSERT(tensorOrder == dimensions.size(), "...",);
+
+    //
+    Relation = TkType::Argument;
+}
+
 TensorExpression::TensorExpression(float valueIn) : value(valueIn){
 
     Relation = TkType::Argument;
     tensorOrder = 0;
     isConstant = true;
+}
+
+bool TensorExpression::containsDimensions() const {
+
+    return dimensions.size() == tensorOrder;
 }
 
 void TensorExpression::moveSelfIntoFirstChild(){
@@ -572,7 +596,7 @@ void TensorExpression::addAssign(const TensorExpression& other){
 
     // ASSERTS
     RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1, "Addition von Tensoren unterschiedlicher Stufe versucht",);
-
+    
     //
     if(!isValid()){
 
@@ -598,6 +622,7 @@ void TensorExpression::addAssign(const TensorExpression& other){
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
@@ -617,11 +642,21 @@ void TensorExpression::addAssign(const TensorExpression& other){
     // ...
 
     //
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
     if(otherMember.tensorOrder == -1){
+
         tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){ dimensions.clear(); }
+    
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        RETURNING_ASSERT(dimensions == otherMember.dimensions, "...",);
     }
 }
 
@@ -659,6 +694,7 @@ void TensorExpression::subAssign(const TensorExpression& other){
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
@@ -669,11 +705,21 @@ void TensorExpression::subAssign(const TensorExpression& other){
     // ...
 
     //
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
     if(otherMember.tensorOrder == -1){
+
         tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){ dimensions.clear(); }
+    
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        RETURNING_ASSERT(dimensions == otherMember.dimensions, "...",);
     }
 }
 
@@ -710,6 +756,7 @@ void TensorExpression::mulAssign(const TensorExpression& other){
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
@@ -728,12 +775,26 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     // Anpassen TensorOrder
     
     //
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
-    else{
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
+
+        tensorOrder = otherMember.tensorOrder > tensorOrder ? otherMember.tensorOrder : tensorOrder;
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        dimensions = dimensions.empty() ? otherMember.dimensions : dimensions;
         tensorOrder = otherMember.tensorOrder > tensorOrder ? otherMember.tensorOrder : tensorOrder;
     }
 }
@@ -760,6 +821,7 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
@@ -768,12 +830,31 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
     // Anpassen TensorOrder
 
     //
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
-    else{
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
+
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 2;
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        // Für Reversed Check : std::make_reverse_iterator(otherMember.dimensions.begin() + contractNIndices)
+        RETURNING_ASSERT(std::equal(dimensions.end() - 1, dimensions.end(), otherMember.dimensions.begin()), "...",);
+
+        dimensions.erase(dimensions.end() - 1, dimensions.end());
+        dimensions.insert(dimensions.end(), otherMember.dimensions.begin() + 1, otherMember.dimensions.end());
+
         tensorOrder = tensorOrder + otherMember.tensorOrder - 2;
     }
 }
@@ -800,6 +881,7 @@ void TensorExpression::contractingDotProductAssign(const TensorExpression& other
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
@@ -808,14 +890,35 @@ void TensorExpression::contractingDotProductAssign(const TensorExpression& other
     // Anpassen TensorOrder
 
     //
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
-    else{
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
 
         tensorOrder = tensorOrder + otherMember.tensorOrder - 2 * std::min(tensorOrder, otherMember.tensorOrder);
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        //
+        int contractIndices = std::min(tensorOrder, otherMember.tensorOrder);
+
+        // Für Reversed Check : std::make_reverse_iterator(otherMember.dimensions.begin() + contractNIndices)
+        RETURNING_ASSERT(std::equal(dimensions.end() - contractIndices, dimensions.end(), otherMember.dimensions.begin()), "...",);
+
+        dimensions.erase(dimensions.end() - contractIndices, dimensions.end());
+        dimensions.insert(dimensions.end(), otherMember.dimensions.begin() + contractIndices, otherMember.dimensions.end());
+
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 2 * contractIndices;
     }
 }
 
@@ -841,27 +944,36 @@ void TensorExpression::crossProductAssign(const TensorExpression& other){
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
     children.emplace_back(copySelf ? children.back() : other);
 
     //
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Anpassen TensorOrder
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){ dimensions.clear(); }
+    
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        RETURNING_ASSERT(dimensions == otherMember.dimensions, "...",);
+    }
 }
 
 void TensorExpression::dyadProductAssign(const TensorExpression& other){
 
     //
     static TensorExpressionOperator operation = TensorExpressionOperator::DyadicProduct;
-
-    // ASSERTS
-    RETURNING_ASSERT((tensorOrder > 1 && other.tensorOrder > 1) || tensorOrder == -1 || other.tensorOrder == -1, "Tensoren mit Stufe kleiner 2 ...",);
 
     //
     bool copySelf = false;
@@ -877,18 +989,38 @@ void TensorExpression::dyadProductAssign(const TensorExpression& other){
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
-    else{
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
+
+        tensorOrder = tensorOrder + otherMember.tensorOrder;
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        //
+        int contractIndices = std::min(tensorOrder, otherMember.tensorOrder);
+
+        //
+        dimensions.insert(dimensions.end(), otherMember.dimensions.begin(), otherMember.dimensions.end());
+
         tensorOrder = tensorOrder + otherMember.tensorOrder;
     }
 }
@@ -915,6 +1047,7 @@ void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& 
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
@@ -923,12 +1056,35 @@ void TensorExpression::mirroringDoubleContractionAssign(const TensorExpression& 
     // Anpassen TensorOrder
 
     // Anpassen TensorOrder
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
-    else{
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
+
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 4;
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        //
+        int contractIndices = 2;
+
+        //
+        RETURNING_ASSERT(std::equal(dimensions.end() - contractIndices, dimensions.end(), std::reverse_iterator(otherMember.dimensions.begin() + contractIndices)),
+            "Crossing contraction dimensions don't match",);
+
+        dimensions.erase(dimensions.end() - contractIndices, dimensions.end());
+        dimensions.insert(dimensions.end(), otherMember.dimensions.begin() + contractIndices, otherMember.dimensions.end());
+
         tensorOrder = tensorOrder + otherMember.tensorOrder - 4;
     }
 }
@@ -955,18 +1111,42 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
         Relation = TkType::Operator;
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
     }
 
     //
     children.emplace_back(copySelf ? children.back() : other);
 
     // Anpassen TensorOrder
-    const TensorExpression& otherMember = (copySelf ? children.back() : other);
+    const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-    if(tensorOrder == -1){}
-    else if(otherMember.tensorOrder == -1){ tensorOrder = -1; }
-    else{
+// Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
+
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 4;
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        //
+        int contractIndices = 2;
+
+        // Für Reversed Check : std::make_reverse_iterator(otherMember.dimensions.begin() + contractNIndices)
+        RETURNING_ASSERT(std::equal(dimensions.end() - contractIndices, dimensions.end(), otherMember.dimensions.begin()), "...",);
+
+        dimensions.erase(dimensions.end() - contractIndices, dimensions.end());
+        dimensions.insert(dimensions.end(), otherMember.dimensions.begin() + contractIndices, otherMember.dimensions.end());
+
         tensorOrder = tensorOrder + otherMember.tensorOrder - 4;
     }
 }
@@ -1155,10 +1335,14 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     if(isConstant && other.isConstantTemplate() || isConstantTemplate() && other.isConstant){ return true; }
 
     if(label != other.label){ return false; }
-
     if(tensorOrder != -1 && other.tensorOrder != -1 && tensorOrder != other.tensorOrder){ return false; }
 
+    if(containsDimensions() && other.containsDimensions() && dimensions != other.dimensions){ return false; }
+
     if(children.size() != other.children.size()){ return false; }
+    
+    // Fallback für Nodes die keine Childs haben bislang aber identisch waren (relation, label, dimensions, etc. gleich)
+    if(children.size() == 0 && other.children.size() == 0){ return true; }
 
     bool equal = true;
 
@@ -1470,7 +1654,18 @@ std::string TensorExpression::toString(size_t depth) const{
     //
     std::string res;
 
-    res += depth == 0 ? "TensorExpression[" + std::to_string(tensorOrder) + "] = " : "";
+    res += depth == 0 ? "TensorExpression[" + std::to_string(tensorOrder) + "]" : "";
+
+    if(depth == 0 && containsDimensions()){
+
+        res += "(";
+        for(const auto& dim : dimensions){
+            res += std::to_string(dim) + ",";
+        }
+        res += ")";
+    }
+
+    res += depth == 0 ? " = " : "";
 
     // Argument node
     if(Relation == TkType::Argument && !isConstant){
@@ -1545,6 +1740,15 @@ std::string TensorExpression::toString(size_t depth) const{
         res += "Invalid Expr";
     }
 
+    if(depth > 0 && containsDimensions()){
+
+        res += "(";
+        for(const auto& dim : dimensions){
+            res += std::to_string(dim) + ",";
+        }
+        res += ")";
+    }
+
     return res;
 }
 
@@ -1600,6 +1804,64 @@ namespace types{
         },
         {TENSOR_EXPRESSION::typeIndex});
 
+        // Konstruktoren
+        registerFunction("tExpr", {STRING::typeIndex, INT::typeIndex, ARGS::typeIndex},
+            [__functionLabel__ = "tExpr", __numArgs__ = 3](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0); GET_ARG(INT, 1); GET_ARG(ARGS, 2);
+
+                //
+                std::vector<int> dimensions = {};
+                dimensions.reserve(arg2->getMember().size());
+
+                //
+                for(auto& arg : arg2->getMember()){
+
+                    RETURNING_ASSERT(arg.getTypeIndex() == INT::typeIndex, "...",);
+                    dimensions.emplace_back(static_cast<INT*>(arg.getVariableRef().getData())->getMember());
+                }
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), arg1->getMember(), dimensions);
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExpr", {STRING::typeIndex, ARGS::typeIndex},
+            [__functionLabel__ = "tExpr", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0); GET_ARG(ARGS, 1);
+
+                //
+                std::vector<int> dimensions = {};
+                dimensions.reserve(arg1->getMember().size());
+
+                //
+                for(auto& arg : arg1->getMember()){
+
+                    RETURNING_ASSERT(arg.getTypeIndex() == INT::typeIndex, "...",);
+                    dimensions.emplace_back(static_cast<INT*>(arg.getVariableRef().getData())->getMember());
+                }
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), dimensions.size(), dimensions);
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
         //
         registerFunction("tExpr", {INT::typeIndex},
             [__functionLabel__ = "tExpr", __numArgs__ = 1](FREG_ARGS){
@@ -1633,6 +1895,25 @@ namespace types{
 
                 // schreiben in returns
                 ret0->getMember() = TensorExpression(arg0->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExprTmpl", {STRING::typeIndex},
+            [__functionLabel__ = "tExprTmpl", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), -1);
+                ret0->getMember().convertToTemplate();
         },
         {TENSOR_EXPRESSION::typeIndex});
 

@@ -3,6 +3,7 @@
 #include "../SemanticAnalysis/AST.h"
 
 #include "InstanceIncludes.h"
+#include "ARGS.h"
 #include "BOOL.h"
 #include "INT.h"
 #include "DOUBLE.h"
@@ -107,13 +108,17 @@ struct TensorExpression{
     float value = 0.0f;
     bool isConstant = false;
 
-    std::vector<TensorExpression> children;
+    std::vector<TensorExpression> children = {};
+    std::vector<int> dimensions = {};
 
     TensorExpression();
     
     // Konstruktion einer Arg node
     TensorExpression(const std::string& labelIn, int tensorOrderIn);
+    TensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn);
     TensorExpression(float valueIn);
+
+    bool containsDimensions() const;
 
     bool operator==(const TensorExpression& other) const;
 
@@ -228,6 +233,7 @@ struct IndexNotatedTensorExpression{
     void replaceIndex(NotationIndex oldIndex, NotationIndex newIndex);
     void replaceIndices(const std::vector<NotationIndex>& oldIndices, const std::vector<NotationIndex>& newIndices);
     std::vector<NotationIndex> getUniqueChildIndices() const;
+    std::vector<NotationIndex> getNotUniqueChildIndices() const;
 
     //
     const std::vector<NotationIndex>& getSortedIndices();

@@ -54,7 +54,7 @@ fetch script ["pckg/preDecls"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int orderTSM = 3
+int orderTSM = 1
 
 //
 // setUnwrapOperands(true)
@@ -67,7 +67,7 @@ decl evaluateExample(int orderTSM){
 
     // Anteile des E Tensors
     void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
-    void [ETSM] = E + D
+    void [ETSM] = E0 + D
 
     // Anteile der Spannung
     void [sigma0, sigmaFl] = (E0 . epsilon, D . epsilon)
@@ -95,14 +95,14 @@ decl evaluateExample(int orderTSM){
     // logSeparator()
 
     //
-    // slog(sigmaTSM_t)
+    slog(sigmaTSM_t)
     // logSeparator()
 
     slog("Ergebnis Indexnotation mit", toIDN(result)->getNumOfNodes(), "Nodes")
     logSeparator()
 
     //
-    // slog(toIDN(sigmaTSM_t))
+    slog(toIDN(sigmaTSM_t))
     // logSeparator()
 }
 

@@ -1,33 +1,22 @@
 // Beispiel Programm in Baldur
-fetch script ["pckg/preDecls", "pckg/Vector3"]
+// fetch script ["pckg/preDecls", "pckg/Vector3"]
 
 // main des Skript
 decl main(){
     
-    slog("[Baldur Lang Example Script]")
-    slog(" ")
-    slog("[Iteration through 10 delayed frames]")
-    slog(" ")
+    slog("Hallo Welt")
 
-    int [currentFrameIdx, numFrames] = 0, 10
-    int ref [currentFrameRef, expRef]
+    void tmp = tExpr("m", args(1,2,10))
+    void tmpB = tExpr("m2", args(2,10,6))
 
-    while(currentFrameIdx < numFrames){
+    void A = tExpr("A", 3)
+    void B = tExpr("B", 3)
 
-        static{
-            int tmpInt
-            expRef, currentFrameRef << tmpInt, currentFrameIdx
-        }
+    void tmpTmpl = tExprTmpl("hallo")
 
-        sleep(0.1)
-        log("[Frame ", currentFrameIdx , "/", numFrames, "]")
+    slog(tmp + tmpTmpl)
 
-        currentFrameIdx++
-    }
-
-    Vector3(1,5,10)->print()
-
-    slog("Garbage Collection Destroyed referenced Variable")
+    slog(tmp : tmpB)
 }
 
 //

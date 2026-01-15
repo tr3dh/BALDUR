@@ -10,6 +10,33 @@ enum class ExecuteScriptAs : int{
     Include
 };
 
+int countOccurrences(const std::string& str, const std::string& sub);
+
+struct Script{
+
+    std::vector<size_t> lineBreaks = {};
+    std::string scriptContent;
+    size_t numLines = -1;
+
+    void cacheLineBreaks(){
+        
+        numLines = countOccurrences(scriptContent, "\n");
+        lineBreaks.reserve(numLines);
+
+        size_t pos = 0, count = 0;
+        const std::string par = "\n";
+
+        while (pos != std::string::npos) {
+            
+            pos = scriptContent.find(par, pos + par.length());
+            
+            if(pos != std::string::npos){
+                lineBreaks.emplace_back(pos);
+            }
+        }
+    }
+};
+
 enum class STDUniformType : int{
 
 };

@@ -3,6 +3,7 @@
 // includes für den asserst Teil
 #include <assert.h>
 #include <iostream>
+#include <functional>
 #include <sstream>
 #include <cstdlib>
 
@@ -21,11 +22,15 @@
 #define TRIGGER_ASSERT  0
 #define PASS_ASSERT     1
 
+
+
 #define RESOLVE_CONDITION(condition)\
     bool resolvedCondition = false;\
     if(condition){\
         resolvedCondition = true;\
     } 
+
+inline std::string (*g_getErrorContext)() = nullptr;
 
 #define ASSERT(condition, message)\
     do{\
@@ -34,7 +39,11 @@
             oss << "Assertion failed:\n"\
                 << "\t\\ Debug Instruction : " << message << "\n"\
                 << "\t\\ " << __FILE__ << ":" << __LINE__ << "\n"\
-                << "\t\\ Function: " << __FUNCTION__;\
+                << "\t\\ Function: " << __FUNCTION__; \
+            \
+            if(g_getErrorContext != nullptr){ \
+                oss << g_getErrorContext() << "\n"; \
+            } \
             _ERROR << oss.str() << "\n" << ENDL;\
         }}\
     while(0);

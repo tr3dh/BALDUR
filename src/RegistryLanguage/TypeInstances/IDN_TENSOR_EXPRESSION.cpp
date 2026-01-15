@@ -115,6 +115,31 @@ std::vector<NotationIndex> IndexNotatedTensorExpression::getUniqueChildIndices()
     return uniqueIndices;
 }
 
+std::vector<NotationIndex> IndexNotatedTensorExpression::getNotUniqueChildIndices() const {
+
+    std::unordered_map<NotationIndex, int> indexCount;
+    std::vector<NotationIndex> order;
+
+    for (const auto& child : children) {
+        for (auto idx : child.notatedIndices) {
+            if (indexCount[idx]++ == 0) {
+                order.push_back(idx);
+            }
+        }
+    }
+
+    std::vector<NotationIndex> notUniqueIndices;
+    notUniqueIndices.reserve(order.size());
+
+    for (auto idx : order) {
+        if (indexCount[idx] > 1) {
+            notUniqueIndices.push_back(idx);
+        }
+    }
+
+    return notUniqueIndices;
+}
+
 //
 const std::vector<NotationIndex>& IndexNotatedTensorExpression::getSortedIndices(){
 

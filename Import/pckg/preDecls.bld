@@ -213,6 +213,8 @@ decl factorial(int ref member){
     return [member * factorial(member - 1)]
 }
 
+// zeros[4] + Identity[4] vereinfachen mit simplify Template
+
 //
 decl taylorSeries(tExpr ref function, tExpr ref x, tExpr ref x0, int seriesOrder){
 
