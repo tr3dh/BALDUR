@@ -1437,6 +1437,12 @@ void TensorExpression::rawDiffAssign(const TensorExpression& other){
 
     tensorOrder = (children.begin()->tensorOrder < 0 || children.back().tensorOrder < 0) ? -1 :
                     children.begin()->tensorOrder + children.back().tensorOrder;
+
+    if(children.begin()->containsDimensions() && children.back().containsDimensions()){
+
+        dimensions = children.begin()->dimensions;
+        dimensions.insert(dimensions.end(), children.back().dimensions.begin(), children.back().dimensions.end());
+    }
 }
 
 void TensorExpression::diffAssign(const TensorExpression& other){
@@ -1511,7 +1517,16 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     }
     else if(*this == other){
 
-        *this = TensorExpression("Identity", 2 * this->tensorOrder);
+        if(containsDimensions() && other.containsDimensions()){
+
+            std::vector<int> tmpDims = dimensions;
+            tmpDims.insert(tmpDims.end(), other.dimensions.begin(), other.dimensions.end());
+            *this = TensorExpression("Identity", 2 * this->tensorOrder, tmpDims);
+        }
+        else{
+
+            *this = TensorExpression("Identity", 2 * this->tensorOrder);
+        }
     }
     else if(((Relation == TkType::Argument && other.Relation == TkType::Argument) ||
             (Operator == TensorExpressionOperator::Diff || Operator == TensorExpressionOperator::Multiplication))){
