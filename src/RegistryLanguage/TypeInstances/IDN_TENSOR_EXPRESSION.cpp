@@ -811,11 +811,11 @@ void IndexNotatedTensorExpression::traceAssign(int contractIndices){
     const std::vector<NotationIndex>& indices = getSortedIndices();
 
     //
-    size_t i = 1, contractedIndices = 0;
-    while(contractedIndices < contractIndices && i < indices.size()){
+    size_t i = indices.size() - 1, contractedIndices = 0;
+    while(contractedIndices < contractIndices && i > 0){
 
-        if(indices[i] != indices[0]){ replaceIndex(indices[i], indices[0]); contractedIndices++; }
-        i++;
+        if(indices[i] != indices.back()){ replaceIndex(indices[i], indices.back()); contractedIndices++; }
+        i--;
     }
 
     //

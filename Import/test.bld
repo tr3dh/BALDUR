@@ -5,18 +5,6 @@
 decl main(){
     
     slog("Hallo Welt")
-
-    void tmp = tExpr("m", args(1,2,10))
-    void tmpB = tExpr("m2", args(2,10,6))
-
-    void A = tExpr("A", 3)
-    void B = tExpr("B", 3)
-
-    void tmpTmpl = tExprTmpl("hallo")
-
-    slog(tmp + tmpTmpl)
-
-    slog(tmp : tmpB)
 }
 
 //

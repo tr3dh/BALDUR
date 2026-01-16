@@ -1121,7 +1121,6 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
     const TensorExpression& otherMember = children.back();
 
     // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
-// Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
     if(otherMember.tensorOrder == -1){
 
         tensorOrder = -1;
@@ -1163,6 +1162,12 @@ void TensorExpression::transposeAssign(){
     Relation = TkType::Operator;
     Operator = operation;
     tensorOrder = children.begin()->tensorOrder;
+
+    if(children.begin()->containsDimensions()){
+
+        dimensions = children.begin()->dimensions;
+        std::reverse(dimensions.begin(), dimensions.end());
+    }
 }
 
 void TensorExpression::inverseAssign(){
@@ -1177,6 +1182,11 @@ void TensorExpression::inverseAssign(){
     Relation = TkType::Operator;
     Operator = operation;
     tensorOrder = children.begin()->tensorOrder;
+
+    if(children.begin()->containsDimensions()){
+
+        dimensions = children.begin()->dimensions;
+    }
 }
 
 void TensorExpression::traceAssign(){
@@ -1191,6 +1201,8 @@ void TensorExpression::traceAssign(){
     Relation = TkType::Operator;
     Operator = operation;
     tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
 }
 
 void TensorExpression::traceAssign(int contractIndices){
@@ -1209,6 +1221,18 @@ void TensorExpression::traceAssign(int contractIndices){
     Operator = operation;
     tensorOrder = children.back().tensorOrder != -1 ? children.back().tensorOrder - (contractIndices + 1) : -1;
     contractNIndices = contractIndices;
+    
+    // die n letzten Dimensionen werden kontrahiert
+    // >> dimensions.end() - contractNIndices bis dimensions.end()
+
+    if(children.begin()->containsDimensions()){
+
+        RETURNING_ASSERT(std::all_of(children.begin()->dimensions.end() - contractIndices, children.begin()->dimensions.end(),
+            [&](int dim) { return dim == children.begin()->dimensions.back(); }), "...",);
+
+        dimensions = children.begin()->dimensions;
+        dimensions.erase(dimensions.end() - (contractNIndices + 1), dimensions.end());
+    }
 }
 
 void TensorExpression::determinantAssign(){
@@ -1223,6 +1247,8 @@ void TensorExpression::determinantAssign(){
     Relation = TkType::Operator;
     Operator = operation;
     tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
 }
 
 void TensorExpression::sectionAssign(){
@@ -1237,6 +1263,11 @@ void TensorExpression::sectionAssign(){
     Relation = TkType::Operator;
     Operator = operation;
     tensorOrder = children.back().tensorOrder;
+
+    if(children.begin()->containsDimensions()){
+
+        dimensions = children.begin()->dimensions;
+    }
 }
 
 void TensorExpression::zerosAssign(){
@@ -1252,11 +1283,13 @@ void TensorExpression::zerosAssign(){
         // node erneut Aufsetzen
         Relation = TkType::Operator;
         Operator = operation;
-        tensorOrder = 0;
+        tensorOrder = children.begin()->tensorOrder;
+
+        // da tensorOrder < 0 kommt der Ausdruck eh ohne valide dimensions
     }
     else{
         
-        *this = TensorExpression("zeros", tensorOrder);
+        *this = TensorExpression("zeros", tensorOrder, dimensions);
     }
 }
 
@@ -1273,11 +1306,11 @@ void TensorExpression::onesAssign(){
         // node erneut Aufsetzen
         Relation = TkType::Operator;
         Operator = operation;
-        tensorOrder = 0;
+        tensorOrder = children.begin()->tensorOrder;
     }
     else{
         
-        *this = TensorExpression("ones", tensorOrder);
+        *this = TensorExpression("ones", tensorOrder, dimensions);
     }
 }
 
@@ -1294,11 +1327,11 @@ void TensorExpression::identityAssign(){
         // node erneut Aufsetzen
         Relation = TkType::Operator;
         Operator = operation;
-        tensorOrder = 0;
+        tensorOrder = children.begin()->tensorOrder;
     }
     else{
         
-        *this = TensorExpression("Identity", tensorOrder);
+        *this = TensorExpression("Identity", tensorOrder, dimensions);
     }
 }
 
