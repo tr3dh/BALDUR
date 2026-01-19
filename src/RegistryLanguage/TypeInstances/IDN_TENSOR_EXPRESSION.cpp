@@ -46,6 +46,20 @@ size_t IndexNotatedTensorExpression::getNumOfNodes() const{
     return numOfNodes;
 }
 
+size_t IndexNotatedTensorExpression::getNumOfExternalNodes() const{
+
+    if(children.empty()){ return 1; }
+
+    size_t numOfExternalNodes = 0;
+
+    for(const auto& child : children){
+
+        numOfExternalNodes += child.getNumOfExternalNodes();
+    }
+
+    return numOfExternalNodes;
+}
+
 bool IndexNotatedTensorExpression::isValid(){
 
     return label != NULLSTR && tensorOrder >= 0;
@@ -255,6 +269,8 @@ void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression&
 
     // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
     children.back().replaceIndices(operand1Indices, operand0Indices);
+
+    // Dimensionen anpassen
 
     // unwrap (nur für assoziative Operatoren)
     if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
@@ -1213,6 +1229,24 @@ namespace types{
 
                 //
                 ret0->getMember() = static_cast<int>(mb->getMember().getNumOfNodes());
+        },
+        {INT::typeIndex});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "getNumOfExternalNodes", {},
+            [__functionLabel__ = "getNumOfNodes", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_RETURN(INT, 0);
+
+                //
+                ret0->getMember() = static_cast<int>(mb->getMember().getNumOfExternalNodes());
         },
         {INT::typeIndex});
 

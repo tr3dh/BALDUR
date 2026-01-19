@@ -6,7 +6,12 @@ decl main(){
     
     slog("Hallo Welt")
 
-    slog(diff(tExpr("l", args(2,3,6)) + tExpr("m", args(2,3,6)), tExpr("l", args(2,3,6))))
+    tExpr tmp = diff(tExpr("l", args(2,3,6)) + tExpr("m", args(2,3,6)), tExpr("l", args(2,3,6)));
+
+    slog(tmp->getNumOfExternalNodes())
+    slog(tmp->getNumOfNodes())
+
+    slog(diff(tExpr("m", 4), tExpr("c", 3)))
 }
 
 //

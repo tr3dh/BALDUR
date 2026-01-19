@@ -245,6 +245,20 @@ size_t TensorExpression::getNumOfNodes() const{
     return numOfNodes;
 }
 
+size_t TensorExpression::getNumOfExternalNodes() const{
+
+    if(children.empty()){ return 1; }
+
+    size_t numOfExternalNodes = 0;
+
+    for(const auto& child : children){
+
+        numOfExternalNodes += child.getNumOfExternalNodes();
+    }
+
+    return numOfExternalNodes;
+}
+
 // Statics
 void TensorExpression::replaceBySubstitutions(TensorExpression& expr, const substitutionMap& subsMap){
 
@@ -416,13 +430,13 @@ TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn
 }
 
 TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn) :
-    label(labelIn), tensorOrder(tensorOrderIn), dimensions(dimensionsIn){
+    TensorExpression(labelIn, tensorOrderIn){
 
     //
-    RETURNING_ASSERT(tensorOrder == dimensions.size(), "...",);
+    RETURNING_ASSERT(tensorOrder == dimensionsIn.size(), "build von " + toString() + " failed",);
 
     //
-    Relation = TkType::Argument;
+    dimensions = dimensionsIn;
 }
 
 TensorExpression::TensorExpression(float valueIn) : value(valueIn){
@@ -1287,9 +1301,13 @@ void TensorExpression::zerosAssign(){
 
         // da tensorOrder < 0 kommt der Ausdruck eh ohne valide dimensions
     }
-    else{
+    else if(containsDimensions()){
         
         *this = TensorExpression("zeros", tensorOrder, dimensions);
+    }
+    else{
+        
+        *this = TensorExpression("zeros", tensorOrder);
     }
 }
 
@@ -1308,9 +1326,13 @@ void TensorExpression::onesAssign(){
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
     }
-    else{
+    else if(containsDimensions()){
         
         *this = TensorExpression("ones", tensorOrder, dimensions);
+    }
+    else{
+
+        *this = TensorExpression("ones", tensorOrder);
     }
 }
 
@@ -1329,9 +1351,13 @@ void TensorExpression::identityAssign(){
         Operator = operation;
         tensorOrder = children.begin()->tensorOrder;
     }
-    else{
+    else if(containsDimensions()){
         
         *this = TensorExpression("Identity", tensorOrder, dimensions);
+    }
+    else{
+        
+        *this = TensorExpression("Identity", tensorOrder);
     }
 }
 
@@ -1495,6 +1521,8 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         // >> Rebuild der ursprünglichen Kopie (nicht mehr templatiert)
 
         // *this <> it->first.first | other <> it->first.second | result <> it->second
+
+        // LOG << it->first.first.toString() << " / " << it->first.second.toString() << " => " << it->second.toString() << endl;
 
         // result rekursiv durchlaufen und substituieren wenn nötig
         TensorExpression res = it->second;
@@ -2839,6 +2867,24 @@ namespace types{
 
                 //
                 ret0->getMember() = static_cast<int>(mb->getMember().getNumOfNodes());
+        },
+        {INT::typeIndex});
+
+        //
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getNumOfExternalNodes", {},
+            [__functionLabel__ = "getNumOfNodes", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(INT, 0);
+
+                //
+                ret0->getMember() = static_cast<int>(mb->getMember().getNumOfExternalNodes());
         },
         {INT::typeIndex});
 
