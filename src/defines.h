@@ -102,3 +102,20 @@ std::ostream& operator<<(std::ostream& os, const std::map<Key, Value>& map) {
     }
     return os;
 }
+
+template<typename T>
+std::string printPlainVector(const std::vector<T>& vec) {
+    if(vec.empty()) {
+        return "()";
+    }
+    
+    std::string result = "(";
+    for(size_t i = 0; i < vec.size(); ++i) {
+        result += std::to_string(vec[i]);
+        if(i != vec.size() - 1) {
+            result += ", ";
+        }
+    }
+    result += ")";
+    return result;
+}

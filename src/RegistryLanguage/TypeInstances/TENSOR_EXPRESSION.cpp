@@ -75,6 +75,11 @@ void moveSelfIntoFirstChild(TensorExpression& node){
     node.children.emplace_back(std::move(tmp));
 }
 
+TensorExpression TensorExpression::asExternalNode(const std::string& label){
+
+    return TensorExpression(label, tensorOrder, dimensions);
+}
+
 // bei Rückgabe von true wird lhs vor rhs sortiert bei false andersherum
 bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
 {
@@ -204,8 +209,9 @@ bool operator<(const std::pair<TensorExpression, TensorExpression>& lhs, const s
     return false;
 }
 
-size_t TensorExpression::getNumOfUniqueNodes() const{
+std::vector<const TensorExpression*> TensorExpression::getUniqueExternalNodes() const{
 
+    //
     std::vector<const TensorExpression*> uniqueNodes;
 
     // rekursive DFS Funktion
@@ -230,7 +236,12 @@ size_t TensorExpression::getNumOfUniqueNodes() const{
 
     dfs(*this);
 
-    return uniqueNodes.size();
+    return uniqueNodes;
+}
+
+size_t TensorExpression::getNumOfUniqueNodes() const{
+
+    return getUniqueExternalNodes().size();
 }
 
 size_t TensorExpression::getNumOfNodes() const{
@@ -2064,6 +2075,25 @@ namespace types{
                 // schreiben in returns
                 ret0->getMember() = TensorExpression();
                 ret0->getMember().convertToConstantTemplate(arg0->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "asExternalNode", {STRING::typeIndex},
+            [__functionLabel__ = "asExternalNode", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_ARG(STRING, 0);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                
+                // schreiben in returns
+                ret0->getMember() = mb->getMember().asExternalNode(arg0->getMember());
         },
         {TENSOR_EXPRESSION::typeIndex});
 

@@ -66,8 +66,11 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr ref result
     int nVoigtComps = getNumOfVoigtComponents(dimension)
 
+    //
+    epsilon = tExpr("epsilon", 1, args(nVoigtComps))
+
     // Anteile des E Tensors
-    void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
+    void [E0, D] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps))
     void [ETSM] = E0 + D
 
     // Anteile der Spannung
@@ -79,8 +82,8 @@ decl evaluateExample(int orderTSM, int dimension){
     setEqual(diff(sigmaTSM, D) .n D, D .n epsilon)
 
     // Modell für viskoelastische Dehnung
-    void epsilonv = tExpr("epsilonv", 1)
-    void sigmav = E . (epsilon - epsilonv)
+    void epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
+    // void sigmav = E . (epsilon - epsilonv)
 
     // interne Variable wird über Taylorreihe entwickelt
     void epsilonv_t = tExprTaylorSeries(epsilonv, D, orderTSM)
@@ -89,25 +92,32 @@ decl evaluateExample(int orderTSM, int dimension){
     result << sigmaTSM_t
 
     //
+    simplify(result)
+
+    //
     slog("Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
     logSeparator()
 
     //
-    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes")
+    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
     // logSeparator()
 
     //
     slog(result)
     logSeparator()
 
-    slog("Ergebnis Indexnotation mit", toIDN(result)->getNumOfNodes(), "Nodes")
+    //
+    void tIDNResult = toIDN(result)
+
+    slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
     // logSeparator()
 
     //
-    slog(toIDN(result))
+    slog(tIDNResult)
     logSeparator()
 
-    slog(toIDN(tExpr("m",args(1,2,3,4)) + transpose(tExpr("mc", args(4,3,2,1)))))
+    slog(tIDNResult->toJuliaString())
+    logSeparator()
 }
 
 //

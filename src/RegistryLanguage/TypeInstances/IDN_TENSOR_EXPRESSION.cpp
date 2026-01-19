@@ -73,6 +73,55 @@ size_t IndexNotatedTensorExpression::getNumOfExternalNodes() const{
     return numOfExternalNodes;
 }
 
+bool IndexNotatedTensorExpression::areEqualExternals(const IndexNotatedTensorExpression& lhs, const IndexNotatedTensorExpression& rhs){
+
+    //
+    if(lhs.Relation != TkType::Argument || lhs.Relation != TkType::Argument) return false;
+
+    if(lhs.isConstant != rhs.isConstant) return false;
+    if(lhs.value != rhs.value) return false;
+
+    if (rhs.tensorOrder != lhs.tensorOrder) return false;
+    if(lhs.dimensions != rhs.dimensions) return false;
+
+    // Label nur relevant bei konkreten Ausdrücken
+    if (rhs.label != lhs.label) return false;
+
+    return true;
+}
+
+std::vector<const IndexNotatedTensorExpression*> IndexNotatedTensorExpression::getUniqueExternalNodes() const{
+
+    //
+    std::vector<const IndexNotatedTensorExpression*> uniqueNodes;
+
+    // rekursive DFS Funktion
+    std::function<void(const IndexNotatedTensorExpression&)> dfs = [&](const IndexNotatedTensorExpression& node)
+    {
+        if(node.Relation == TkType::Argument){
+
+            // Prüfen ob die Node schon in uniqueNodes enthalten ist
+            for (const auto* u : uniqueNodes)
+            {
+                if (areEqualExternals(*u, node)){ return; }
+            }
+
+            // Node ist einzigartig
+            uniqueNodes.push_back(&node);
+        }
+        
+        // weiter durch childs iterieren
+        for (const auto& child : node.children)
+        {
+            dfs(child);
+        }
+    };
+
+    dfs(*this);
+
+    return uniqueNodes;
+}
+
 bool IndexNotatedTensorExpression::isValid(){
 
     return label != NULLSTR && tensorOrder >= 0;
@@ -877,6 +926,80 @@ void IndexNotatedTensorExpression::determinantAssign(){
     tensorOrder = 0;
 }
 
+std::string IndexNotatedTensorExpression::toJuliaString() const {
+
+    // Unique External Nodes
+    auto uniqueExternals = getUniqueExternalNodes();
+
+    // Return string
+    std::string res;
+    
+    //
+    res += "# Julia Skript\n#\n";
+    res += "# unique external nodes :\n";
+    
+    //
+    for(const auto& node : getUniqueExternalNodes()){
+        
+        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones"){
+            continue;
+        }
+
+        res += "# | arg '" + node->label + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
+
+        for(const auto& dim : node->dimensions){
+
+            res += std::to_string(dim) + ",";
+        }
+
+        res += "}\n";
+    }
+
+    //
+    res += "\n";
+    res += "function autodiff(";
+
+    //
+    bool filledInFirstExternal = false;
+
+    //
+    for(const auto& node : getUniqueExternalNodes()){
+        
+        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones"){
+            
+            continue;
+        }
+
+        res += filledInFirstExternal ? ", " + node->label : node->label;
+        filledInFirstExternal = true;
+    }
+    
+
+    // Abhängigkeiten des Indexnotierten Ausdrucks >> unique External Nodes
+
+    res += ")\n\n";
+
+    //
+    for(const auto& node : getUniqueExternalNodes()){
+        
+        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones"){
+            
+            continue;
+        }
+
+        if(node->containsDimensions()){
+            
+            res += "\t@assert size(" + node->label + ") == " + printPlainVector(node->dimensions) + "\n";
+        }
+    }
+
+    //
+
+    res += "end";
+
+    return res;
+}
+
 std::string IndexNotatedTensorExpression::toString(size_t depth) const {
 
     //
@@ -1611,6 +1734,23 @@ namespace types{
                 member0.diffAssign(member1);
         },
         {});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toJuliaString", {},
+            [__functionLabel__ = "toJuliaString", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_RETURN(STRING, 0);
+
+                ret0->getMember() = mb->getMember().toJuliaString();
+        },
+        {STRING::typeIndex});
 
         return true;
     }

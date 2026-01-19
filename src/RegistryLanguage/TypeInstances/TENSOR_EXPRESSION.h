@@ -125,6 +125,9 @@ struct TensorExpression{
     //
     void moveSelfIntoFirstChild();
 
+    //
+    TensorExpression asExternalNode(const std::string& label);
+
     // Operatoren
     void addAssign(const TensorExpression& other);
     void subAssign(const TensorExpression& other);
@@ -162,6 +165,9 @@ struct TensorExpression{
     size_t getNumOfUniqueNodes() const;
     size_t getNumOfNodes() const;
     size_t getNumOfExternalNodes() const;
+
+    //
+    std::vector<const TensorExpression*> getUniqueExternalNodes() const;
 
     //
     std::vector<std::string> getRawLabels();
@@ -202,9 +208,15 @@ struct IndexNotatedTensorExpression{
     //
     static NotationIndex NotationIndexCounter;
 
+    //
+    bool isConstant = false;
+    float value = 0.0f;
+
+    int tensorOrder = -1;
+
     // Inhalt
     std::string label = NULLSTR;
-    int tensorOrder = -1;
+    
     std::vector<NotationIndex> notatedIndices;
     std::vector<int> dimensions = {};
     // mutable std::vector<NotationIndex> cachedSortedIndices;
@@ -213,10 +225,6 @@ struct IndexNotatedTensorExpression{
     TkType Relation;
     IndexNotationOperator Operator;
     std::vector<IndexNotatedTensorExpression> children;
-
-    //
-    bool isConstant = false;
-    float value = 0.0f;
 
     //
     IndexNotatedTensorExpression();
@@ -231,6 +239,10 @@ struct IndexNotatedTensorExpression{
     size_t getNumOfNodes() const;
     size_t getNumOfExternalNodes() const;
 
+    //
+    static bool areEqualExternals(const IndexNotatedTensorExpression& lhs, const IndexNotatedTensorExpression& rhs); 
+    std::vector<const IndexNotatedTensorExpression*> getUniqueExternalNodes() const;
+    
     //
     void moveSelfIntoFirstChild();
 
@@ -266,6 +278,8 @@ struct IndexNotatedTensorExpression{
     void determinantAssign();
 
     bool equals(const IndexNotatedTensorExpression& other);
+
+    std::string toJuliaString() const;
 
     std::string toString(size_t depth = 0) const;
     friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);
