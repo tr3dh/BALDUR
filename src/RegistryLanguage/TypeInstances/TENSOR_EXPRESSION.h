@@ -206,6 +206,7 @@ struct IndexNotatedTensorExpression{
     std::string label = NULLSTR;
     int tensorOrder = -1;
     std::vector<NotationIndex> notatedIndices;
+    std::vector<int> dimensions = {};
     // mutable std::vector<NotationIndex> cachedSortedIndices;
 
     //
@@ -221,6 +222,10 @@ struct IndexNotatedTensorExpression{
     IndexNotatedTensorExpression();
     IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn);
     IndexNotatedTensorExpression(float valueIn);
+    IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn);
+
+    //
+    bool containsDimensions() const;
 
     //
     size_t getNumOfNodes() const;

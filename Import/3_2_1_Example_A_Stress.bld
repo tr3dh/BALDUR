@@ -50,20 +50,21 @@
 // |----------------|-----------------------|-------------------|-------------------|
 
 // Includes
-fetch script ["pckg/preDecls"]
+fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int orderTSM = 1
+int [orderTSM, dimension] = 1, 2
 
 //
 // setUnwrapOperands(true)
 
 //
-decl evaluateExample(int orderTSM){
+decl evaluateExample(int orderTSM, int dimension){
 
     //
     tExpr ref result
+    int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     // Anteile des E Tensors
     void [E0, D] = tExpr("E0", 2), tExpr("D", 2)
@@ -88,22 +89,25 @@ decl evaluateExample(int orderTSM){
     result << sigmaTSM_t
 
     //
-    slog("Skript wird fuer TSM", orderTSM, "ter Stufe ausgefuehrt")
+    slog("Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
+    logSeparator()
 
     //
     slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes")
     // logSeparator()
 
     //
-    slog(sigmaTSM_t)
-    // logSeparator()
-
-    slog("Ergebnis Indexnotation mit", toIDN(result)->getNumOfNodes(), "Nodes")
+    slog(result)
     logSeparator()
 
-    //
-    slog(toIDN(sigmaTSM_t))
+    slog("Ergebnis Indexnotation mit", toIDN(result)->getNumOfNodes(), "Nodes")
     // logSeparator()
+
+    //
+    slog(toIDN(result))
+    logSeparator()
+
+    slog(toIDN(tExpr("m",args(1,2,3,4)) + transpose(tExpr("mc", args(4,3,2,1)))))
 }
 
 //
@@ -122,7 +126,7 @@ decl main(){
     logSeparator()
 
     //
-    evaluateExample(orderTSM)
+    evaluateExample(orderTSM, dimension)
     
     return 0
 }

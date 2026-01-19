@@ -34,6 +34,19 @@ IndexNotatedTensorExpression::IndexNotatedTensorExpression(float valueIn) : valu
     isConstant = true;
 }
 
+IndexNotatedTensorExpression::IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn)
+    : IndexNotatedTensorExpression(labelIn, tensorOrderIn){
+
+    RETURNING_ASSERT(tensorOrder == dimensionsIn.size(), "...",);
+
+    dimensions = dimensionsIn;
+}
+
+bool IndexNotatedTensorExpression::containsDimensions() const {
+
+    return dimensions.size() == tensorOrder;
+}
+
 size_t IndexNotatedTensorExpression::getNumOfNodes() const{
 
     size_t numOfNodes = children.size();
@@ -879,8 +892,22 @@ std::string IndexNotatedTensorExpression::toString(size_t depth) const {
             result += i < notatedIndices.size() - 1 ? "," : "";
         }
 
-        result += "] = ";
+        result += "]";
     }
+
+    if(depth == 0 && containsDimensions()){
+
+        result += "(";
+
+        for(const auto& dim : dimensions){
+            
+            result += std::to_string(dim) + ",";
+        }
+
+        result += ")";
+    }
+
+    result += depth == 0 ? " = " : "";
 
     if(isConstant){
         
@@ -960,6 +987,15 @@ std::string IndexNotatedTensorExpression::toString(size_t depth) const {
         }
 
         result += depth > 0 ? ")" : "";
+    }
+
+    if(depth > 0 && containsDimensions()){
+
+        result += "(";
+        for(const auto& dim : dimensions){
+            result += std::to_string(dim) + ",";
+        }
+        result += ")";
     }
 
     return result;
@@ -1090,6 +1126,10 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
 
                 res = IndexNotatedTensorExpression(expr.value);
             }
+            // else if(expr.containsDimensions()){
+
+            //     res = IndexNotatedTensorExpression(expr.label, expr.tensorOrder, expr.dimensions);
+            // }
             else{
 
                 res = IndexNotatedTensorExpression(expr.label, expr.tensorOrder);
@@ -1145,6 +1185,11 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
 
             break;
         }
+    }
+
+    if(expr.containsDimensions()){
+
+        res.dimensions = expr.dimensions;
     }
 
     return res;
