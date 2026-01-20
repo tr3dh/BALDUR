@@ -9,7 +9,7 @@
 #include "DOUBLE.h"
 #include "STRING.h"
 
-typedef size_t NotationIndex;
+typedef int NotationIndex;
 
 enum class IndexNotationOperator{
 
@@ -279,6 +279,9 @@ struct IndexNotatedTensorExpression{
 
     bool equals(const IndexNotatedTensorExpression& other);
 
+    void evaluateIndexDimensions(std::map<int, int>& indexDimensions) const;
+
+    std::string generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth = 0) const;
     std::string toJuliaString() const;
 
     std::string toString(size_t depth = 0) const;

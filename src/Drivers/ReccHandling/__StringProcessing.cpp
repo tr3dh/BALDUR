@@ -16,6 +16,21 @@ namespace string{
         return str.rfind(subStr);
     }
 
+    std::string strippedString(const float& f){
+            
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(6) << f;
+        std::string str = oss.str();
+
+        // Entferne trailing zeros
+        str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+
+        // Entferne trailing '.' wenn vorhanden
+        if(str.back() == '.') str.pop_back();
+
+        return str;
+    }
+
     // // C++23
     // void trim(std::string& str, const char token) {
     //     auto start = std::ranges::find_if_not(str, [&token](unsigned char c) {

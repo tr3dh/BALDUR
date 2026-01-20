@@ -22,6 +22,8 @@ namespace string{
     // Findet das letzte Vorkommen eines Substrings in einem String
     std::string::size_type findLast(std::string_view str, std::string_view subStr);
 
+    std::string strippedString(const float& f);
+
     void trim(std::string& str, const char token = ' ');
     void trimVec(std::vector<std::string>& strings, const char& token = ' ');
 

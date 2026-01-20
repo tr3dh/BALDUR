@@ -1,4 +1,5 @@
 #include "TENSOR_EXPRESSION.h"
+#include "PermutationGenerator.h"
 
 NotationIndex IndexNotatedTensorExpression::NotationIndexCounter = 0;
 
@@ -626,6 +627,7 @@ void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorEx
 
     //
     IndexNotatedTensorExpression civitaDelta("eps", 3);
+    
     civitaDelta.notatedIndices = {IndexNotatedTensorExpression::NotationIndexCounter++, operand0Indices.back(), operand1Indices.back()};
     children.emplace_back(std::move(civitaDelta));
 
@@ -926,7 +928,173 @@ void IndexNotatedTensorExpression::determinantAssign(){
     tensorOrder = 0;
 }
 
+void IndexNotatedTensorExpression::evaluateIndexDimensions(std::map<int, int>& indexDimensions) const{
+
+    for(size_t i = 0; i < notatedIndices.size(); i++){
+
+        const auto& idx = notatedIndices[i];
+
+        if(indexDimensions.contains(idx)){
+
+            // >> nach extern vergebener Index
+            // ...
+
+            continue;
+        }
+
+        const auto& dim = dimensions[i];
+
+        indexDimensions.try_emplace(idx, dim);
+    }
+
+    for(size_t i = 0; i < children.size(); i++){
+
+        children[i].evaluateIndexDimensions(indexDimensions);
+    }
+}
+
+std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth) const{
+
+    //
+    // RETURNING_ASSERT(indexPermutation.size() == notatedIndices.size(), "...", "");
+
+    // Zuordnung : notierter Index <> eingesetzter Wert für notierten Index
+    static std::map<int, int> indexAssignment;
+    if(depth == 0){ indexAssignment.clear(); emplaceVectorsIntoMap(indexAssignment, notatedIndices, indexPermutation); }
+
+    static const IndexNotatedTensorExpression* prevPtr = nullptr;
+    static std::map<int, int> indexDimensions;
+
+    if(depth == 0 && this != prevPtr){
+
+        indexDimensions.clear();
+        evaluateIndexDimensions(indexDimensions);
+
+        prevPtr = this;
+    }
+
+    //
+    std::string res;
+
+    //
+    if(isConstant){ res += string::strippedString(value); }
+    else if(Relation == TkType::Argument){
+
+        res += label + "[";
+
+        for(size_t i = 0; i < notatedIndices.size(); i++){
+
+            const auto& idx = notatedIndices[i];
+
+            if(i > 0){ res += ", "; }
+
+            if(indexAssignment.contains(idx)){
+
+                res += std::to_string(indexAssignment[idx]);
+            }
+            else{
+
+                res += "idx" + std::to_string(idx);
+            }
+        }
+
+        res += "]";
+    }
+    else if(Relation == TkType::Operator){
+        
+        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)), "");
+
+        // unique Indices <> external Indices
+        const auto& notUniqueIndices = getNotUniqueChildIndices();
+
+        // über elemente der notUnique Indices summieren
+
+        for(size_t i = 0; i < notUniqueIndices.size(); i++){
+
+            const auto& idx = notUniqueIndices[i];
+
+            res += "sum(idx" + std::to_string(idx) + " -> ";
+        }
+
+        //
+        for(size_t i = 0; i < children.size(); i++){
+
+            const IndexNotatedTensorExpression& child = children[i];
+
+            res += child.generateTensorSequenceJuliaString({}, depth + 1);
+            res += i < children.size() - 1 ? (" " + IndexNotationOperatorStrings[Operator] + " ") : "";
+        }
+
+        for(size_t i = 0; i < notUniqueIndices.size(); i++){
+
+            const auto& idx = notUniqueIndices[i];
+
+            res += ", 1:" + std::to_string(idx) + ")";
+        }
+    }
+
+    // else if(Relation == TkType::Container){
+
+    //     result += "Container " + std::string(magic_enum::enum_name(Operator)) + " [";
+
+    //     for(size_t i = 0; i < notatedIndices.size(); i++){
+
+    //         result += std::to_string(notatedIndices[i]);
+    //         result += i < notatedIndices.size() - 1 ? "," : "";
+    //     }
+
+    //     result += "]";
+
+    //     result += "{ ";
+
+    //     for(size_t i = 0; i < children.size(); i++){
+
+    //         const IndexNotatedTensorExpression& child = children[i];
+
+    //         result += child.toString(depth + 1);
+    //     }
+
+    //     result += " }";
+    // }
+    // else if(Relation == TkType::Operator && Operator == IndexNotationOperator::Diff){
+
+    //     result += "diff(";
+
+    //     for(size_t i = 0; i < children.size(); i++){
+
+    //         const IndexNotatedTensorExpression& child = children[i];
+
+    //         result += i > 0 ? ", " : "";
+    //         result += child.toString(depth + 1);
+    //     }
+
+    //     result += ")";
+    // }
+    // else if(Relation == TkType::Operator){
+        
+    //     RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator", "");
+
+    //     result += depth > 0 ? "(" : "";
+
+    //     for(size_t i = 0; i < children.size(); i++){
+
+    //         const IndexNotatedTensorExpression& child = children[i];
+
+    //         result += (i > 0) ? " " + IndexNotationOperatorStrings[Operator] + " " : "";
+    //         result += child.toString(depth + 1);
+    //     }
+
+    //     result += depth > 0 ? ")" : "";
+    // }
+
+    //
+    return res;
+}
+
 std::string IndexNotatedTensorExpression::toJuliaString() const {
+
+    //
+    RETURNING_ASSERT(containsDimensions(), "Ohne Dimensionsberücksichtigung kann Julia Skript nicht erstellt werden","");
 
     // Unique External Nodes
     auto uniqueExternals = getUniqueExternalNodes();
@@ -941,17 +1109,12 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     //
     for(const auto& node : getUniqueExternalNodes()){
         
-        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones"){
+        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones" || node->label == "eps"){
             continue;
         }
 
         res += "# | arg '" + node->label + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
-
-        for(const auto& dim : node->dimensions){
-
-            res += std::to_string(dim) + ",";
-        }
-
+        res += printPlainVector(node->dimensions, false);
         res += "}\n";
     }
 
@@ -965,7 +1128,7 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     //
     for(const auto& node : getUniqueExternalNodes()){
         
-        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones"){
+        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones" || node->label == "eps"){
             
             continue;
         }
@@ -974,7 +1137,6 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
         filledInFirstExternal = true;
     }
     
-
     // Abhängigkeiten des Indexnotierten Ausdrucks >> unique External Nodes
 
     res += ")\n\n";
@@ -982,7 +1144,7 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     //
     for(const auto& node : getUniqueExternalNodes()){
         
-        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones"){
+        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones" || node->label == "eps"){
             
             continue;
         }
@@ -993,8 +1155,25 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
         }
     }
 
-    //
+    res += "\n";
 
+    // Return Wert initialisieren
+    res += "\tres = zeros" + printPlainVector(dimensions) + "\n\n";
+
+    //
+    for(const auto& idxs : generateTensorIndexPermutations(dimensions)){
+        
+        //
+        res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
+        
+        // Werte der nach extern weitergereichten Indices : idxs
+        res += generateTensorSequenceJuliaString(idxs);
+        
+        //
+        res += "\n";
+    }
+
+    //
     res += "end";
 
     return res;

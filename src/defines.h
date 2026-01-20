@@ -104,18 +104,52 @@ std::ostream& operator<<(std::ostream& os, const std::map<Key, Value>& map) {
 }
 
 template<typename T>
-std::string printPlainVector(const std::vector<T>& vec) {
+std::string printPlainVector(const std::vector<T>& vec, bool logParens = true, const std::string& token = ", ") {
+
     if(vec.empty()) {
-        return "()";
+        return logParens ? "()" : "";
     }
     
-    std::string result = "(";
+    std::string result = logParens ? "(" : "";
     for(size_t i = 0; i < vec.size(); ++i) {
         result += std::to_string(vec[i]);
         if(i != vec.size() - 1) {
-            result += ", ";
+            result += token;
         }
     }
-    result += ")";
+    result += logParens ? ")" : "";
     return result;
+}
+
+template<typename T>
+std::string printIncreasedPlainVector(const std::vector<T>& vec, bool logParens = true, const std::string& token = ", ") {
+
+    if(vec.empty()) {
+        return logParens ? "()" : "";
+    }
+    
+    std::string result = logParens ? "(" : "";
+    for(size_t i = 0; i < vec.size(); ++i) {
+        result += std::to_string(vec[i] + 1);
+        if(i != vec.size() - 1) {
+            result += token;
+        }
+    }
+    result += logParens ? ")" : "";
+    return result;
+}
+
+template<typename K, typename V>
+void emplaceVectorsIntoMap(std::map<K, V>& map, const std::vector<K>& keys, const std::vector<K>& vals) {
+
+    //
+    RETURNING_ASSERT(keys.size() == vals.size(), "...",);
+
+    //
+    if(keys.empty()){ return; }
+
+    for (size_t i = 0; i < keys.size(); ++i) {
+
+        map.try_emplace(keys[i], vals[i]);
+    }
 }
