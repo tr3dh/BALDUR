@@ -54,7 +54,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 1, 3
+int [orderTSM, dimension] = 2, 3
 
 //
 // setUnwrapOperands(true)
@@ -80,7 +80,7 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     setDiffTemplate(E0, tmplA, zeros(E0 \(x) tmplA))
     setEqual(diff(sigmaTSM, D) .n D, D .n epsilon)
-
+    
     // Modell für viskoelastische Dehnung
     void epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
     // void sigmav = E . (epsilon - epsilonv)
@@ -89,6 +89,7 @@ decl evaluateExample(int orderTSM, int dimension){
     void epsilonv_t = tExprTaylorSeries(epsilonv, D, orderTSM)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
     void sigmaTSM_t = tExprTaylorSeries(sigma_t, D, orderTSM)
+    
     result << sigmaTSM_t
 
     //
