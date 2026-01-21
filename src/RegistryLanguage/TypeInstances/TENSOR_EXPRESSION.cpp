@@ -1502,7 +1502,8 @@ void TensorExpression::diffAssign(const TensorExpression& other){
 
         if (it->first.first == *this && it->first.second == other) 
         {
-            IsRepresentableByTemplate = true;
+            //
+            // LOG << "Template found " << it->first.first.toString() << " / " << it->first.second.toString() << " => " << it->second.toString() << endl;
 
             // Checke ob der Ausdruck durch das Template auch für mehrfache Vorkommen einzelner TemplateInstanzen
             // zb. <A> .. <B> .. <A> repräsentiert werden kann
@@ -1513,8 +1514,9 @@ void TensorExpression::diffAssign(const TensorExpression& other){
                 && assembleSubstitutionMap(it->first.first, *this, subsMap, true)
                 && assembleSubstitutionMap(it->first.second, other, subsMap, true);
 
-            if(isRepresentationConsistent){ 
+            if(isRepresentationConsistent){
 
+                IsRepresentableByTemplate = true;
                 break;
             }
         }
