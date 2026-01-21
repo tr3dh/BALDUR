@@ -108,6 +108,8 @@ struct TensorExpression{
     float value = 0.0f;
     bool isConstant = false;
 
+    bool isArgTmpl = false;
+
     std::vector<TensorExpression> children = {};
     std::vector<int> dimensions = {};
 
@@ -154,12 +156,14 @@ struct TensorExpression{
     void convertToTemplate();
     void convertToConstantTemplate();
     void convertToConstantTemplate(const std::string& labelIn);
+    void convertToArgTemplate();
 
     bool isTemplatedNode() const;
     bool isTemplate() const;
 
     bool isConstantTemplate() const;
     bool isInstanceTemplate() const;
+    bool isArgTemplate() const;
 
     //
     size_t getNumOfUniqueNodes() const;

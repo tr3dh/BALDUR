@@ -90,7 +90,24 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
 
     //
     if (lhsIsTemplate != rhsIsTemplate){ return !lhsIsTemplate; }
-     
+    
+    //
+    else if(lhsIsTemplate && rhsIsTemplate){
+
+        // Wenn Instance und Arg Template vorhanden soll Instance Template überladen werden
+        if((lhs.isInstanceTemplate() && rhs.isArgTemplate()) || (lhs.isArgTemplate() && rhs.isInstanceTemplate())){
+
+            return lhs.isInstanceTemplate();
+        }
+        else if((lhs.isConstantTemplate() && rhs.isArgTemplate()) || (lhs.isArgTemplate() && rhs.isConstantTemplate())){
+
+            return lhs.isConstantTemplate();
+        }
+
+        // Der Vergleich zwischen Instance und Constant Template ist tatsächlich irrelevant da sie sich
+        // anderweitig ausreichend unterscheiden und die Überladung trivial ist
+    }
+
     //
     if (lhs.Relation != rhs.Relation){ return lhs.Relation < rhs.Relation; }
     if (lhs.Operator != rhs.Operator){ return lhs.Operator < rhs.Operator; }
@@ -99,7 +116,7 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     else if(lhs.isConstant && !rhs.isConstant && rhs.Relation == TkType::Argument){ return true; }
     else if(!lhs.isConstant && lhs.Relation == TkType::Argument && rhs.isConstant){ return false; }
 
-    if((!lhsIsTemplate && !rhsIsTemplate && lhs.label != rhs.label) || (lhs.isInstanceTemplate() && rhs.isInstanceTemplate())){
+    if((!lhsIsTemplate && !rhsIsTemplate && lhs.label != rhs.label)){
         return lhs.label < rhs.label;
     }
 
@@ -109,11 +126,6 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     //
     const auto& a = lhs.children;
     const auto& b = rhs.children;
-
-    if (a.size() != b.size()){
-
-        return a.size() < b.size();
-    }
 
     // Hier kommt es zur Unterscheidung identischer Template Ausdrücke, die sich nur noch durch Doppelnennungen
     // einzelner Nodex unterscheiden, also zb. A .. B .. C und A .. B .. A
@@ -326,7 +338,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
         return true;
     }
 
-    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate() || tmplExpr.isInstanceTemplate();
+    bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate() || tmplExpr.isInstanceTemplate() || tmplExpr.isArgTemplate();
 
     if(tmplIsTemplatedNode && subsMap.try_emplace(tmplExpr, expr).second){}
     else if(tmplIsTemplatedNode && subsMap[tmplExpr] != expr){
@@ -1393,8 +1405,17 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     // Check ob gleiche Instanz
     if(this == &other){ return true; }
 
+    // wenn ein member des Abgleichs eine templated node (Standardtemplate) ist und der andere kein Template
+    // >> template und einsetzungs parameter
     if(((isTemplatedNode() && !other.isTemplate()) || (!isTemplate() && other.isTemplatedNode())) &&
        (tensorOrder == other.tensorOrder || (tensorOrder == -1 || other.tensorOrder == -1))){
+
+        return true;
+    }
+
+    // wenn ein member des Abgleichs eine templated node (Standardtemplate) ist und der andere kein Template
+    // >> template und einsetzungs parameter
+    if(((isArgTemplate() && !other.isTemplate() && other.children.size() < 2) || (!isTemplate() && children.size() < 2 && other.isArgTemplate()))){
 
         return true;
     }
@@ -1545,10 +1566,10 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         // assembleSubstitutionMap(it->first.first, *this, subsMap);
         // assembleSubstitutionMap(it->first.second, other, subsMap);
 
-        // for(const auto& [k, v] : subsMap){
+        for(const auto& [k, v] : subsMap){
 
-        //     LOG << k.toString() << " <> " << v.toString() << endl;
-        // }
+            LOG << k.toString() << " <> " << v.toString() << endl;
+        }
 
         //
         replaceBySubstitutions(res, subsMap);
@@ -1698,6 +1719,11 @@ void TensorExpression::convertToConstantTemplate(const std::string& labelIn){
     label = labelIn;
 }
 
+void TensorExpression::convertToArgTemplate(){
+
+    isArgTmpl = true;
+}
+
 bool TensorExpression::isTemplatedNode() const{
 
     if(Relation == TkType::Container && Operator == TensorExpressionOperator::Arbitary){
@@ -1711,7 +1737,7 @@ bool TensorExpression::isTemplatedNode() const{
 bool TensorExpression::isTemplate() const{
 
     //
-    if(isTemplatedNode() || isConstantTemplate() || isInstanceTemplate()){
+    if(isTemplatedNode() || isConstantTemplate() || isInstanceTemplate() || isArgTemplate()){
         return true;
     }
 
@@ -1734,7 +1760,12 @@ bool TensorExpression::isConstantTemplate() const {
 
 bool TensorExpression::isInstanceTemplate() const {
 
-    return Relation == TkType::Argument && tensorOrder < 0;
+    return Relation == TkType::Argument && tensorOrder < 0 && isArgTmpl == false;
+}
+
+bool TensorExpression::isArgTemplate() const{
+
+    return isArgTmpl;
 }
 
 //
@@ -1757,7 +1788,15 @@ std::string TensorExpression::toString(size_t depth) const{
     res += depth == 0 ? " = " : "";
 
     // Argument node
-    if(Relation == TkType::Argument && !isConstant){
+    if(Relation == TkType::Argument && isInstanceTemplate()){
+
+        res += "insttmpl<" + label + ">[" + std::to_string(tensorOrder) + "]";
+    }
+    else if(Relation == TkType::Argument && isArgTemplate()){
+
+        res += "argtmpl<" + label + ">[" + std::to_string(tensorOrder) + "]";
+    }
+    else if(Relation == TkType::Argument && !isConstant){
 
         res += label + "[" + std::to_string(tensorOrder) + "]";
     }
@@ -3198,6 +3237,25 @@ namespace types{
                 ret0->getMember() = mb->getMember().tensorOrder;
         },
         {INT::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExprArgTmpl", {STRING::typeIndex},
+            [__functionLabel__ = "tExprArgTmpl", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), -1);
+                ret0->getMember().convertToArgTemplate();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
 
         return true;
     }

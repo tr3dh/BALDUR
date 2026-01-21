@@ -5,12 +5,16 @@
 decl main(){
     
     tExpr [tmplA, tmplB] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1)
+    tExpr [ArgTmplA, ArgTmplB] = tExprArgTmpl("tmplA"), tExprArgTmpl("B")
+
     setDiffTemplate(tmplA, tmplA, identity(tmplA \(x) tmplA))
+    setDiffTemplate(ArgTmplA, tmplB, zeros(ArgTmplA \(x) tmplB))
 
-    // logDiffTemplates()
+    logDiffTemplates()
 
-    slog(diff(tExpr("A", 4), tExpr("A", 5)))
-    // slog(tExpr("A", 4) == tExpr("A", 5))
+    slog(diff(tExpr("A", 4) . tExpr("A", 4), tExpr("A", 5)))
+
+    // slog(ArgTmplA)
 }
 
 //
