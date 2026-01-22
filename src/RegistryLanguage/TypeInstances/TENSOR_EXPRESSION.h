@@ -191,6 +191,7 @@ struct TensorExpression{
     //
     TensorExpression rebuild() const;
     TensorExpression unwrap() const;
+    TensorExpression wrap() const;
 
     //
     bool simplifyOnce();

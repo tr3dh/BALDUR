@@ -550,6 +550,17 @@ TensorExpression TensorExpression::unwrap() const{
     return res;
 }
 
+TensorExpression TensorExpression::wrap() const{
+
+    bool storedFlag = unwrapOperands;
+    unwrapOperands = false;
+
+    TensorExpression res = rebuild();
+    unwrapOperands = storedFlag;
+
+    return res;
+}
+
 void TensorExpression::simplify(){
 
     while(simplifyOnce()){}
@@ -610,7 +621,7 @@ bool TensorExpression::simplifyOnce(){
                 //
                 *this = res.rebuild();
 
-                return false;
+                return true;
             }
         }
     }
@@ -1566,10 +1577,10 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         // assembleSubstitutionMap(it->first.first, *this, subsMap);
         // assembleSubstitutionMap(it->first.second, other, subsMap);
 
-        for(const auto& [k, v] : subsMap){
+        // for(const auto& [k, v] : subsMap){
 
-            LOG << k.toString() << " <> " << v.toString() << endl;
-        }
+        //     LOG << k.toString() << " <> " << v.toString() << endl;
+        // }
 
         //
         replaceBySubstitutions(res, subsMap);
@@ -3118,8 +3129,9 @@ namespace types{
 
                 GET_RETURN(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 0)
 
-                ret0->getMember() = arg0->getMember();
-                ret0->getMember().simplify();
+                TensorExpression copy(arg0->getMember());  // ← Copy Constructor
+                copy.simplify();
+                ret0->getMember() = std::move(copy);
         },
         {TENSOR_EXPRESSION::typeIndex});
 
@@ -3153,6 +3165,22 @@ namespace types{
                 GET_ARG(TENSOR_EXPRESSION, 0)
 
                 ret0->getMember() = arg0->getMember().unwrap();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("wrap", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "wrap", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(TENSOR_EXPRESSION, 0)
+
+                ret0->getMember() = arg0->getMember().wrap();
         },
         {TENSOR_EXPRESSION::typeIndex});
 

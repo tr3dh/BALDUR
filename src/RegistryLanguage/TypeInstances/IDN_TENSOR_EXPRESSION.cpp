@@ -991,7 +991,9 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     if(isConstant){ res += string::strippedString(value); }
     else if(Relation == TkType::Argument){
 
-        res += label + "[";
+        bool isFunctionalNode = (label == "Identity" || label == "zeros" || label == "ones" || label == "eps");
+
+        res += label + (isFunctionalNode ? "(" : "[");
 
         for(size_t i = 0; i < notatedIndices.size(); i++){
 
@@ -1009,7 +1011,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
             }
         }
 
-        res += "]";
+        res += (isFunctionalNode ? ")" : "]");
     }
     else if(Relation == TkType::Operator && (Operator == IndexNotationOperator::Addition || Operator == IndexNotationOperator::Subtraction)){
         
@@ -1032,7 +1034,11 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     }
     else if(Relation == TkType::Operator){
         
-        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)), "");
+        if(!IndexNotationOperatorStrings.contains(Operator)){
+
+            _ERROR << toString() << endl;
+            RETURNING_ASSERT(TRIGGER_ASSERT, "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)), "");
+        }
 
         // unique Indices <> external Indices
         const auto& notUniqueIndices = getNotUniqueChildIndices();
@@ -1173,7 +1179,35 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     }
 
     res += "\n";
-    res += "using LinearAlgebra\n";
+    res += "using LinearAlgebra\n\n";
+
+    // Hilfsfunktionen definieren
+    res += "function levi_civita(indices...)\n";
+    res += "    n = length(indices)\n";
+    res += "    if length(unique(indices)) != n\n";
+    res += "        return 0\n";
+    res += "    end\n";
+    res += "    perm = collect(indices)\n";
+    res += "    sign = 1\n";
+    res += "    for i in 1:n-1\n";
+    res += "        for j in i+1:n\n";
+    res += "            if perm[i] > perm[j]\n";
+    res += "                sign *= -1\n";
+    res += "            end\n";
+    res += "        end\n";
+    res += "    end\n";
+    res += "    return sign\n";
+    res += "end\n\n";
+
+    res += "function identity_tensor(indices...)\n";
+    res += "    return all(i -> i == indices[1], indices) ? 1 : 0\n";
+    res += "end\n\n";
+
+    //
+    res += "zeros(indices::Integer...) = 0\n";
+    res += "ones(indices::Integer...) = 1\n";
+    res += "eps(indices::Integer...) = levi_civita(indices...)\n";
+    res += "Identity(indices::Integer...) = identity_tensor(indices...)\n";
 
     //
     res += "\n";
@@ -1223,7 +1257,7 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     res += "\n";
 
     // Return Wert initialisieren
-    res += "\tres = zeros" + printPlainVector(dimensions) + "\n\n";
+    res += "\tres = Base.zeros" + printPlainVector(dimensions) + "\n\n";
 
     //
     for(const auto& idxs : generateTensorIndexPermutations(dimensions)){

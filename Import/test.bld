@@ -12,7 +12,7 @@ decl main(){
 
     logDiffTemplates()
 
-    slog(diff(tExpr("A", 4) . tExpr("A", 4), tExpr("A", 5)))
+    slog(diff(tExpr("A", 4) . tExpr("A", 4), tExpr("A", 4)))
 
     // slog(ArgTmplA)
 }

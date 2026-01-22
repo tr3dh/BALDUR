@@ -1,67 +1,63 @@
 # Julia Skript
 #
 # unique external nodes :
+# | arg 'E0', order [2], dimensions {6, 6}
+# | arg 'D', order [2], dimensions {6, 6}
 # | arg 'epsilon', order [1], dimensions {6}
-# | arg 'scalar', order [0], dimensions {}
+# | arg 'epsilonv', order [1], dimensions {6}
 
-function autodiff(epsilon, scalar)
+using LinearAlgebra
 
+function levi_civita(indices...)
+    n = length(indices)
+    if length(unique(indices)) != n
+        return 0
+    end
+    perm = collect(indices)
+    sign = 1
+    for i in 1:n-1
+        for j in i+1:n
+            if perm[i] > perm[j]
+                sign *= -1
+            end
+        end
+    end
+    return sign
+end
+
+function identity_tensor(indices...)
+    return all(i -> i == indices[1], indices) ? 1 : 0
+end
+
+zeros(indices::Integer...) = 0
+ones(indices::Integer...) = 1
+eps(indices::Integer...) = levi_civita(indices...)
+Identity(indices::Integer...) = identity_tensor(indices...)
+
+function autodiff(E0, D, epsilon, epsilonv)
+
+        @assert size(E0) == (6, 6)
+        @assert size(D) == (6, 6)
         @assert length(epsilon) == 6
-        @assert ndims(scalar) == 0
+        @assert length(epsilonv) == 6
 
-        res = zeros(6)
+        res = Base.zeros(6)
 
-        res[1] = epsilon[1] * scalar[]
-        res[2] = epsilon[2] * scalar[]
-        res[3] = epsilon[3] * scalar[]
-        res[4] = epsilon[4] * scalar[]
-        res[5] = epsilon[5] * scalar[]
-        res[6] = epsilon[6] * scalar[]
+        res[1] = sum(idx5 -> (E0[1, idx5] + D[1, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
+        res[2] = sum(idx5 -> (E0[2, idx5] + D[2, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
+        res[3] = sum(idx5 -> (E0[3, idx5] + D[3, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
+        res[4] = sum(idx5 -> (E0[4, idx5] + D[4, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
+        res[5] = sum(idx5 -> (E0[5, idx5] + D[5, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
+        res[6] = sum(idx5 -> (E0[6, idx5] + D[6, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
 
         return res
 end
 
-# Test mit konkreten Werten
-println("=== Test der autodiff Funktion ===\n")
+E0 = rand(6, 6)
+D = rand(6, 6)
+epsilon = rand(6)
+epsilonv = rand(6)
 
-# Erstelle Test-Matrizen und -Vektor
-E0_test = [
-    1.0  2.0  3.0  4.0  5.0  6.0;
-    7.0  8.0  9.0  10.0 11.0 12.0;
-    13.0 14.0 15.0 16.0 17.0 18.0;
-    19.0 20.0 21.0 22.0 23.0 24.0;
-    25.0 26.0 27.0 28.0 29.0 30.0;
-    31.0 32.0 33.0 34.0 35.0 36.0
-]
+result3 = autodiff(E0, D, epsilon, epsilonv)
 
-D_test = [
-    0.1  0.2  0.3  0.4  0.5  0.6;
-    0.7  0.8  0.9  1.0  1.1  1.2;
-    1.3  1.4  1.5  1.6  1.7  1.8;
-    1.9  2.0  2.1  2.2  2.3  2.4;
-    2.5  2.6  2.7  2.8  2.9  3.0;
-    3.1  3.2  3.3  3.4  3.5  3.6
-]
-
-epsilon_test = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
-
-s = fill(5.0)
-
-# Funktion ausführen
-result = autodiff(epsilon_test, s)
-
-# Ergebnis ausgeben
-println("Input E0:")
-display(E0_test)
-println("\n\nInput D:")
-display(D_test)
-println("\n\nInput epsilon:")
-println(epsilon_test)
-println("\n\nErgebnis:")
-println(result)
-println("\nEinzelne Komponenten:")
-for i in 1:6
-    println("res[$i] = $(result[i])")
-end
-
-print(s[])
+print(result3)

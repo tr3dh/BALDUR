@@ -70,7 +70,7 @@ decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 //        unter Umständen zuerst auf Gleichheit mit [tExprTmpl(A, ?) .. tExprTmpl(B, ?)] überprüft werden und dieses
 //        Template als Repräsentation gewählt werden, obwohl [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] es besser repräsentiert
 // . Ausdruckskomplexität bzw. Spezifizierungen (>> (a . a) . b vor a . b)
-// . Ausdruckstyp (>> Instanzen, Constanttemplates, Instancetemplates, Standardtemplates)
+// . Ausdruckstyp (>> Instanzen, Constanttemplates, Instancetemplates, Standardtemplates, ...)
 //
 // | Template Typen               | repräsentierte Objekte                                        | Syntax                                    |
 // | -----------------------------------------------------------------------------------------------------------------------------------------|
@@ -85,13 +85,18 @@ decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
 // |                              | die Angabe des labels dient nur der Unterscheidung innerhalb  |                                           |
 // |                              | innerhalb eines template Ausdrucks                            |                                           | 
 // |------------------------------|---------------------------------------------------------------|-------------------------------------------|
+// | Tensor Arg Templates         | repräsentieren beliebige Argumente                            | tExprArgTmpl("label")                     |
+// |                              | Operationen können nicht repräsentert werden                  |                                           |
+// |                              | nur beliebige Instanzen (auch gewrappt >> det, inv, ...)      |                                           | 
+// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
 
 // Templates für beliebig stufige Tensoren
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
 
 // Templates für Tensoren spezifischer Stufe
 tExpr [CnstTmpl]                    = tExprCnstTmpl()
-tExpr [CnstTmplA, CnstTmplB]        = tExprCnstTmpl("CnstTmpA"), tExprCnstTmpl("CnstTmpB")
+tExpr [CnstTmplA, CnstTmplB]        = tExprCnstTmpl("CnstTmplA"), tExprCnstTmpl("CnstTmplB")
+tExpr [ArgTmplA, ArgTmplB]          = tExprArgTmpl("ArgTmplA"), tExprArgTmpl("ArgTmplB")
 tExpr [tmplScalar]                  = tExprTmpl("tmplSc", 0)
 tExpr [tmplScalarA, tmplScalarB]    = tExprTmpl("tmplScA", 0), tExprTmpl("tmplScB", 0)
 tExpr [zerosInstanceTemplate]       = tExprInstcTmpl("zeros")
@@ -134,6 +139,8 @@ setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                           
 setEqual(tmplA - zerosInstanceTemplate, tmplA)
 setEqual(zerosInstanceTemplate * tmplA, zeros(zerosInstanceTemplate * tmplA))           // *
 setEqual(tmplA * zerosInstanceTemplate, zeros(tmplA * zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate * CnstTmpl, zerosInstanceTemplate)                       // *
+setEqual(CnstTmpl * zerosInstanceTemplate, zerosInstanceTemplate)
 setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
 setEqual(tmplA . zerosInstanceTemplate, zeros(tmplA . zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate .n tmplA, zeros(zerosInstanceTemplate .n tmplA))         // .n
@@ -196,9 +203,13 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 // template Instanzierungen für Ersetzung durch template Schema
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
-setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 
-// Inverse
+// Allgemeine Regelung, die Interpreterinterne überschreibt
+setDiffTemplate(tmplA, tmplA, identity(tmplA \(x) tmplA))
+setDiffTemplate(ArgTmplA, tmplB, zeros(ArgTmplA \(x) tmplB))
+
+// Einfache Operationen
+setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 setDiffTemplate(inverse(tmplA), tmplB, (-1) * inverse(tmplA) . diff(tmplA, tmplB) . inverse(tmplA))
 setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
 setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmplA, tmplB)))
