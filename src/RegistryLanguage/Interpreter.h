@@ -12,11 +12,23 @@ enum class ExecuteScriptAs : int{
 
 int countOccurrences(const std::string& str, const std::string& sub);
 
+struct Script;
+
+extern std::map<std::string, Script> g_Scripts;
+
+extern Script* g_currentlyEvaluatedScript;
+extern ASTNode* g_currentlyEvaluatedNode;
+
 struct Script{
 
     std::vector<size_t> lineBreaks = {};
     std::string scriptContent;
     size_t numLines = -1;
+
+    std::vector<Token> tokens;
+    ASTNode Expr;
+
+    std::string scriptPath;
 
     void cacheLineBreaks(){
         

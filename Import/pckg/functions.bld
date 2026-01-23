@@ -1,8 +1,14 @@
+fetch script ["pckg/preDecls"]
+
+decl triggerAssert(){
+
+    slog(a + b)
+}
+
 //
 decl getNumOfVoigtComponents(int dimension){
 
     double dimensionDb = double(dimension)
-
     return [int(dimensionDb * (dimensionDb + 1) / 2)]
 }
 

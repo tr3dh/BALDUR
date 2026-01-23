@@ -1183,6 +1183,7 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
 
     // Hilfsfunktionen definieren
     res += "function levi_civita(indices...)\n";
+    res += "    \n";
     res += "    n = length(indices)\n";
     res += "    if length(unique(indices)) != n\n";
     res += "        return 0\n";
@@ -1200,6 +1201,7 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     res += "end\n\n";
 
     res += "function identity_tensor(indices...)\n";
+    res += "    \n";
     res += "    return all(i -> i == indices[1], indices) ? 1 : 0\n";
     res += "end\n\n";
 

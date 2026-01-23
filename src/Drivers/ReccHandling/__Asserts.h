@@ -22,15 +22,13 @@
 #define TRIGGER_ASSERT  0
 #define PASS_ASSERT     1
 
-
-
 #define RESOLVE_CONDITION(condition)\
     bool resolvedCondition = false;\
     if(condition){\
         resolvedCondition = true;\
     } 
 
-inline std::string (*g_getErrorContext)() = nullptr;
+extern std::string (*g_getErrorContext)();
 
 #define ASSERT(condition, message)\
     do{\

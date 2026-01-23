@@ -1,6 +1,11 @@
 #include "Interpreter.h"
 #include "Evaluation/EvaluateExpression.h"
 
+std::map<std::string, Script> g_Scripts = {};
+
+Script* g_currentlyEvaluatedScript = nullptr;
+ASTNode* g_currentlyEvaluatedNode = nullptr;
+
 int countOccurrences(const std::string& str, const std::string& sub) {
 
     if (sub.empty()) return 0;
@@ -16,7 +21,30 @@ int countOccurrences(const std::string& str, const std::string& sub) {
     return count;
 }
 
+std::string getErrorContext(){
+
+    std::string res = "\n";
+
+    if(g_currentlyEvaluatedScript != nullptr){
+
+        res += "ERROR at Script" + g_currentlyEvaluatedScript->scriptPath + "\n";
+    }
+
+    if(g_currentlyEvaluatedNode != nullptr){
+
+        std::ostringstream oss;
+
+        oss << "ERROR at Node " << g_currentlyEvaluatedNode << "\n";
+        res += oss.str();
+    }
+
+    return res;
+}
+
 std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPath, Scope* parent){
+
+    //
+    g_getErrorContext = &getErrorContext;
 
     // Aufsetzen der mitgelieferten Standard Typen
     // weitere eigene Typen können bspl. in der eigenen main aufgerufen werden
@@ -93,6 +121,9 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     // nullScope wird geläscht ...
     // --- ab hier sind alle ptrs auf die nullScope ungültig 
 
+    //
+    g_getErrorContext = nullptr;
+
     return isolatedObjects;
 }
 
@@ -104,13 +135,32 @@ ProcessingResult executeScript(const std::string& scriptPath, Scope* nullScope, 
     //
     std::ifstream file(scriptPath);
     if (!file) {
+        
         _ERROR << "kein Script " << scriptPath << " gefunden" << ENDL;
         return {};
     }
 
-    Script src;
-    src.scriptContent = "";
+    bool cachePrevScript = false;
+    Script* g_previouslyEvaluatedScript = nullptr;
+    ASTNode* g_previouslyEvaluatedNode = nullptr;
 
+    if(g_Scripts.contains(scriptPath)){
+        
+        RETURNING_ASSERT(TRIGGER_ASSERT, "Mehrfacher Include von " + scriptPath, {});
+    }
+
+    Script& src = g_Scripts.try_emplace(scriptPath).first->second;
+    src.scriptPath = scriptPath;
+
+    if(g_currentlyEvaluatedScript != nullptr){
+
+        cachePrevScript = true;
+
+        g_previouslyEvaluatedScript = g_currentlyEvaluatedScript;
+    }
+
+    g_currentlyEvaluatedScript = &src;
+    
     std::string line;
     while (std::getline(file, line)) {
 
@@ -166,13 +216,19 @@ ProcessingResult executeScript(const std::string& scriptPath, Scope* nullScope, 
     //
     src.cacheLineBreaks();
 
-    auto tokens = lexExpression(src.scriptContent);
+    src.tokens = lexExpression(src.scriptContent);
+    src.Expr.end = src.tokens.size();
 
-    ASTNode Expr;
-    Expr.end = tokens.size();
-
-    convertTokensToAST(Expr, tokens, src.scriptContent);
+    convertTokensToAST(src.Expr, src.tokens, src.scriptContent);
 
     //
-    return evaluateExpression(Expr, *nullScope, *nullScope, Context::NONE);
+    ProcessingResult prc = evaluateExpression(src.Expr, *nullScope, *nullScope, Context::NONE);
+
+    if(cachePrevScript){
+
+        g_currentlyEvaluatedScript = g_previouslyEvaluatedScript;
+    }
+
+    //
+    return prc;
 }

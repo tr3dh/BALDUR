@@ -116,7 +116,10 @@ std::pair<bool, Variable*> ActiveScopesContainingDataVariableOrReference(IObject
 ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& returnToScope, Context context){
 
     //
-    ProcessingResult prcResult; 
+    ProcessingResult prcResult;
+
+    //
+    g_currentlyEvaluatedNode = const_cast<ASTNode*>(&node);
 
     //
     switch(node.Relation){
@@ -922,7 +925,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
 
                 registerMemberFunction(DeclaringStructByIndex, functionLabel, argIndices,
                     [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
-                    __argIndices__ = argIndices, params, section, &scope
+                    __argIndices__ = argIndices, params, section, &scope, __script__ = g_currentlyEvaluatedScript
                     ](FREG_ARGS){
 
                         // 
@@ -932,6 +935,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         // Asserts
                         ASSERT_IS_MEMBER_FUNCTION;
                         if(!argsInvolved){ ASSERT_HAS_N_INPUT_ARGS(__numArgs__); }
+
+                        //
+                        Script* prevScript = g_currentlyEvaluatedScript;
+                        g_currentlyEvaluatedScript = __script__;
 
                         //
                         Scope functionScope;
@@ -973,6 +980,8 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         }
 
                         returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
+
+                        g_currentlyEvaluatedScript = prevScript;
                 },
                 {IObject::ARGS_TYPE});
 
@@ -981,7 +990,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 
                 registerStaticFunction(DeclaringStructByIndex, functionLabel, argIndices,
                     [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
-                    __argIndices__ = argIndices, params, section, &scope
+                    __argIndices__ = argIndices, params, section, &scope, __script__ = g_currentlyEvaluatedScript
                     ](FREG_ARGS){
 
                         // 
@@ -991,6 +1000,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         // Asserts
                         ASSERT_IS_NO_MEMBER_FUNCTION;
                         if(!argsInvolved){ ASSERT_HAS_N_INPUT_ARGS(__numArgs__); }
+
+                        //
+                        Script* prevScript = g_currentlyEvaluatedScript;
+                        g_currentlyEvaluatedScript = __script__;
 
                         //
                         Scope functionScope;
@@ -1027,6 +1040,8 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         }
 
                         returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
+
+                        g_currentlyEvaluatedScript = prevScript;
                 },
                 {IObject::ARGS_TYPE});
             }
@@ -1035,7 +1050,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 // Konstruktoren
                 registerFunction(functionLabel, argIndices,
                     [__functionLabel__ = functionLabel, __numArgs__ = argIndices.size(),
-                    __argIndices__ = argIndices, params, section, &scope
+                    __argIndices__ = argIndices, params, section, &scope, __script__ = g_currentlyEvaluatedScript
                     ](FREG_ARGS){
 
                         // 
@@ -1045,6 +1060,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         // Asserts
                         ASSERT_IS_NO_MEMBER_FUNCTION;
                         if(!argsInvolved){ ASSERT_HAS_N_INPUT_ARGS(__numArgs__); }
+
+                        //
+                        Script* prevScript = g_currentlyEvaluatedScript;
+                        g_currentlyEvaluatedScript = __script__;
 
                         //
                         Scope functionScope;
@@ -1082,6 +1101,8 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         }
 
                         returns = evaluateExpression(section, functionScope, returnToScope, Context::NONE).evalResults;
+
+                        g_currentlyEvaluatedScript = prevScript;
                 },
                 {IObject::ARGS_TYPE});
             }
