@@ -119,6 +119,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
     ProcessingResult prcResult;
 
     //
+    ASTNode* prevEvaluatedNode = g_currentlyEvaluatedNode;
     g_currentlyEvaluatedNode = const_cast<ASTNode*>(&node);
 
     //
@@ -788,12 +789,10 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     prcResult.append(SectionRes);
                 }
             }
-            else{
+            // else{
 
-                return {};
-            }
-
-
+            //     return {};
+            // }
         }
         else if(IsFunctionCall(node)){
 
@@ -1210,6 +1209,9 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
         break;
     }
     }
+
+    //
+    g_currentlyEvaluatedNode = prevEvaluatedNode;
 
     return prcResult;
 }

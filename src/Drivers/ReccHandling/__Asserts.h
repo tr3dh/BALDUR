@@ -7,6 +7,9 @@
 #include <sstream>
 #include <cstdlib>
 
+//
+#include "__timeStamp.h"
+
 #ifndef LOG
 #define LOG std::cout
 #endif // LOG
@@ -34,15 +37,13 @@ extern std::string (*g_getErrorContext)();
     do{\
         if (!(condition)) {\
             std::ostringstream oss;\
-            oss << "Assertion failed:\n"\
-                << "\t\\ Debug Instruction : " << message << "\n"\
-                << "\t\\ " << __FILE__ << ":" << __LINE__ << "\n"\
-                << "\t\\ Function: " << __FUNCTION__; \
+            oss << "[" << getTimestamp() << "] Assertion Failed : '" << message << "'\n" << \
+            ">> Source : " << __FILE__ << ":" << __LINE__ << " >> " << __FUNCTION__ << "\n";\
             \
             if(g_getErrorContext != nullptr){ \
-                oss << g_getErrorContext() << "\n"; \
+                oss << ">> Context : " <<  g_getErrorContext(); \
             } \
-            _ERROR << oss.str() << "\n" << ENDL;\
+            _ERROR << oss.str() << ENDL;\
         }}\
     while(0);
 

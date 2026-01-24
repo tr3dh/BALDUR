@@ -21,21 +21,154 @@ int countOccurrences(const std::string& str, const std::string& sub) {
     return count;
 }
 
+// std::string getErrorContext(){
+
+//     std::string res;
+
+//     if(g_currentlyEvaluatedScript != nullptr && g_currentlyEvaluatedNode != nullptr){
+
+//         std::ostringstream oss;
+
+//         // Bereich in tokenfolge : g_currentlyEvaluatedNode->begin - g_currentlyEvaluatedNode->end
+//         const Token& firstToken = g_currentlyEvaluatedScript->tokens[g_currentlyEvaluatedNode->begin];
+//         const Token& lastToken = g_currentlyEvaluatedScript->tokens[g_currentlyEvaluatedNode->end - 1];
+
+//         size_t position = 0, len = 0, linePos = 0, lineSpan = 0;
+
+//         for(size_t i = 0; i < g_currentlyEvaluatedScript->lineBreaks.size() - 2; i++){
+
+//             if(g_currentlyEvaluatedScript->lineBreaks[i] <= firstToken.position &&
+//                 g_currentlyEvaluatedScript->lineBreaks[i + 1] > firstToken.position + firstToken.length){
+
+//                 //
+//                 position = g_currentlyEvaluatedScript->lineBreaks[i];
+//                 linePos = i;
+//             }
+
+//             if(g_currentlyEvaluatedScript->lineBreaks[i] <= lastToken.position &&
+//                 g_currentlyEvaluatedScript->lineBreaks[i + 1] > lastToken.position + lastToken.length){
+
+//                 //
+//                 len = g_currentlyEvaluatedScript->lineBreaks[i + 1] - position;
+//                 lineSpan = i - linePos;
+//             }
+//         }
+
+//         LOG << g_currentlyEvaluatedScript->lineBreaks << endl;
+
+//         res += g_currentlyEvaluatedScript->scriptPath + ":" + std::to_string(linePos) + "\n";
+
+//         res += std::to_string(position) + " " + std::to_string(len) + "\n";
+//         res += std::to_string(linePos) + " " + std::to_string(lineSpan) + "\n";
+//         res += std::to_string(g_currentlyEvaluatedScript->lineBreaks[linePos]) + "\n";
+
+//         for(size_t i = linePos; i < linePos + lineSpan + 1; i++){
+
+//             res += std::to_string(i) + "   | " + g_currentlyEvaluatedScript->scriptContent.substr(g_currentlyEvaluatedScript->lineBreaks[i] + 1, g_currentlyEvaluatedScript->lineBreaks[i + 1] - g_currentlyEvaluatedScript->lineBreaks[i]);
+//         }
+
+//         size_t offset = std::to_string(linePos).length() + 5 + firstToken.position - position - 1;
+//         res += std::string(offset, ' ') + "^"; // + std::string(len - 1, '~') + "\n";
+//     }
+
+//     return res;
+// }
+
 std::string getErrorContext(){
 
-    std::string res = "\n";
+    std::string res;
 
-    if(g_currentlyEvaluatedScript != nullptr){
-
-        res += "ERROR at Script" + g_currentlyEvaluatedScript->scriptPath + "\n";
-    }
-
-    if(g_currentlyEvaluatedNode != nullptr){
+    if(g_currentlyEvaluatedScript != nullptr && g_currentlyEvaluatedNode != nullptr){
 
         std::ostringstream oss;
 
-        oss << "ERROR at Node " << g_currentlyEvaluatedNode << "\n";
-        res += oss.str();
+        // Bereich in tokenfolge : g_currentlyEvaluatedNode->begin - g_currentlyEvaluatedNode->end
+        const Token& firstToken = g_currentlyEvaluatedScript->tokens[g_currentlyEvaluatedNode->begin];
+        const Token& lastToken = g_currentlyEvaluatedScript->tokens[g_currentlyEvaluatedNode->end - 1];
+
+        size_t position = 0, len = 0, linePos = 0, lineSpan = 0;
+
+        // Zeile i geht von lineBreaks[i] bis lineBreaks[i+1]-1
+        for(size_t i = 0; i < g_currentlyEvaluatedScript->lineBreaks.size() - 1; i++){
+            
+            size_t lineStart = g_currentlyEvaluatedScript->lineBreaks[i];
+            size_t lineEnd = g_currentlyEvaluatedScript->lineBreaks[i + 1] - 1; // -1 weil lineBreaks[i+1] bereits nächste Zeile ist
+            
+            // Zeile in der sich firstToken befindet
+            if(lineStart <= firstToken.position && firstToken.position < g_currentlyEvaluatedScript->lineBreaks[i + 1]){
+                position = lineStart;
+                linePos = i;
+            }
+            
+            // Zeile in der sich lastToken befindet
+            if(lineStart <= lastToken.position && lastToken.position < g_currentlyEvaluatedScript->lineBreaks[i + 1]){
+                len = lineEnd - position;
+                lineSpan = i - linePos;
+            }
+        }
+
+        // Header mit Dateiname und Zeilennummer
+        res += g_currentlyEvaluatedScript->scriptPath + ":" + std::to_string(linePos + 1) + "\n";
+
+        // Debug output
+        // res += std::to_string(position) + " " + std::to_string(len) + "\n";
+        // res += std::to_string(linePos) + " " + std::to_string(lineSpan) + "\n";
+
+        // alle betroffenen Zeilen mit Markierungen
+        for(size_t i = linePos; i <= linePos + lineSpan; i++){
+
+            //
+            RETURNING_ASSERT(i < g_currentlyEvaluatedScript->lineBreaks.size(),
+                "Assertion Context kann aufgrund fehlerhafter Skriptformatierung nicht erzeugt werden", "");
+            
+            //
+            std::string lineNum = std::to_string(i + 1);
+            std::string line = g_currentlyEvaluatedScript->getLine(i);
+            res += lineNum + "   | " + line + "\n";
+
+            // Berechne Markierung für diese Zeile
+            size_t prefix = lineNum.length() + 5; // Zeilennummer + 3 Spaces + " | "
+            
+            size_t lineStart = g_currentlyEvaluatedScript->lineBreaks[i];
+            size_t lineEnd = g_currentlyEvaluatedScript->lineBreaks[i + 1] - 1;
+            
+            // Start und Ende der Markierung
+            size_t markStart, markEnd;
+            
+            if(i == linePos){
+
+                // Erste Zeile
+                markStart = firstToken.position - lineStart;
+
+            } else {
+
+                // Folgezeilen
+                markStart = line.find_first_not_of(" \t");
+            }
+            
+            if(i == linePos + lineSpan){
+
+                // Letzte Zeile
+                markEnd = lastToken.position + lastToken.length - lineStart;
+            } else {
+
+                // Zwischenzeilen
+                markEnd = line.length();
+            }
+            
+            // Erzeuge Markierung
+            res += std::string(prefix + markStart, ' ');
+            
+            if(markEnd > markStart){
+
+                res += (i == linePos) ? "^" : "~";
+                if(markEnd - markStart > 1){
+                    res += std::string(markEnd - markStart - 1, '~');
+                }
+            }
+            
+            res += "\n";
+        }
     }
 
     return res;

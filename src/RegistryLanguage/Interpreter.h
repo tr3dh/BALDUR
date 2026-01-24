@@ -31,21 +31,30 @@ struct Script{
     std::string scriptPath;
 
     void cacheLineBreaks(){
-        
-        numLines = countOccurrences(scriptContent, "\n");
-        lineBreaks.reserve(numLines);
+    
+        numLines = countOccurrences(scriptContent, "\n") + 1;
+        lineBreaks.reserve(numLines + 1);
 
-        size_t pos = 0, count = 0;
+        lineBreaks.emplace_back(0);
+
+        size_t pos = 0;
         const std::string par = "\n";
 
-        while (pos != std::string::npos) {
-            
-            pos = scriptContent.find(par, pos + par.length());
-            
-            if(pos != std::string::npos){
-                lineBreaks.emplace_back(pos);
-            }
+        while ((pos = scriptContent.find(par, pos)) != std::string::npos) {
+
+            lineBreaks.emplace_back(pos + 1);
+
+            // Zum nächsten Zeichen nach dem Zeilenumbruch springen
+            pos += par.length(); 
         }
+
+        lineBreaks.emplace_back(scriptContent.length());
+    }
+
+    std::string getLine(size_t lineNum) {
+
+        if (lineNum >= lineBreaks.size() - 1){ return "";}
+        return scriptContent.substr(lineBreaks[lineNum], lineBreaks[lineNum + 1] - lineBreaks[lineNum] - 1);
     }
 };
 

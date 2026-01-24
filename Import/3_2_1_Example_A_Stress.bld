@@ -62,9 +62,6 @@ int [orderTSM, dimension] = 1, 3
 //
 decl evaluateExample(int orderTSM, int dimension){
 
-    triggerAssert()
-    return 0
-
     //
     tExpr ref result
     int nVoigtComps = getNumOfVoigtComponents(dimension)
