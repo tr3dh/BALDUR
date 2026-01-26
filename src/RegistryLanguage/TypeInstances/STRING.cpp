@@ -181,6 +181,28 @@ namespace types{
         },
         {BOOL::typeIndex});
 
+        // Operatoren
+        registerMemberFunction(STRING::typeIndex, "writeToFile", {STRING::typeIndex},
+            [__functionLabel__ = "writeToFile", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                GET_MEMBER(STRING);
+                GET_ARG(STRING, 0);
+
+                //
+                std::ofstream outputFile;
+                outputFile.open(arg0->getMember());
+
+                //
+                outputFile << mb->getMember();
+                outputFile.close();
+        },
+        {});
+
         return true;
     }
 };

@@ -1154,7 +1154,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
 }
 
 //
-std::string IndexNotatedTensorExpression::toJuliaString() const {
+std::string IndexNotatedTensorExpression::toJuliaString(const std::string& instanceLabel) const {
 
     //
     RETURNING_ASSERT(containsDimensions(), "Ohne Dimensionsberücksichtigung kann Julia Skript nicht erstellt werden","");
@@ -1218,7 +1218,7 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
 
     //
     res += "\n";
-    res += "function autodiff(";
+    res += "function autodiff_" + instanceLabel + "(";
 
     //
     bool filledInFirstExternal = false;
@@ -2059,6 +2059,23 @@ namespace types{
                 GET_RETURN(STRING, 0);
 
                 ret0->getMember() = mb->getMember().toJuliaString();
+        },
+        {STRING::typeIndex});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toJuliaString", {STRING::typeIndex},
+            [__functionLabel__ = "toJuliaString", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_ARG(STRING, 0); GET_RETURN(STRING, 0);
+
+                ret0->getMember() = mb->getMember().toJuliaString(arg0->getMember());
         },
         {STRING::typeIndex});
 

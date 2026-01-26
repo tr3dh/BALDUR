@@ -213,10 +213,7 @@ decl disableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(true)] }
 // Allgemeine Regelung, die Interpreterinterne überschreibt
 decl setDiffTemplateDefaults(bool val){
 
-    if(val == diffTemplateDefaultsEnabled){
-
-        return {}
-    }
+    if(val == diffTemplateDefaultsEnabled){ return {} }
 
     if(diffTemplateDefaultsEnabled => val){
 

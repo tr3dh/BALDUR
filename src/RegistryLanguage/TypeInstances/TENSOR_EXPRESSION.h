@@ -290,7 +290,7 @@ struct IndexNotatedTensorExpression{
     void evaluateIndexDimensions(std::map<int, int>& indexDimensions) const;
 
     std::string generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth = 0) const;
-    std::string toJuliaString() const;
+    std::string toJuliaString(const std::string& instanceLabel = "Tmp") const;
 
     std::string toString(size_t depth = 0) const;
     friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);

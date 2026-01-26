@@ -10,7 +10,7 @@ using LinearAlgebra
 using Tullio
 
 function levi_civita(indices...)
-
+    
     n = length(indices)
     if length(unique(indices)) != n
         return 0
@@ -28,7 +28,7 @@ function levi_civita(indices...)
 end
 
 function identity_tensor(indices...)
-
+    
     return all(i -> i == indices[1], indices) ? 1 : 0
 end
 
@@ -37,26 +37,16 @@ ones(indices::Integer...) = 1
 eps(indices::Integer...) = levi_civita(indices...)
 Identity(indices::Integer...) = identity_tensor(indices...)
 
-function autodiff(E0, D, epsilon, epsilonv)
+function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv)
 
-        @assert size(E0) == (6, 6)
-        @assert size(D) == (6, 6)
-        @assert length(epsilon) == 6
-        @assert length(epsilonv) == 6
+	@assert size(E0) == (6, 6)
+	@assert size(D) == (6, 6)
+	@assert length(epsilon) == 6
+	@assert length(epsilonv) == 6
 
-        res = Base.zeros(6)
+	res = Base.zeros(6)
 
-        @tullio res[idx4] = ((E0[idx4, idx5] + D[idx4, idx5]) * (epsilon[idx5] - epsilonv[idx5]))
+	@tullio res[idx4] = ((E0[idx4, idx5] + D[idx4, idx5]) * (epsilon[idx5] - epsilonv[idx5]))
 
-        return res
+	return res
 end
-
-E0 = rand(6, 6)
-D = rand(6, 6)
-epsilon = rand(6)
-epsilonv = rand(6)
-
-result = autodiff(E0, D, epsilon, epsilonv)
-
-print("\nErgebnis : ")
-print(result)

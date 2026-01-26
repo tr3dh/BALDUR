@@ -67,6 +67,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tExpr ref result
+    string tResultLabel
     int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
@@ -93,6 +94,7 @@ decl evaluateExample(int orderTSM, int dimension){
     void sigmaTSM_t = tExprTaylorSeries(sigma_t, D, orderTSM)
     
     result << sigmaTSM_t
+    tResultLabel = "sigmaTSM_t"
 
     // unter Umständen muss der Ausdruck hier nochmal gewrapped werden damit eine Übereinstimmung mit den gängigen Simplify Templates angewendet werden kann
     // Diese Vereinfachungen / Vereinfachungstemplates können nicht für eine beliebige anzahl an operanden definiert werden. Deshalb empfiehlt es sich sie nur für konkret zwei
@@ -126,8 +128,7 @@ decl evaluateExample(int orderTSM, int dimension){
     slog(tIDNResult)
     logSeparator()
 
-    slog(tIDNResult->toJuliaString())
-    logSeparator()
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_" + tResultLabel + ".jl")
 }
 
 //
