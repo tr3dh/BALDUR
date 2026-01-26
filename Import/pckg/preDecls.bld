@@ -204,9 +204,34 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 // Hier muss nich auf Reihenfolge geachtet werden
 // DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
 
+//
+bool diffTemplateDefaultsEnabled = false 
+
+decl enableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(true)] }
+decl disableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(true)] }
+
 // Allgemeine Regelung, die Interpreterinterne überschreibt
-setDiffTemplate(tmplA, tmplA, identity(tmplA \(x) tmplA))
-setDiffTemplate(ArgTmplA, tmplB, zeros(ArgTmplA \(x) tmplB))
+decl setDiffTemplateDefaults(bool val){
+
+    if(val == diffTemplateDefaultsEnabled){
+
+        return {}
+    }
+
+    if(diffTemplateDefaultsEnabled => val){
+
+        setDiffTemplate(tmplA, tmplA, identity(tmplA \(x) tmplA))
+        setDiffTemplate(ArgTmplA, tmplB, zeros(ArgTmplA \(x) tmplB))
+    }
+    else{
+
+        removeEmplacedDiffTemplate(tmplA, tmplA)
+        removeEmplacedDiffTemplate(ArgTmplA, tmplB)
+    }
+}
+
+//
+enableDiffTemplateDefaults()
 
 // Einfache Operationen
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))

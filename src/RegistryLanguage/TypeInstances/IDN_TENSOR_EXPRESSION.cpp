@@ -1039,8 +1039,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
         
         if(!IndexNotationOperatorStrings.contains(Operator)){
 
-            _ERROR << toString() << endl;
-            RETURNING_ASSERT(TRIGGER_ASSERT, "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)), "");
+            RETURNING_ASSERT(TRIGGER_ASSERT, "Unbekannter IndexNotationOperator '" + std::string(magic_enum::enum_name(Operator)) + "', Node : " + toString(), "");
         }
 
         // unique Indices <> external Indices

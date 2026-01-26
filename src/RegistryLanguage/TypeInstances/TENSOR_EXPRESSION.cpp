@@ -3012,6 +3012,28 @@ namespace types{
         },
         {});
 
+        registerFunction("removeEmplacedDiffTemplate", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "removeSetDiffTemplate", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); 
+                GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+                
+                auto key = std::make_pair(member0, member1);
+                size_t removed = tensorExpressionDiffTemplates.erase(key);
+                
+                RETURNING_ASSERT(removed > 0, "Kein Differential für gegebenes Tensortemplatepaar gefunden : " + member0.toString() + "|" + member1.toString(),);
+        },
+        {});
+
         //
         registerFunction("setEqual", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "setEqual", __numArgs__ = 2](FREG_ARGS){
