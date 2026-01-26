@@ -964,6 +964,9 @@ void IndexNotatedTensorExpression::evaluateIndexDimensions(std::map<int, int>& i
     }
 }
 
+//
+bool usingTullio = false;
+
 std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth) const{
 
     //
@@ -971,7 +974,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
 
     // Zuordnung : notierter Index <> eingesetzter Wert für notierten Index
     static std::map<int, int> indexAssignment;
-    if(depth == 0){ indexAssignment.clear(); emplaceVectorsIntoMap(indexAssignment, notatedIndices, indexPermutation); }
+    if(depth == 0 && !indexPermutation.empty()){ indexAssignment.clear(); emplaceVectorsIntoMap(indexAssignment, notatedIndices, indexPermutation); }
 
     static const IndexNotatedTensorExpression* prevPtr = nullptr;
     static std::map<int, int> indexDimensions;
@@ -1052,7 +1055,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
 
             const auto& idx = notUniqueIndices[i];
 
-            res += "sum(idx" + std::to_string(idx) + " -> ";
+            res += usingTullio ? "(" : ("sum(idx" + std::to_string(idx) + " -> ");
         }
 
         //
@@ -1068,7 +1071,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
 
             const auto& idx = notUniqueIndices[i];
 
-            res += ", 1:" + std::to_string(indexDimensions[idx]) + ")";
+            res += usingTullio ? ")" : (", 1:" + std::to_string(indexDimensions[idx]) + ")");
         }
     }
     else if(Relation == TkType::Container){
@@ -1151,6 +1154,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     return res;
 }
 
+//
 std::string IndexNotatedTensorExpression::toJuliaString() const {
 
     //
@@ -1179,7 +1183,9 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     }
 
     res += "\n";
-    res += "using LinearAlgebra\n\n";
+    res += "using LinearAlgebra\n";
+    res += usingTullio ? "using Tullio\n" : "";
+    res += "\n";
 
     // Hilfsfunktionen definieren
     res += "function levi_civita(indices...)\n";
@@ -1262,14 +1268,36 @@ std::string IndexNotatedTensorExpression::toJuliaString() const {
     res += "\tres = Base.zeros" + printPlainVector(dimensions) + "\n\n";
 
     //
-    for(const auto& idxs : generateTensorIndexPermutations(dimensions)){
-        
+    if(!usingTullio){
+
         //
-        res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
-        
-        // Werte der nach extern weitergereichten Indices : idxs
-        res += generateTensorSequenceJuliaString(idxs);
-        
+        for(const auto& idxs : generateTensorIndexPermutations(dimensions)){
+            
+            //
+            res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
+
+            //
+            res += 
+            
+            // Werte der nach extern weitergereichten Indices : idxs
+            res += generateTensorSequenceJuliaString(idxs);
+
+            //
+            res += "\n";
+        }
+    }
+    else{
+
+        //
+        res += "\t@tullio res[";
+
+        res += fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false);
+
+        // fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); })
+
+        res += "] = ";
+        res += generateTensorSequenceJuliaString({});
+
         //
         res += "\n";
     }
@@ -2034,6 +2062,22 @@ namespace types{
                 ret0->getMember() = mb->getMember().toJuliaString();
         },
         {STRING::typeIndex});
+
+        //
+        registerFunction("setUsingTullio", {BOOL::typeIndex},
+            [__functionLabel__ = "setUsingTullio", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(BOOL, 0);
+
+                usingTullio = arg0->getMember();
+        },
+        {});
 
         return true;
     }

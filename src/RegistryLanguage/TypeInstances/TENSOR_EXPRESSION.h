@@ -84,6 +84,9 @@ struct SubstitutionComparator {
 extern bool unwrapOperands;
 
 //
+extern bool usingTullio;
+
+//
 struct TensorExpression{
 
     //

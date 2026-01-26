@@ -60,6 +60,9 @@ int [orderTSM, dimension] = 1, 3
 // setUnwrapOperands(true)
 
 //
+setUsingTullio(true)
+
+//
 decl evaluateExample(int orderTSM, int dimension){
 
     //
@@ -134,7 +137,8 @@ decl main(){
 
     // logTypeRegister()
     // logNullRefs()
-    logDiffTemplates(); logSeparator()
+    // logFunctionRegister()
+    // logDiffTemplates(); logSeparator()
     // logSimplifications(); logSeparator()
 
     //

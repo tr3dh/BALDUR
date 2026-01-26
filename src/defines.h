@@ -139,6 +139,25 @@ std::string printIncreasedPlainVector(const std::vector<T>& vec, bool logParens 
     return result;
 }
 
+template<typename T, typename Func>
+std::string fprintPlainVector(const std::vector<T>& vec, const Func& printFunc, bool logParens = true, const std::string& token = ", ") {
+
+    if(vec.empty()) {
+        return logParens ? "()" : "";
+    }
+    
+    std::string result = logParens ? "(" : "";
+    for(size_t i = 0; i < vec.size(); ++i) {
+        
+        result += printFunc(vec[i]);
+        if(i != vec.size() - 1) {
+            result += token;
+        }
+    }
+    result += logParens ? ")" : "";
+    return result;
+}
+
 template<typename K, typename V>
 void emplaceVectorsIntoMap(std::map<K, V>& map, const std::vector<K>& keys, const std::vector<K>& vals) {
 

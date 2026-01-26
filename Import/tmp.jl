@@ -7,8 +7,10 @@
 # | arg 'epsilonv', order [1], dimensions {6}
 
 using LinearAlgebra
+using Tullio
 
 function levi_civita(indices...)
+
     n = length(indices)
     if length(unique(indices)) != n
         return 0
@@ -26,6 +28,7 @@ function levi_civita(indices...)
 end
 
 function identity_tensor(indices...)
+
     return all(i -> i == indices[1], indices) ? 1 : 0
 end
 
@@ -43,12 +46,7 @@ function autodiff(E0, D, epsilon, epsilonv)
 
         res = Base.zeros(6)
 
-        res[1] = sum(idx5 -> (E0[1, idx5] + D[1, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
-        res[2] = sum(idx5 -> (E0[2, idx5] + D[2, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
-        res[3] = sum(idx5 -> (E0[3, idx5] + D[3, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
-        res[4] = sum(idx5 -> (E0[4, idx5] + D[4, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
-        res[5] = sum(idx5 -> (E0[5, idx5] + D[5, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
-        res[6] = sum(idx5 -> (E0[6, idx5] + D[6, idx5]) * (epsilon[idx5] - epsilonv[idx5]), 1:6)
+        @tullio res[idx4] = ((E0[idx4, idx5] + D[idx4, idx5]) * (epsilon[idx5] - epsilonv[idx5]))
 
         return res
 end
@@ -58,6 +56,7 @@ D = rand(6, 6)
 epsilon = rand(6)
 epsilonv = rand(6)
 
-result3 = autodiff(E0, D, epsilon, epsilonv)
+result = autodiff(E0, D, epsilon, epsilonv)
 
-print(result3)
+print("\nErgebnis : ")
+print(result)
