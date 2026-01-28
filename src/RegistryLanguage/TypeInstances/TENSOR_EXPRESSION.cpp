@@ -3223,6 +3223,23 @@ namespace types{
         {});
 
         //
+        registerFunction("getUnwrapOperands", {},
+            [__functionLabel__ = "getUnwrapOperands", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                GET_RETURN(BOOL, 0);
+
+                //
+                ret0->getMember() = unwrapOperands;
+        },
+        {BOOL::typeIndex});
+
+        //
         registerFunction("unwrap", {TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "unwrap", __numArgs__ = 1](FREG_ARGS){
 

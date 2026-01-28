@@ -135,7 +135,7 @@ tExpr [P, S]            = tExpr("P", 2), tExpr("S", 2)                          
 
 // ZEROS Vereinfachungen
 setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
-// setEqual(tmplA + zerosInstanceTemplate, tmplA)
+setEqual(tmplA + zerosInstanceTemplate, tmplA)
 setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
 setEqual(tmplA - zerosInstanceTemplate, tmplA)
 setEqual(zerosInstanceTemplate * tmplA, zeros(zerosInstanceTemplate * tmplA))           // *

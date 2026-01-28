@@ -1,8 +1,3 @@
-decl triggerAssert(){
-
-    return 1 + 2 + A
-}
-
 //
 decl getNumOfVoigtComponents(int dimension){
 
@@ -35,8 +30,39 @@ decl tExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
         for(int i = 0, i < order, i++){ tmp := x }
 
         // Hier wird x durch konkreten Wert x0 ersetzt
-        res += unwrap(simplified(wrap(tmp)))
+        res += wrpSimplified(tmp)
     }
 
+    wrpSimplify(res)
+
     return res
+}
+
+//
+decl wrpSimplify(tExpr ref expr){
+
+    // Wenn unwrapOperands bereits auf false gesetzt ist unterscheidet ist wrpSimplify gleichbedeutend mit simplify
+    if(!(unwrapOperands => getUnwrapOperands())){
+        
+        simplify(expr)
+        return {}
+    }
+    
+    // Flag muss geändert werden damit rebuild beim simplify nicht wieder alles entpackt
+    setUnwrapOperands(false)
+
+    expr = wrap(expr)
+    simplify(expr)
+
+    //
+    setUnwrapOperands(true)
+
+    expr = unwrap(expr)
+    simplify(expr)
+}
+
+decl wrpSimplified(tExpr expr){
+
+    wrpSimplify(expr)
+    return [<-expr]
 }
