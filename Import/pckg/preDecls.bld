@@ -102,6 +102,7 @@ tExpr [tmplScalarA, tmplScalarB]    = tExprTmpl("tmplScA", 0), tExprTmpl("tmplSc
 tExpr [zerosInstanceTemplate]       = tExprInstcTmpl("zeros")
 tExpr [onesInstanceTemplate]        = tExprInstcTmpl("ones")
 tExpr [identityInstanceTemplate]    = tExprInstcTmpl("Identity")
+tExpr [epsInstanceTemplate]         = tExprInstcTmpl("eps")             // Levi-Civita-Tensor Instance Template
 tExpr [tmplVector]                  = tExprTmpl("tmplVec", 1)
 tExpr [tmplMatrix]                  = tExprTmpl("tmplMat", 2)
 tExpr [tmplTensor]                  = tExprTmpl("tmplTensor", -1)
@@ -236,3 +237,7 @@ setDiffTemplate(inverse(tmplA), tmplB, (-1) * inverse(tmplA) . diff(tmplA, tmplB
 setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
 setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmplA, tmplB)))
 setDiffTemplate(trace(tmplA), tmplB, trace(diff(tmplA, tmplB)))
+setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) tmplA))
+setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
+setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
+setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
