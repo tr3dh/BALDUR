@@ -1275,9 +1275,6 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
             //
             res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
 
-            //
-            res += 
-            
             // Werte der nach extern weitergereichten Indices : idxs
             res += generateTensorSequenceJuliaString(idxs);
 

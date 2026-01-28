@@ -195,7 +195,7 @@ namespace types{
 
                 //
                 std::ofstream outputFile;
-                outputFile.open(arg0->getMember());
+                outputFile.open(arg0->getMember(), std::ios::trunc);
 
                 //
                 outputFile << mb->getMember();

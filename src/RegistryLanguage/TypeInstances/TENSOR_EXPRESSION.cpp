@@ -329,7 +329,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
 
     bool res = true;
 
-    RETURNING_ASSERT(tmplExpr == expr, "Ungleiche Operanden für Template Substitution", false);
+    RETURNING_ASSERT(tmplExpr == expr, "Ungleiche Operanden für Template Substitution " + tmplExpr.toString() + " " + expr.toString(), false);
     RETURNING_ASSERT(tmplExpr.children.size() == expr.children.size() || tmplExpr.children.size() == 0,
                      "Ungleiche Operanden Childs für Template Substitution", false);
 

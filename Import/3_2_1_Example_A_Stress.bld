@@ -57,10 +57,13 @@ string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Mode
 int [orderTSM, dimension] = 1, 3
 
 //
-// setUnwrapOperands(true)
+// setUnwrapOperands(false)
 
 //
 setUsingTullio(true)
+
+//
+// disableDiffTemplateDefaults()
 
 //
 decl evaluateExample(int orderTSM, int dimension){

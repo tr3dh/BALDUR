@@ -48,8 +48,8 @@ decl product(args prms){ return [prms->chainByOperator("*=")] }
 // Standardmatritzen für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
 decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
-decl tExprZeros(int order){ return [tExpr("Zeros", order)] }
-decl tIdnZeros(int order){ return [tIDN("Zeros", order)] }
+decl tExprZeros(int order){ return [tExpr("zeros", order)] }
+decl tIdnZeros(int order){ return [tIDN("zeros", order)] }
 
 // Config Tensorausdrücke
 // . Template Größen 
@@ -209,7 +209,7 @@ setDiff(v, x, L)                                        // Geschwindigkeitsgradi
 bool diffTemplateDefaultsEnabled = false 
 
 decl enableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(true)] }
-decl disableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(true)] }
+decl disableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(false)] }
 
 // Allgemeine Regelung, die Interpreterinterne überschreibt
 decl setDiffTemplateDefaults(bool val){
