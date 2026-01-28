@@ -54,7 +54,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 1, 3
+int [orderTSM, dimension] = 2, 3
 
 //
 // setUnwrapOperands(false)
@@ -104,7 +104,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // Operanden zu definieren und wenn nötig die Ausdrucksstruktur in diese Form zu bringen
 
     //
-    // result = simplified(unwrap(simplified(wrap(result))))
+    result = unwrap(simplified(wrap(result)))
 
     //
     simplify(result)

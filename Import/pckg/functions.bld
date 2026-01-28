@@ -35,7 +35,7 @@ decl tExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
         for(int i = 0, i < order, i++){ tmp := x }
 
         // Hier wird x durch konkreten Wert x0 ersetzt
-        res += simplified(tmp)
+        res += unwrap(simplified(wrap(tmp)))
     }
 
     return res

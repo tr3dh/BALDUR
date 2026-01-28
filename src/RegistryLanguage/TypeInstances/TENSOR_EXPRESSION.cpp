@@ -364,7 +364,7 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
     }
     else{
 
-        size_t N = 2;
+        size_t N = tmplExpr.children.size();
         std::vector<size_t> indices(N);
         for(size_t i = 0; i < N; i++) indices[i] = i;
 
@@ -585,6 +585,8 @@ bool TensorExpression::simplifyOnce(){
                 return true;
             }
             else{
+
+                // LOG << "found tmpl " << k.toString(1) << " <> " << toString(1) << endl; 
 
                 IsRepresentableByTemplate = true;
 
@@ -1459,31 +1461,77 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     if(equal){ return true; }
     else if(!isCommutativ()){ return equal; }
 
-    auto sortedChildren = unwrap().children;
-    auto sortedOtherChildren = other.unwrap().children;
+    // auto sortedChildren = unwrap().children;
+    // auto sortedOtherChildren = other.unwrap().children;
 
-    // for(const auto& child : sortedChildren){ LOG << child.toString(1) << " | "; }
-    // LOG << endl;
-    // for(const auto& child : sortedOtherChildren){ LOG << child.toString(1) << " | "; }
-    // LOG << endl;
+    // // for(const auto& child : sortedChildren){ LOG << child.toString(1) << " | "; }
+    // // LOG << endl;
+    // // for(const auto& child : sortedOtherChildren){ LOG << child.toString(1) << " | "; }
+    // // LOG << endl;
 
-    std::sort(sortedChildren.begin(), sortedChildren.end());
-    std::sort(sortedOtherChildren.begin(), sortedOtherChildren.end());
+    // std::sort(sortedChildren.begin(), sortedChildren.end());
+    // std::sort(sortedOtherChildren.begin(), sortedOtherChildren.end());
 
-    // for(const auto& child : sortedChildren){ LOG << child.toString(1) << " | "; }
-    // LOG << endl;
-    // for(const auto& child : sortedOtherChildren){ LOG << child.toString(1) << " | "; }
-    // LOG << endl;
+    // // for(const auto& child : sortedChildren){ LOG << child.toString(1) << " | "; }
+    // // LOG << endl;
+    // // for(const auto& child : sortedOtherChildren){ LOG << child.toString(1) << " | "; }
+    // // LOG << endl;
 
-    for(size_t i = 0; i < sortedChildren.size(); i++){
+    // for(size_t i = 0; i < sortedChildren.size(); i++){
         
-        // LOG << sortedChildren[i].toString() << " == " << sortedOtherChildren[i].toString() << " = " << (sortedChildren[i] == sortedOtherChildren[i]) << endl;
-        if(!(sortedChildren[i] == sortedOtherChildren[i])){
-            return false;
+    //     // LOG << sortedChildren[i].toString() << " == " << sortedOtherChildren[i].toString() << " = " << (sortedChildren[i] == sortedOtherChildren[i]) << endl;
+    //     if(!(sortedChildren[i] == sortedOtherChildren[i])){
+    //         return false;
+    //     }
+    // }
+
+    // Umstellung von Abgleich sortierter Childs zu Permutationsgenerierung 
+    // Aufgrund der Bandbreite der Templates die einander überladen müssen (Überladung nutzt ebenfalls <)
+    // ist Sortierung nicht mehr trivial
+
+    size_t N = children.size();
+    std::vector<size_t> indices(N);
+    for(size_t i = 0; i < N; i++) indices[i] = i;
+
+    std::vector<bool> used(N, false);
+    std::vector<size_t> current(N);
+    std::vector<std::vector<size_t>> allPermutations;
+
+    size_t matchingPermutation = allPermutations.size();
+    bool permutationIsMatching = true;
+
+    generateIndexCombinations(indices, used, current, allPermutations, 0);
+
+    // // Ausgabe
+    // for(const auto& perm : allPermutations){
+
+    //     for(size_t x : perm) std::cout << x << " ";
+    //     LOG << endl;
+    // }
+
+    //
+    for(size_t permIdx = 0; permIdx < allPermutations.size(); permIdx++){
+
+        const auto& perm = allPermutations[permIdx];
+        permutationIsMatching = true;
+
+        for(size_t i = 0; i < children.size(); i++){
+
+            if(!(children[i] == other.children[perm[i]])){
+
+                permutationIsMatching = false;
+                break;
+            }
+        }
+
+        if(permutationIsMatching){
+
+            matchingPermutation = permIdx;
+            break;
         }
     }
 
-    return true;
+    return permutationIsMatching;
 }
 
 void TensorExpression::rawDiffAssign(const TensorExpression& other){
