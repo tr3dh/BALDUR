@@ -964,8 +964,31 @@ void IndexNotatedTensorExpression::evaluateIndexDimensions(std::map<int, int>& i
     }
 }
 
+bool isFunctionalNode(const IndexNotatedTensorExpression& node){
+
+    if(node.label == "Identity" || node.label == "zeros" || node.label == "ones" || node.label == "eps"){
+        
+        return true;
+    }
+
+    return false;
+}
+
+std::string getArgLabel(const IndexNotatedTensorExpression& node){
+
+    if(isFunctionalNode(node)){
+        
+        return node.label + "_ord" + std::to_string(node.tensorOrder) + "_dm" + printPlainVector(node.dimensions, false, "");
+    }
+    else{
+
+        return node.label;
+    }
+}
+
 //
 bool usingTullio = false;
+bool generatingDebugProgram = true;
 
 std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth) const{
 
@@ -990,13 +1013,13 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     //
     std::string res;
 
+    // if(depth == 0 && usingTullio){ res += "("; }
+
     //
     if(isConstant){ res += string::strippedString(value); }
     else if(Relation == TkType::Argument){
 
-        bool isFunctionalNode = (label == "Identity" || label == "zeros" || label == "ones" || label == "eps");
-
-        res += label + (isFunctionalNode ? "(" : "[");
+        res += getArgLabel(*this) + "[";
 
         for(size_t i = 0; i < notatedIndices.size(); i++){
 
@@ -1014,7 +1037,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
             }
         }
 
-        res += (isFunctionalNode ? ")" : "]");
+        res += "]";
     }
     else if(Relation == TkType::Operator && (Operator == IndexNotationOperator::Addition || Operator == IndexNotationOperator::Subtraction)){
         
@@ -1149,6 +1172,26 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
         }
     }
 
+    // //
+    // if(depth == 0 && usingTullio){
+
+    //     res += ") (";
+
+    //     //
+    //     auto externIndices = getNotUniqueChildIndices();
+
+    //     for(auto it = indexDimensions.begin(); it != indexDimensions.end(); ++it) {
+
+    //         auto [idx, rng] = *it;
+    //         res += "idx" + std::to_string(idx) + " ∈ 1:" + std::to_string(rng);
+    //         if(std::next(it) != indexDimensions.end()) {
+    //             res += ", ";
+    //         }
+    //     }
+
+    //     res += ")";
+    // }
+
     //
     return res;
 }
@@ -1172,11 +1215,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     //
     for(const auto& node : getUniqueExternalNodes()){
         
-        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones" || node->label == "eps"){
-            continue;
-        }
-
-        res += "# | arg '" + node->label + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
+        res += "# | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
         res += printPlainVector(node->dimensions, false);
         res += "}\n";
     }
@@ -1186,35 +1225,57 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += usingTullio ? "using Tullio\n" : "";
     res += "\n";
 
-    // Hilfsfunktionen definieren
-    res += "function levi_civita(indices...)\n";
-    res += "    \n";
-    res += "    n = length(indices)\n";
-    res += "    if length(unique(indices)) != n\n";
-    res += "        return 0\n";
+    // Helper functions to create precomputed tensors
+    res += "function create_zeros(dims::Integer...)\n";
+    res += "    return zeros(Float64, dims...)\n";
+    res += "end\n\n";
+
+    res += "function create_ones(dims::Integer...)\n";
+    res += "    return ones(Float64, dims...)\n";
+    res += "end\n\n";
+
+    res += "function create_Identity(dims::Integer...)\n";
+    res += "    n = dims[1]\n";
+    res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Identity\"\n";
+    res += "    tensor = zeros(Float64, dims...)\n";
+    res += "    for i in 1:n\n";
+    res += "        indices = ntuple(x -> i, length(dims))\n";
+    res += "        tensor[indices...] = 1.0\n";
     res += "    end\n";
-    res += "    perm = collect(indices)\n";
-    res += "    sign = 1\n";
-    res += "    for i in 1:n-1\n";
-    res += "        for j in i+1:n\n";
-    res += "            if perm[i] > perm[j]\n";
-    res += "                sign *= -1\n";
+    res += "    return tensor\n";
+    res += "end\n\n";
+
+    res += "function create_eps(dims::Integer...)\n";
+    res += "    # Alle Dimensionen müssen gleich sein\n";
+    res += "    n = dims[1]\n";
+    res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Levi-Civita\"\n";
+    res += "    @assert n == 3 \"Levi-Civita only implemented for dimension 3\"\n";
+    res += "    @assert length(dims) == 3 \"Levi-Civita must be 3D tensor\"\n";
+    res += "    \n";
+    res += "    eps_tensor = Base.zeros(Float64, dims...)\n";
+    res += "    \n";
+    res += "    for i in 1:n\n";
+    res += "        for j in 1:n\n";
+    res += "            for k in 1:n\n";
+    res += "                indices = [i, j, k]\n";
+    res += "                if length(unique(indices)) != 3\n";
+    res += "                    continue\n";
+    res += "                end\n";
+    res += "                sign = 1\n";
+    res += "                for x in 1:2\n";
+    res += "                    for y in x+1:3\n";
+    res += "                        if indices[x] > indices[y]\n";
+    res += "                            sign *= -1\n";
+    res += "                        end\n";
+    res += "                    end\n";
+    res += "                end\n";
+    res += "                eps_tensor[i, j, k] = sign\n";
     res += "            end\n";
     res += "        end\n";
     res += "    end\n";
-    res += "    return sign\n";
-    res += "end\n\n";
-
-    res += "function identity_tensor(indices...)\n";
     res += "    \n";
-    res += "    return all(i -> i == indices[1], indices) ? 1 : 0\n";
+    res += "    return eps_tensor\n";
     res += "end\n\n";
-
-    //
-    res += "zeros(indices::Integer...) = 0\n";
-    res += "ones(indices::Integer...) = 1\n";
-    res += "eps(indices::Integer...) = levi_civita(indices...)\n";
-    res += "Identity(indices::Integer...) = identity_tensor(indices...)\n";
 
     //
     res += "\n";
@@ -1226,7 +1287,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     //
     for(const auto& node : getUniqueExternalNodes()){
         
-        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones" || node->label == "eps"){
+        if(isFunctionalNode(*node)){
             
             continue;
         }
@@ -1240,14 +1301,16 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += ")\n\n";
 
     //
-    for(const auto& node : getUniqueExternalNodes()){
-        
-        if(node->label == "Identity" || node->label == "zeros" || node->label == "ones" || node->label == "eps"){
-            
-            continue;
-        }
+    auto externalNodes = getUniqueExternalNodes();
 
-        if(node->containsDimensions() && node->dimensions.size() > 1){
+    //
+    for(const auto& node : externalNodes){
+        
+        if(isFunctionalNode(*node)){
+            
+            res += "\t" + getArgLabel(*node) + " = create_" + node->label + printPlainVector(node->dimensions) + "\n";
+        }
+        else if(node->containsDimensions() && node->dimensions.size() > 1){
             
             res += "\t@assert size(" + node->label + ") == " + printPlainVector(node->dimensions) + "\n";
         }
@@ -1302,7 +1365,36 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "\n\treturn res\n";
 
     //
-    res += "end";
+    res += "end\n\n";
+
+    if(generatingDebugProgram){
+
+        res += "print(autodiff_" + instanceLabel + "("; 
+
+        //
+        for(auto it = externalNodes.begin(); it != externalNodes.end(); ){
+            
+            if(isFunctionalNode(**it)){
+                it = externalNodes.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for(auto it = externalNodes.begin(); it != externalNodes.end(); ++it) {
+
+            auto expr = *it;
+
+            //
+            res += "rand" + printPlainVector(expr->dimensions);
+
+            if(std::next(it) != externalNodes.end()) {
+                res += ", ";
+            }
+        }
+
+        res +=  "))";
+    }
 
     return res;
 }

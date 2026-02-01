@@ -46,6 +46,42 @@ namespace types{
         },
         {STRING::typeIndex});
 
+        // Konstruktoren
+        registerFunction("string", {INT::typeIndex},
+            [__functionLabel__ = "string", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(STRING, 0);
+                GET_ARG(INT, 0);
+
+                // schreiben in returns
+                ret0->getMember() = std::to_string(arg0->getMember());
+        },
+        {STRING::typeIndex});
+
+        // Konstruktoren
+        registerFunction("string", {DOUBLE::typeIndex},
+            [__functionLabel__ = "string", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns | Inputs
+                GET_RETURN(STRING, 0);
+                GET_ARG(DOUBLE, 0);
+
+                // schreiben in returns
+                ret0->getMember() = std::to_string(arg0->getMember());
+        },
+        {STRING::typeIndex});
+
         // Member
         registerMemberFunction(STRING::typeIndex, "size", {},
             [__functionLabel__ = "size", __numArgs__ = 0](FREG_ARGS){

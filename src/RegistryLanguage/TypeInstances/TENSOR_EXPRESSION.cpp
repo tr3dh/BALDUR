@@ -330,8 +330,8 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
     bool res = true;
 
     RETURNING_ASSERT(tmplExpr == expr, "Ungleiche Operanden für Template Substitution " + tmplExpr.toString() + " " + expr.toString(), false);
-    RETURNING_ASSERT(tmplExpr.children.size() == expr.children.size() || tmplExpr.children.size() == 0,
-                     "Ungleiche Operanden Childs für Template Substitution", false);
+    // RETURNING_ASSERT(tmplExpr.children.size() == expr.children.size() || tmplExpr.children.size() == 0,
+    //                  "Ungleiche Operanden Childs für Template Substitution", false);
 
     if(!tmplExpr.isTemplate()){ 
         
@@ -339,6 +339,16 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
     }
 
     bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate() || tmplExpr.isInstanceTemplate() || tmplExpr.isArgTemplate();
+
+    if(tmplExpr.tensorOrder == -1 &&
+        ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
+        (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
+        (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
+
+        return true;
+    }
+
+    // LOG << tmplExpr.toString() << " <> " << expr.toString() << " repl? " << tmplIsTemplatedNode << endl;
 
     if(tmplIsTemplatedNode && subsMap.try_emplace(tmplExpr, expr).second){}
     else if(tmplIsTemplatedNode && subsMap[tmplExpr] != expr){
@@ -575,6 +585,8 @@ bool TensorExpression::simplifyOnce(){
 
         if(k == *this){
 
+            // LOG << "found tmpl " << k.toString(1) << " <> " << toString(1) << endl;
+
             auto prevOrder = tensorOrder;
 
             if(!k.isTemplate()){
@@ -585,8 +597,6 @@ bool TensorExpression::simplifyOnce(){
                 return true;
             }
             else{
-
-                // LOG << "found tmpl " << k.toString(1) << " <> " << toString(1) << endl; 
 
                 IsRepresentableByTemplate = true;
 
@@ -610,7 +620,7 @@ bool TensorExpression::simplifyOnce(){
                 // *this <> k | result <> v
 
                 // result rekursiv durchlaufen und substituieren wenn nötig
-                TensorExpression res = v;
+                TensorExpression source = k;
 
                 // for(const auto& [k, v] : subsMap){
 
@@ -618,6 +628,15 @@ bool TensorExpression::simplifyOnce(){
                 // }
 
                 //
+                replaceBySubstitutions(source, subsMap);
+                source = source.rebuild();
+
+                //
+                if(!(*this == source)){
+                    continue;
+                }
+
+                TensorExpression res = v;
                 replaceBySubstitutions(res, subsMap);
 
                 //
@@ -1415,6 +1434,8 @@ bool TensorExpression::isCommutativ() const{
 
 bool TensorExpression::operator==(const TensorExpression& other) const {
 
+    // LOG << this->toString() << " == " << other.toString() << " ??" << endl;
+
     // Check ob gleiche Instanz
     if(this == &other){ return true; }
 
@@ -1432,6 +1453,25 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
 
         return true;
     }
+
+    // if(Operator == TensorExpressionOperator::Zeros && tensorOrder == -1 && other.Relation == TkType::Argument && other.label == "zeros"){
+    //     return true;
+    // }
+    // if(Relation == TkType::Argument && label == "zeros" && other.Operator == TensorExpressionOperator::Zeros && other.tensorOrder == -1){
+    //     return true;
+    // }
+    // if(Operator == TensorExpressionOperator::Ones && tensorOrder == -1 && other.Relation == TkType::Argument && other.label == "ones"){
+    //     return true;
+    // }
+    // if(Relation == TkType::Argument && label == "ones" && other.Operator == TensorExpressionOperator::Ones && other.tensorOrder == -1){
+    //     return true;
+    // }
+    // if(Operator == TensorExpressionOperator::Identity && tensorOrder == -1 && other.Relation == TkType::Argument && other.label == "Identity"){
+    //     return true;
+    // }
+    // if(Relation == TkType::Argument && label == "Identity" && other.Operator == TensorExpressionOperator::Identity && other.tensorOrder == -1){
+    //     return true;
+    // }
 
     if(Relation != other.Relation){ return false; }
     if(Operator != other.Operator){ return false; }
@@ -1454,12 +1494,18 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
         
         if(!(children[childIdx] == other.children[childIdx])){
             
+            // LOG << children[childIdx].toString() << other.children[childIdx].toString() << endl;
+            // LOG << (children[childIdx] == other.children[childIdx]) << endl;
+
             equal = false;
         } 
     }
 
     if(equal){ return true; }
-    else if(!isCommutativ()){ return equal; }
+    else if(!isCommutativ()){
+
+        return equal;
+    }
 
     // auto sortedChildren = unwrap().children;
     // auto sortedOtherChildren = other.unwrap().children;

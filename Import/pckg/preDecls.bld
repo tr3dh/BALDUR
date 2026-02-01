@@ -135,11 +135,11 @@ tExpr [P, S]            = tExpr("P", 2), tExpr("S", 2)                          
 
 // ZEROS Vereinfachungen
 setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
-setEqual(tmplA + zerosInstanceTemplate, tmplA)
+setEqual(tmplA + zerosInstanceTemplate, tmplA)                                          // trivial
 setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
 setEqual(tmplA - zerosInstanceTemplate, tmplA)
 setEqual(zerosInstanceTemplate * tmplA, zeros(zerosInstanceTemplate * tmplA))           // *
-setEqual(tmplA * zerosInstanceTemplate, zeros(tmplA * zerosInstanceTemplate))
+setEqual(tmplA * zerosInstanceTemplate, zeros(tmplA * zerosInstanceTemplate))           // trivial
 setEqual(zerosInstanceTemplate * CnstTmpl, zerosInstanceTemplate)                       // *
 setEqual(CnstTmpl * zerosInstanceTemplate, zerosInstanceTemplate)
 setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
@@ -155,9 +155,15 @@ setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
 setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplate))
 
-//
-setEqual(identityInstanceTemplate . tmplA, tmplA)
-setEqual(tmplA . identityInstanceTemplate, tmplA)
+// //
+// setEqual(identity(tmplA) . tmplA, tmplA)
+// setEqual(tmplA . identity(tmplA), tmplA)
+
+// //
+// setEqual(identityInstanceTemplate .. tmplA, trace(tmplA))
+// setEqual(tmplA .. identityInstanceTemplate, trace(tmplA))
+// setEqual(identityInstanceTemplate : tmplA, trace(tmplA))
+// setEqual(tmplA : identityInstanceTemplate, trace(tmplA))
 
 //
 setEqual(tmplA * 1, tmplA)
@@ -218,13 +224,24 @@ decl setDiffTemplateDefaults(bool val){
 
     if(diffTemplateDefaultsEnabled => val){
 
+        // Diff Template Emplace von d tmplA / d tmplA und d ArgTmplA / d ArgTmplA
+        // nicht redundant >> wenn templates sortiert und in register geschrieben werden wird
+        // Reihenfolge ohne emplace d ArgTmplA / d ArgTmplA template wie folgt aufgestellt:
+        // . diff(argTmplA, tmplB) = ...
+        // . diff(tmplA, tmplA) = ...
+        // Beim Abgleich von diff(inst, inst) wird zuerst d argTmplA / d tmplB als matching template gefunden
+        // Deshalb muss das d ArgTmplA / d ArgTmplA berücksichtigt werden, dieses wird noch vor d argTmplA / d tmplB
+        // sortiert und wird für Fälle in denen Instanzen nach sich selbst abgeleitet werden zuerst als matching template
+        // gefunden
         setDiffTemplate(tmplA, tmplA, identity(tmplA \(x) tmplA))
         setDiffTemplate(ArgTmplA, tmplB, zeros(ArgTmplA \(x) tmplB))
+        setDiffTemplate(ArgTmplA, ArgTmplA, identity(ArgTmplA \(x) ArgTmplA))
     }
     else{
 
         removeEmplacedDiffTemplate(tmplA, tmplA)
         removeEmplacedDiffTemplate(ArgTmplA, tmplB)
+        removeEmplacedDiffTemplate(ArgTmplA, ArgTmplA)
     }
 }
 
