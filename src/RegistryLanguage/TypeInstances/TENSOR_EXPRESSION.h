@@ -260,6 +260,7 @@ struct IndexNotatedTensorExpression{
     void replaceIndex(NotationIndex oldIndex, NotationIndex newIndex);
     void replaceIndices(const std::vector<NotationIndex>& oldIndices, const std::vector<NotationIndex>& newIndices);
     std::vector<NotationIndex> getUniqueChildIndices() const;
+    std::vector<NotationIndex> getUniqueChildDimensions() const;
     std::vector<NotationIndex> getNotUniqueChildIndices() const;
 
     //
@@ -284,6 +285,8 @@ struct IndexNotatedTensorExpression{
     void traceAssign();
 
     void determinantAssign();
+
+    // void reEvaluateIndices();
 
     bool equals(const IndexNotatedTensorExpression& other);
 

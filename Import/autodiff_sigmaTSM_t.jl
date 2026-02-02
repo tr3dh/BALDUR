@@ -9,6 +9,7 @@
 # | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
 
 using LinearAlgebra
+using Tullio
 
 function create_zeros(dims::Integer...)
     return zeros(Float64, dims...)
@@ -73,9 +74,7 @@ function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1)
 
 	res = Base.zeros(3)
 
-	res[1] = (sum(idx5 -> (E0[1, idx5] + D[1, idx5]) * (epsilon[idx5] - (epsilonv[idx5] + sum(idx18 -> sum(idx19 -> depsilonv1_dD1[idx5, idx18, idx19] * D[idx18, idx19], 1:3), 1:3))), 1:3) + sum(idx43 -> sum(idx44 -> (sum(idx45 -> Identity_ord4_dm3333[1, idx43, idx44, idx45] * (epsilon[idx45] - (epsilonv[idx45] + sum(idx36 -> sum(idx37 -> depsilonv1_dD1[idx45, idx36, idx37] * D[idx36, idx37], 1:3), 1:3))), 1:3) + sum(idx51 -> (E0[1, idx51] + D[1, idx51]) * -1 * (depsilonv1_dD1[idx51, idx43, idx44] + sum(idx67 -> sum(idx68 -> depsilonv1_dD1[idx51, idx67, idx68] * Identity_ord4_dm3333[idx67, idx68, idx43, idx44], 1:3), 1:3)), 1:3)) * D[idx43, idx44], 1:3), 1:3))
-	res[2] = (sum(idx5 -> (E0[2, idx5] + D[2, idx5]) * (epsilon[idx5] - (epsilonv[idx5] + sum(idx18 -> sum(idx19 -> depsilonv1_dD1[idx5, idx18, idx19] * D[idx18, idx19], 1:3), 1:3))), 1:3) + sum(idx43 -> sum(idx44 -> (sum(idx45 -> Identity_ord4_dm3333[2, idx43, idx44, idx45] * (epsilon[idx45] - (epsilonv[idx45] + sum(idx36 -> sum(idx37 -> depsilonv1_dD1[idx45, idx36, idx37] * D[idx36, idx37], 1:3), 1:3))), 1:3) + sum(idx51 -> (E0[2, idx51] + D[2, idx51]) * -1 * (depsilonv1_dD1[idx51, idx43, idx44] + sum(idx67 -> sum(idx68 -> depsilonv1_dD1[idx51, idx67, idx68] * Identity_ord4_dm3333[idx67, idx68, idx43, idx44], 1:3), 1:3)), 1:3)) * D[idx43, idx44], 1:3), 1:3))
-	res[3] = (sum(idx5 -> (E0[3, idx5] + D[3, idx5]) * (epsilon[idx5] - (epsilonv[idx5] + sum(idx18 -> sum(idx19 -> depsilonv1_dD1[idx5, idx18, idx19] * D[idx18, idx19], 1:3), 1:3))), 1:3) + sum(idx43 -> sum(idx44 -> (sum(idx45 -> Identity_ord4_dm3333[3, idx43, idx44, idx45] * (epsilon[idx45] - (epsilonv[idx45] + sum(idx36 -> sum(idx37 -> depsilonv1_dD1[idx45, idx36, idx37] * D[idx36, idx37], 1:3), 1:3))), 1:3) + sum(idx51 -> (E0[3, idx51] + D[3, idx51]) * -1 * (depsilonv1_dD1[idx51, idx43, idx44] + sum(idx67 -> sum(idx68 -> depsilonv1_dD1[idx51, idx67, idx68] * Identity_ord4_dm3333[idx67, idx68, idx43, idx44], 1:3), 1:3)), 1:3)) * D[idx43, idx44], 1:3), 1:3))
+	@tullio res[idx4] = (((E0[idx4, idx5] + D[idx4, idx5]) * (epsilon[idx5] - (epsilonv[idx5] + ((depsilonv1_dD1[idx5, idx18, idx19] * D[idx18, idx19]))))) + ((((Identity_ord4_dm3333[idx4, idx43, idx44, idx45] * (epsilon[idx45] - (epsilonv[idx45] + ((depsilonv1_dD1[idx45, idx36, idx37] * D[idx36, idx37]))))) + ((E0[idx4, idx51] + D[idx4, idx51]) * -1 * (depsilonv1_dD1[idx51, idx43, idx44] + ((depsilonv1_dD1[idx51, idx67, idx68] * Identity_ord4_dm3333[idx67, idx68, idx43, idx44]))))) * D[idx43, idx44])))
 
 	return res
 end

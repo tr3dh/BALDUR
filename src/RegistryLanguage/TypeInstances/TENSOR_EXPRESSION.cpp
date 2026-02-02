@@ -340,13 +340,13 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
 
     bool tmplIsTemplatedNode = tmplExpr.isTemplatedNode() || tmplExpr.isConstantTemplate() || tmplExpr.isInstanceTemplate() || tmplExpr.isArgTemplate();
 
-    if(tmplExpr.tensorOrder == -1 &&
-        ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
-        (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
-        (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
+    // if(tmplExpr.tensorOrder == -1 &&
+    //     ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
+    //     (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
+    //     (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
 
-        return true;
-    }
+    //     return true;
+    // }
 
     // LOG << tmplExpr.toString() << " <> " << expr.toString() << " repl? " << tmplIsTemplatedNode << endl;
 

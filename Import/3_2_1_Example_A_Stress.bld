@@ -60,7 +60,7 @@ int [orderTSM, dimension] = 1, 2
 // setUnwrapOperands(false)
 
 //
-setUsingTullio(false)
+setUsingTullio(true)
 
 //
 // disableDiffTemplateDefaults()
@@ -144,17 +144,11 @@ decl evaluateExample(int orderTSM, int dimension){
     slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
     // logSeparator()
 
-    //
-    slog(tIDNResult)
-    logSeparator()
+    // //
+    // slog(tIDNResult)
+    // logSeparator()
 
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_" + tResultLabel + ".jl")
-
-    logSeparator()
-    slog(sigma_t)
-
-    logSeparator()
-    slog(diff(sigma_t, D, 1) : D)
 }
 
 //
