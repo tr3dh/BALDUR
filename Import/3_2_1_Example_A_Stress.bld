@@ -92,7 +92,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // void sigmav = E . (epsilon - epsilonv)
 
     // taylorReihen enthalten ableitungen 1 bis orderTSM
-    for(int i = 1, i <= orderTSM, i++){
+    for(int i = 1, i <= (orderTSM ^ 2) + 1, i++){
 
         static{
             string [prevTExprLabel, currentTExprLabel] = "epsilonv", " "

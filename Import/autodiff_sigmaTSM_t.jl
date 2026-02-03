@@ -7,6 +7,7 @@
 # | arg 'epsilonv', order [1], dimensions {3}
 # | arg 'depsilonv1_dD1', order [3], dimensions {3, 3, 3}
 # | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
+# | arg 'depsilonv2_dD2', order [5], dimensions {3, 3, 3, 3, 3}
 
 using LinearAlgebra
 using Tullio
@@ -63,7 +64,7 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1)
+function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1, depsilonv2_dD2)
 
 	@assert size(E0) == (3, 3)
 	@assert size(D) == (3, 3)
@@ -71,12 +72,13 @@ function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1)
 	@assert length(epsilonv) == 3
 	@assert size(depsilonv1_dD1) == (3, 3, 3)
 	Identity_ord4_dm3333 = create_Identity(3, 3, 3, 3)
+	@assert size(depsilonv2_dD2) == (3, 3, 3, 3, 3)
 
 	res = Base.zeros(3)
 
-	@tullio res[idx4] = (((E0[idx4, idx5] + D[idx4, idx5]) * (epsilon[idx5] - (epsilonv[idx5] + ((depsilonv1_dD1[idx5, idx18, idx19] * D[idx18, idx19]))))) + ((((Identity_ord4_dm3333[idx4, idx43, idx44, idx45] * (epsilon[idx45] - (epsilonv[idx45] + ((depsilonv1_dD1[idx45, idx36, idx37] * D[idx36, idx37]))))) + ((E0[idx4, idx51] + D[idx4, idx51]) * -1 * (depsilonv1_dD1[idx51, idx43, idx44] + ((depsilonv1_dD1[idx51, idx67, idx68] * Identity_ord4_dm3333[idx67, idx68, idx43, idx44]))))) * D[idx43, idx44])))
+	@tullio res[idx4] = (((E0[idx4, idx5] + D[idx4, idx5]) * (epsilon[idx5] - (epsilonv[idx5] + ((depsilonv1_dD1[idx5, idx18, idx19] * D[idx18, idx19]))))) + ((((Identity_ord4_dm3333[idx4, idx43, idx44, idx45] * (epsilon[idx45] - (epsilonv[idx45] + ((depsilonv1_dD1[idx45, idx36, idx37] * D[idx36, idx37]))))) + ((E0[idx4, idx51] + D[idx4, idx51]) * -1 * (depsilonv1_dD1[idx51, idx43, idx44] + ((depsilonv2_dD2[idx51, idx43, idx44, idx69, idx70] * D[idx69, idx70])) + ((depsilonv1_dD1[idx51, idx84, idx85] * Identity_ord4_dm3333[idx84, idx85, idx43, idx44]))))) * D[idx43, idx44])))
 
 	return res
 end
 
-print(autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3), rand(3), rand(3), rand(3, 3, 3)))
+print(autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3), rand(3), rand(3), rand(3, 3, 3), rand(3, 3, 3, 3, 3)))

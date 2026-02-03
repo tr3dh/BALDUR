@@ -1895,19 +1895,19 @@ std::string TensorExpression::toString(size_t depth) const{
     // Argument node
     if(Relation == TkType::Argument && isInstanceTemplate()){
 
-        res += "insttmpl<" + label + ">[" + std::to_string(tensorOrder) + "]";
+        res += "insttmpl<" + label + ">";
     }
     else if(Relation == TkType::Argument && isArgTemplate()){
 
-        res += "argtmpl<" + label + ">[" + std::to_string(tensorOrder) + "]";
+        res += "argtmpl<" + label + ">";
     }
     else if(Relation == TkType::Argument && !isConstant){
 
-        res += label + "[" + std::to_string(tensorOrder) + "]";
+        res += label;
     }
     else if(Relation == TkType::Argument && isConstantTemplate()){
 
-        res += "<CnstTmpl<" + label + ">>[0]";
+        res += "<CnstTmpl<" + label + ">>";
     }
     // Constant node
     else if(Relation == TkType::Argument){
@@ -1935,8 +1935,6 @@ std::string TensorExpression::toString(size_t depth) const{
 
             res += std::string(magic_enum::enum_name(Operator)) + "(" + children.begin()->toString(depth+1) + ")";
         }
-        
-        res += "[" + std::to_string(tensorOrder) + "]";
     }
     // durch Operator verknüpfte Child nodes
     else if(Relation == TkType::Operator && Operator != TensorExpressionOperator::None && children.size() > 1 &&
@@ -1955,32 +1953,32 @@ std::string TensorExpression::toString(size_t depth) const{
         }
         res += depth > 0 ? ")" : " ";
         // res += ")";
-        res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
+        res += depth > 0 ? "" : "";
     }
     // durch Operator verknüpfte Child nodes
     else if(Relation == TkType::Operator && Operator == TensorExpressionOperator::Diff && children.size() == 2){
 
-        res += "diff(" + children[0].toString(depth+1) + " / " + children[1].toString(depth+1) + ")";   
-        res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";     
+        res += "diff(" + children[0].toString(depth+1) + " / " + children[1].toString(depth+1) + ")";        
     }
     else if(isTemplatedNode()){
 
-        res += "<" + label + ">";  
-        res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";     
+        res += "<" + label + ">";     
     }
     else{
 
         res += "Invalid Expr";
     }
 
-    if(depth > 0 && containsDimensions()){
+    // res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
 
-        res += "(";
-        for(const auto& dim : dimensions){
-            res += std::to_string(dim) + ",";
-        }
-        res += ")";
-    }
+    // if(depth > 0 && containsDimensions()){
+
+    //     res += "(";
+    //     for(const auto& dim : dimensions){
+    //         res += std::to_string(dim) + ",";
+    //     }
+    //     res += ")";
+    // }
 
     return res;
 }
