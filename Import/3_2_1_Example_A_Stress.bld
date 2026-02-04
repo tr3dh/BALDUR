@@ -54,7 +54,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 1, 2
+int [orderTSM, dimension] = 2, 2
 
 //
 // setUnwrapOperands(false)
@@ -139,16 +139,26 @@ decl evaluateExample(int orderTSM, int dimension){
     logSeparator()
 
     //
-    void tIDNResult = toIDN(result)
+    setUnwrapOperands(false)
 
+    //
+    void tIDNResult = toIDN(wrap(result))
     slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
     // logSeparator()
 
     // //
-    // slog(tIDNResult)
-    // logSeparator()
+    slog(tIDNResult)
+    logSeparator()
 
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_" + tResultLabel + ".jl")
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_wrapped" + tResultLabel + ".jl")
+
+    //
+    setUnwrapOperands(true)
+
+    //
+    tIDNResult = toIDN(unwrap(result))
+
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_unwrapped" + tResultLabel + ".jl")
 }
 
 //

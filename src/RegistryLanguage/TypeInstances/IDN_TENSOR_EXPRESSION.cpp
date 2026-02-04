@@ -38,9 +38,19 @@ IndexNotatedTensorExpression::IndexNotatedTensorExpression(float valueIn) : valu
 IndexNotatedTensorExpression::IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn)
     : IndexNotatedTensorExpression(labelIn, tensorOrderIn){
 
-    RETURNING_ASSERT(tensorOrder == dimensionsIn.size(), "...",);
+    RETURNING_ASSERT(tensorOrder == dimensionsIn.size(),
+        "Konstruktionsangaben : {" + labelIn + ", " + std::to_string(tensorOrderIn) + ", " + printPlainVector(dimensionsIn) + "} sind Inkonsistent",);
 
     dimensions = dimensionsIn;
+}
+
+//
+IndexNotatedTensorExpression IndexNotatedTensorExpression::asExternalNode(const std::string& label) const{
+
+    auto tmp = IndexNotatedTensorExpression(label, tensorOrder, dimensions);
+    tmp.notatedIndices = notatedIndices;
+
+    return tmp;
 }
 
 bool IndexNotatedTensorExpression::containsDimensions() const {
@@ -338,7 +348,7 @@ void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression&
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -369,7 +379,7 @@ void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression&
     // Dimensionen anpassen
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -399,7 +409,7 @@ void IndexNotatedTensorExpression::subAssign(const IndexNotatedTensorExpression&
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -447,7 +457,7 @@ void IndexNotatedTensorExpression::mulAssign(const IndexNotatedTensorExpression&
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -473,7 +483,7 @@ void IndexNotatedTensorExpression::mulAssign(const IndexNotatedTensorExpression&
     // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -506,7 +516,7 @@ void IndexNotatedTensorExpression::dotProductAssign(const IndexNotatedTensorExpr
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -533,7 +543,7 @@ void IndexNotatedTensorExpression::dotProductAssign(const IndexNotatedTensorExpr
     children.back().replaceIndex(operand1Indices[0], operand0Indices.back());
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -566,7 +576,7 @@ void IndexNotatedTensorExpression::contractingDotProductAssign(const IndexNotate
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -606,7 +616,7 @@ void IndexNotatedTensorExpression::contractingDotProductAssign(const IndexNotate
     }
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -639,7 +649,7 @@ void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorEx
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -665,7 +675,7 @@ void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorEx
     // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -704,7 +714,7 @@ void IndexNotatedTensorExpression::dyadProductAssign(const IndexNotatedTensorExp
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -730,7 +740,7 @@ void IndexNotatedTensorExpression::dyadProductAssign(const IndexNotatedTensorExp
     // Addition >> alle Indices des erster Operanden werden in die zweiten geschrieben
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -763,7 +773,7 @@ void IndexNotatedTensorExpression::mirroringDoubleContractionAssign(const IndexN
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -790,7 +800,7 @@ void IndexNotatedTensorExpression::mirroringDoubleContractionAssign(const IndexN
     children.back().replaceIndices({operand1Indices[0], operand1Indices[1]}, {operand0Indices.back(), operand0Indices[operand0Indices.size() - 2]});
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -823,7 +833,7 @@ void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNo
     if(Relation == TkType::Argument){ fillIndices(); }
 
     //
-    if(Relation != TkType::Operator || Operator != scalarOperation){
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
 
         // mov
         if(this == &other){ copySelf = true; }
@@ -850,7 +860,7 @@ void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNo
     children.back().replaceIndices({operand1Indices[1], operand1Indices[0]}, {operand0Indices.back(), operand0Indices[operand0Indices.size() - 2]});
 
     // unwrap (nur für assoziative Operatoren)
-    if(children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
 
         // sichere Kopie
         std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
@@ -1215,6 +1225,109 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     return res;
 }
 
+int maxExprComplexity = 20;
+int criticalMaxExprComplexity = 40;
+
+std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString() const{
+
+    IndexNotatedTensorExpression copy = *this;
+    return copy.generateTensorSequenceTullioString();
+}
+
+// Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
+// dafür gibts die wrapper funktion
+std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(size_t depth, bool forceSubstitution){
+
+    // Zuordnung : notierter Index <> eingesetzter Wert für notierten Index
+    static int dependencieIdx = -1;
+    static std::string dependencieDecls = "__INVALID__", dependencieAssignment = "__INVALID__";
+    if(depth == 0){ dependencieIdx = 0; dependencieDecls = ""; dependencieAssignment = ""; }
+
+    std::string res = "";
+
+    //
+    if(isConstant){ res += string::strippedString(value); }
+    else if(Relation == TkType::Argument){
+
+        res += getArgLabel(*this) + "[" +
+            fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + "]";
+    }
+    else if(Relation == TkType::Operator){
+
+        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)), "");
+
+        //
+        res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& child){
+            return child.generateTensorSequenceTullioString(depth + 1);
+        }, true, IndexNotationOperatorStrings[Operator]);
+    }
+    else if(Relation == TkType::Container){
+
+        RETURNING_ASSERT(children.size() == 1, "...","");
+
+        switch(Operator){
+
+            // Node Substituieren
+            case IndexNotationOperator::Determinant:
+            case IndexNotationOperator::Inversion:{
+
+                break;
+            }
+            // einfacher printout des inhalts
+            default:{
+
+                res += children.front().generateTensorSequenceJuliaString({}, depth + 1);
+                break;
+            }
+        }
+    }
+
+    
+    if(Relation == TkType::Operator && getNumOfNodes() > criticalMaxExprComplexity){
+
+        for(auto& child : children){
+
+            child.generateTensorSequenceTullioString(depth + 1, true);
+        }
+
+        res = generateTensorSequenceTullioString(depth + 1);
+    }
+
+    if(Relation == TkType::Operator && (getNumOfNodes() > maxExprComplexity || forceSubstitution)){
+
+        // RETURNING_ASSERT(getNumOfNodes() < criticalMaxExprComplexity, "...", "");
+
+        std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
+        int complexity = getNumOfNodes();
+
+        //
+        dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
+
+        //
+        dependencieAssignment += "\tprintln(\"[Evaluating '" + extNodeLabel + \
+                        "', Komplexität " + std::to_string(complexity) + \
+                        fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + \
+                        "\n\t@tullio " + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + " := " + res + "\n\n";
+
+        *this = asExternalNode(extNodeLabel);
+        res = generateTensorSequenceTullioString(depth + 1);
+    }
+
+    //
+    if(depth == 0){
+
+        res = "\tprintln(\"[Ausdruck mit " + std::to_string(dependencieIdx) + " temporären Dependencies substituiert]\")\n\n" + \
+            /* dependencieDecls + "\n" + */ dependencieAssignment + \
+            /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
+            "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + \
+                        fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + \
+            "\n\t@tullio " + asExternalNode("res").generateTensorSequenceTullioString(1) + " := " + res + "\n\n\treturn res";
+    }
+
+    //
+    return res;
+}
+
 //
 std::string IndexNotatedTensorExpression::toJuliaString(const std::string& instanceLabel) const {
 
@@ -1240,9 +1353,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     }
 
     res += "\n";
-    res += "using LinearAlgebra\n";
-    res += usingTullio ? "using Tullio\n" : "";
-    res += "\n";
+    res += "using LinearAlgebra\nusing Tullio\nusing Dates\n\n";
 
     // Helper functions to create precomputed tensors
     res += "function create_zeros(dims::Integer...)\n";
@@ -1345,50 +1456,53 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     res += "\n";
 
-    // Return Wert initialisieren
-    res += "\tres = Base.zeros" + printPlainVector(dimensions) + "\n\n";
+    // // Return Wert initialisieren
+    // res += "\tres = Base.zeros" + printPlainVector(dimensions) + "\n\n";
 
-    //
-    if(!usingTullio){
+    // //
+    // if(!usingTullio){
 
-        //
-        for(const auto& idxs : generateTensorIndexPermutations(dimensions)){
+    //     //
+    //     for(const auto& idxs : generateTensorIndexPermutations(dimensions)){
 
-            //
-            res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
+    //         //
+    //         res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
 
-            // Werte der nach extern weitergereichten Indices : idxs
-            res += generateTensorSequenceJuliaString(idxs);
+    //         // Werte der nach extern weitergereichten Indices : idxs
+    //         res += generateTensorSequenceJuliaString(idxs);
 
-            //
-            res += "\n";
-        }
-    }
-    else{
+    //         //
+    //         res += "\n";
+    //     }
+    // }
+    // else{
 
-        //
-        res += "\t@tullio res[";
+    //     //
+    //     res += "\t@tullio res[";
 
-        res += fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false);
+    //     res += fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false);
 
-        // fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); })
+    //     // fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); })
 
-        res += "] = ";
-        res += generateTensorSequenceJuliaString({});
+    //     res += "] = ";
+    //     res += generateTensorSequenceJuliaString({});
 
-        //
-        res += "\n";
-    }
+    //     //
+    //     res += "\n";
+    // }
 
-    //
-    res += "\n\treturn res\n";
+    // //
+    // res += "\n\treturn res\n";
+
+    res += wrapTensorSequenceTullioString();
+    res += "\n\n";
 
     //
     res += "end\n\n";
 
     if(generatingDebugProgram){
 
-        res += "print(autodiff_" + instanceLabel + "(";
+        res += "start_time = time()\nres = autodiff_" + instanceLabel + "(";
 
         //
         for(auto it = externalNodes.begin(); it != externalNodes.end(); ){
@@ -1412,7 +1526,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
             }
         }
 
-        res +=  "))";
+        res +=  ")\nelapsed = time() - start_time\nprintln(\"Laufzeit: \", elapsed, \" s\")\nprintln(\"Ergebnis: \", res)";
     }
 
     return res;

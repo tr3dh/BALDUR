@@ -241,6 +241,9 @@ struct IndexNotatedTensorExpression{
     IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn);
 
     //
+    IndexNotatedTensorExpression asExternalNode(const std::string& label) const;
+
+    //
     bool containsDimensions() const;
 
     //
@@ -293,6 +296,8 @@ struct IndexNotatedTensorExpression{
     void evaluateIndexDimensions(std::map<int, int>& indexDimensions) const;
 
     std::string generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth = 0) const;
+    std::string wrapTensorSequenceTullioString() const;
+    std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false);
     std::string toJuliaString(const std::string& instanceLabel = "Tmp") const;
 
     std::string toString(size_t depth = 0) const;
