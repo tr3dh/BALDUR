@@ -66,3 +66,27 @@ decl wrpSimplified(tExpr expr){
     wrpSimplify(expr)
     return [<-expr]
 }
+
+decl toWrappedIDN(tExpr ref expr){
+
+    bool tmp = getUnwrapOperands()
+
+    setUnwrapOperands(false)
+    tIdn res = toIDN(wrap(expr))
+
+    setUnwrapOperands(tmp)
+
+    return [<-res]
+}
+
+decl toUnwrappedIDN(tExpr ref expr){
+
+    bool tmp = getUnwrapOperands()
+
+    setUnwrapOperands(true)
+    tIdn res = toIDN(unwrap(expr))
+
+    setUnwrapOperands(tmp)
+
+    return [<-res]
+}

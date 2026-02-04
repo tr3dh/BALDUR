@@ -1225,8 +1225,8 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     return res;
 }
 
-int maxExprComplexity = 20;
-int criticalMaxExprComplexity = 40;
+int maxExprComplexity = 15;
+int criticalMaxExprComplexity = 20;
 
 std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString() const{
 
@@ -1241,7 +1241,14 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     // Zuordnung : notierter Index <> eingesetzter Wert für notierten Index
     static int dependencieIdx = -1;
     static std::string dependencieDecls = "__INVALID__", dependencieAssignment = "__INVALID__";
-    if(depth == 0){ dependencieIdx = 0; dependencieDecls = ""; dependencieAssignment = ""; }
+    static bool terminate = false;
+
+    if(depth == 0){
+
+        dependencieIdx = 0;
+        dependencieDecls = ""; dependencieAssignment = "";
+        terminate = false;
+    }
 
     std::string res = "";
 
@@ -1254,7 +1261,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     }
     else if(Relation == TkType::Operator){
 
-        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)), "");
+        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)) + " " + children.front().toString() + " " + children.back().toString(), "");
 
         //
         res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& child){
@@ -1285,17 +1292,30 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     
     if(Relation == TkType::Operator && getNumOfNodes() > criticalMaxExprComplexity){
 
+        int numOfNodes = getNumOfNodes();
+
         for(auto& child : children){
 
             child.generateTensorSequenceTullioString(depth + 1, true);
+            if(terminate){ return ""; }
+        }
+
+        // Ausdruck konnte trotz Optimierung nicht in benätigts Format gepackt werden
+        // >> unwrapped Ausdruck mit zu langen Operandenketten
+        if(numOfNodes == getNumOfNodes()){
+
+            terminate = true;
+            RETURNING_ASSERT(TRIGGER_ASSERT, "Ausdruck ist für Konvertierung zu breit augestellt, übergebe gepackte Version an jl Skript Generierung","");
         }
 
         res = generateTensorSequenceTullioString(depth + 1);
     }
 
+    if(terminate){ return ""; }
+
     if(Relation == TkType::Operator && (getNumOfNodes() > maxExprComplexity || forceSubstitution)){
 
-        // RETURNING_ASSERT(getNumOfNodes() < criticalMaxExprComplexity, "...", "");
+        RETURNING_ASSERT(getNumOfNodes() <= criticalMaxExprComplexity, "...", "");
 
         std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
         int complexity = getNumOfNodes();
