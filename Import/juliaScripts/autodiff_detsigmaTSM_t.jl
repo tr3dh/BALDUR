@@ -68,7 +68,7 @@ function autodiff_sigmaTSM_t(E0, D)
 	println("[Ausdruck mit 2 temporären Dependencies substituiert]")
 
 	println("[Evaluating 'tmpRes_0', Komplexität 2(0, 0)]")
-	@tullio tmpRes_0[idx1240, idx1243] := (E0[idx1240, idx1241] * D[idx1241, idx1243])
+	@tullio tmpRes_0[idx17867, idx17870] := (E0[idx17867, idx17868] * D[idx17868, idx17870])
 
 	println("[Evaluating 'tmpRes_1', Komplexität 1(0)]")
 	tmpRes_1 = (det(tmpRes_0))

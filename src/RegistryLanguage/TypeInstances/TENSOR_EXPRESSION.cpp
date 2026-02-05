@@ -343,13 +343,13 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
     // Einkommentieren für Tmpl Dependencies
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    if(tmplExpr.tensorOrder == -1 &&
-        ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
-        (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
-        (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
+    // if(tmplExpr.tensorOrder == -1 &&
+    //     ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
+    //     (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
+    //     (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
 
-        return true;
-    }
+    //     return true;
+    // }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -629,32 +629,35 @@ bool TensorExpression::simplifyOnce(){
                 // Einkommentieren für Tmpl Dependencies
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                // disable Assertion Logging
-                DISABLE_ASSERTION_LOGGING();
+                // if(k.containsTemplateDependencie()){
 
-                // Konsistenz Check
-                bool isRepresentationDependencieSafe = true;
-                TensorExpression source = k;
+                //     // disable Assertion Logging
+                //     DISABLE_ASSERTION_LOGGING();
 
-                // for(const auto& [k, v] : subsMap){
+                //     // Konsistenz Check
+                //     bool isRepresentationDependencieSafe = true;
+                //     TensorExpression source = k;
 
-                //     LOG << k.toString() << " <> " << v.toString() << endl;
+                //     // for(const auto& [k, v] : subsMap){
+
+                //     //     LOG << k.toString() << " <> " << v.toString() << endl;
+                //     // }
+
+                //     //
+                //     replaceBySubstitutions(source, subsMap);
+                //     source = source.rebuild();
+
+                //     //
+                //     if(!(*this == source)){
+                //         isRepresentationDependencieSafe = false;
+                //     }
+
+                //     //
+                //     RESET_ASSERTION_LOGGING();
+
+                //     //
+                //     if(!isRepresentationDependencieSafe){ continue; }
                 // }
-
-                //
-                replaceBySubstitutions(source, subsMap);
-                source = source.rebuild();
-
-                //
-                if(!(*this == source)){
-                    isRepresentationDependencieSafe = false;
-                }
-
-                //
-                RESET_ASSERTION_LOGGING();
-
-                //
-                if(!isRepresentationDependencieSafe){ continue; }
 
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1479,30 +1482,35 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     // Einkommentieren für Tmpl Dependencies
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    //
-    if(isInstanceTemplate() && other.isInstanceTemplate()){ // || isTemplatedNode() || other.isTemplatedNode() || isArgTemplate() || other.isTemplate()){
+    // //
+    // bool lhsIsTmplDepn = isTemplateDependencie();
+    // bool rhsIsTmplDepn = other.isTemplateDependencie();
 
-    }
+    // //
+    // if(lhsIsTmplDepn != rhsIsTmplDepn){
 
-    //
-    else if(Operator == TensorExpressionOperator::Zeros && tensorOrder == -1 && other.Relation == TkType::Argument && other.label == "zeros"){
-        return true;
-    }
-    else if(Relation == TkType::Argument && label == "zeros" && other.Operator == TensorExpressionOperator::Zeros && other.tensorOrder == -1){
-        return true;
-    }
-    else if(Operator == TensorExpressionOperator::Ones && tensorOrder == -1 && other.Relation == TkType::Argument && other.label == "ones"){
-        return true;
-    }
-    else if(Relation == TkType::Argument && label == "ones" && other.Operator == TensorExpressionOperator::Ones && other.tensorOrder == -1){
-        return true;
-    }
-    else if(Operator == TensorExpressionOperator::Identity && tensorOrder == -1 && other.Relation == TkType::Argument && other.label == "Identity"){
-        return true;
-    }
-    else if(Relation == TkType::Argument && label == "Identity" && other.Operator == TensorExpressionOperator::Identity && other.tensorOrder == -1){
-        return true;
-    }
+    //     //
+    //     const TensorExpression& tmplDep = lhsIsTmplDepn ? *this : other;
+    //     const TensorExpression& expr = lhsIsTmplDepn ? other : *this;
+
+    //     //
+    //     if(expr.Relation != TkType::Argument || expr.isTemplate()){
+
+    //         return false;
+    //     }
+
+    //     if(tmplDep.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"){
+    //         return true;
+    //     }
+    //     else if(tmplDep.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros"){
+    //         return true;
+    //     }
+    //     else if(tmplDep.Operator == TensorExpressionOperator::Ones && expr.label == "ones"){
+    //         return true;
+    //     }
+
+    //     return false;
+    // }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1680,34 +1688,38 @@ void TensorExpression::diffAssign(const TensorExpression& other){
             // Einkommentieren für Tmpl Dependencies
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            //
-            DISABLE_ASSERTION_LOGGING();
-
             // Konsistenz Check
-            bool isRepresentationDependencieSafe = true;
 
-            TensorExpression sourceA = it->first.first;
-            TensorExpression sourceB = it->first.second;
+            // if(it->first.first.containsTemplateDependencie() || it->first.second.containsDimensions()){
 
-            // for(const auto& [k, v] : subsMap){
+            //     //
+            //     DISABLE_ASSERTION_LOGGING();
 
-            //     LOG << k.toString() << " <> " << v.toString() << endl;
+            //     bool isRepresentationDependencieSafe = true;
+
+            //     TensorExpression sourceA = it->first.first;
+            //     TensorExpression sourceB = it->first.second;
+
+            //     // for(const auto& [k, v] : subsMap){
+
+            //     //     LOG << k.toString() << " <> " << v.toString() << endl;
+            //     // }
+
+            //     //
+            //     replaceBySubstitutions(sourceA, subsMap);
+            //     replaceBySubstitutions(sourceB, subsMap);
+            //     sourceA = sourceA.rebuild();
+            //     sourceB = sourceB.rebuild();
+
+            //     //
+            //     if((!(*this == sourceA)) || !(other == sourceB)){ isRepresentationDependencieSafe = false; }
+
+            //     //
+            //     RESET_ASSERTION_LOGGING();
+
+            //     //
+            //     if(!isRepresentationDependencieSafe){ continue; }
             // }
-
-            //
-            replaceBySubstitutions(sourceA, subsMap);
-            replaceBySubstitutions(sourceB, subsMap);
-            sourceA = sourceA.rebuild();
-            sourceB = sourceB.rebuild();
-
-            //
-            if((!(*this == sourceA)) || !(other == sourceB)){ isRepresentationDependencieSafe = false; }
-
-            //
-            RESET_ASSERTION_LOGGING();
-
-            //
-            if(!isRepresentationDependencieSafe){ continue; }
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1951,7 +1963,9 @@ bool TensorExpression::isTemplateDependencie() const{
         return false;
     }
 
-    if(tensorOrder == -1 && Relation == TkType::Container && (label == "zeros" || label == "ones" || label == "Identity" || label == "eps")){
+    if(tensorOrder == -1 && Relation == TkType::Operator && 
+        (Operator == TensorExpressionOperator::Zeros || Operator == TensorExpressionOperator::Ones ||
+         Operator == TensorExpressionOperator::Identity)){
 
         return true;
     }
