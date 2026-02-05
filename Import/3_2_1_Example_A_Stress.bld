@@ -1,3 +1,6 @@
+// ---------------------------------------------------------------------------
+//                    Example 3.2.1 TSM - Modelling Stress
+// ---------------------------------------------------------------------------
 // Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
 // "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
 // von Hedrik Geisler, 2025
@@ -150,13 +153,13 @@ decl evaluateExample(int orderTSM, int dimension){
     slog("Writing Wrapped IDN to jl File")
 
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_wrapped" + tResultLabel + ".jl")
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_wrapped" + tResultLabel + ".jl")
 
     slog("Writing unwrapped IDN to jl File")
 
     //
     tIDNResult = toUnwrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/autodiff_unwrapped" + tResultLabel + ".jl")
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_unwrapped" + tResultLabel + ".jl")
 
     //
     slog("leaving Function")
