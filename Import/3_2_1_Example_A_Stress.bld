@@ -162,6 +162,12 @@ decl evaluateExample(int orderTSM, int dimension){
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_unwrapped" + tResultLabel + ".jl")
 
     //
+    toIDN(trace(transpose(inverse(E0 . D))) + det(E0))->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_inv" + tResultLabel + ".jl")
+
+    //
+    toIDN(det(E0 . D))->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_det" + tResultLabel + ".jl")
+
+    //
     slog("leaving Function")
 }
 

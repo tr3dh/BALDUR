@@ -297,7 +297,7 @@ struct IndexNotatedTensorExpression{
 
     std::string generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth = 0) const;
     std::string wrapTensorSequenceTullioString() const;
-    std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false);
+    std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false);
     std::string toJuliaString(const std::string& instanceLabel = "Tmp") const;
 
     std::string toString(size_t depth = 0) const;

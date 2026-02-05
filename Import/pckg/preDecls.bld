@@ -157,6 +157,10 @@ decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
 decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
 decl tExprZeros(int order){ return [tExpr("zeros", order)] }
 decl tIdnZeros(int order){ return [tIDN("zeros", order)] }
+decl tExprOnes(int order){ return [tExpr("ones", order)] }
+decl tIdnOnes(int order){ return [tIDN("ones", order)] }
+decl tExprEps(int order){ return [tExpr("eps", order)] }
+decl tIdnEps(int order){ return [tIDN("eps", order)] }
 
 // Templates für beliebig stufige Tensoren
 tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
