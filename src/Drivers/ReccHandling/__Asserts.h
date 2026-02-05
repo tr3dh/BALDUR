@@ -32,10 +32,16 @@
     } 
 
 extern std::string (*g_getErrorContext)();
+extern bool g_suppressAssertionWarnings, g_storedSuppressionFlag;
+
+//
+void DISABLE_ASSERTION_LOGGING();
+void ENABLE_ASSERTION_LOGGING();
+void RESET_ASSERTION_LOGGING();
 
 #define ASSERT(condition, message)\
     do{\
-        if (!(condition)) {\
+        if (!(condition) && !(g_suppressAssertionWarnings)) {\
             std::ostringstream oss;\
             oss << "[" << getTimestamp() << "] Assertion Failed : '" << message << "'\n" << \
             ">> Source : " << __FILE__ << ":" << __LINE__ << " >> " << __FUNCTION__ << "\n";\

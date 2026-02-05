@@ -1,0 +1,21 @@
+//
+tExpr E0 = tExpr("E0", 2)
+tExpr [tmplA, tmplB] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1)
+tExpr epsilon = tExpr("eps",3)
+
+//
+setEqual(tmplA : identity(tmplA), trace(tmplA))
+
+slog(tmplA == E0)
+slog(identity(tmplA) == identity(E0))
+
+
+slog(tmplA : identity(tmplA) == E0 : identity(E0))
+
+slog(simplified(E0 : identity(epsilon)))
+
+setDiffTemplate(tmplA : identity(tmplA), tmplB, epsilon)
+
+slog(diff(E0 : identity(E0), epsilon))
+
+slog("lev fn main")

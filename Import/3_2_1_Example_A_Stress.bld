@@ -168,6 +168,23 @@ decl evaluateExample(int orderTSM, int dimension){
     toIDN(det(E0 . D))->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_det" + tResultLabel + ".jl")
 
     //
+    setEqual(tmplA : identity(tmplA), trace(tmplA))
+
+    //
+    slog(simplified(E0 : identity(tExpr("a", 3))))
+
+    setDiffTemplate(tmplA : identity(tmplA), tmplB, epsilon)
+
+    slog(diff(E0 : identity(tExpr("a", 2)), epsilon))
+
+    //
+    slog(identity(tExpr("a", 3)))
+
+    //
+    slog(identity(tmplA)->isTmplDependencie())
+    slog(identity(tmplA))
+
+    //
     slog("leaving Function")
 }
 

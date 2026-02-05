@@ -168,6 +168,9 @@ struct TensorExpression{
     bool isInstanceTemplate() const;
     bool isArgTemplate() const;
 
+    bool isTemplateDependencie() const;
+    bool containsTemplateDependencie() const;
+
     //
     size_t getNumOfUniqueNodes() const;
     size_t getNumOfNodes() const;
