@@ -33,6 +33,9 @@ class IndexNotatedTensorExpression;
 
 extern std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const IndexNotatedTensorExpression&)> operatorFunctions;
 
+//
+extern bool g_compareTemplateDependencies;
+
 enum class TensorExpressionOperator{
     
     None,

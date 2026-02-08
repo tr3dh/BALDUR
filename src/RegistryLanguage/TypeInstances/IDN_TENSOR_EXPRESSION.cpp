@@ -1350,7 +1350,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
         if(numOfNodes == getNumOfNodes()){
 
             terminate = true;
-            RETURNING_ASSERT(TRIGGER_ASSERT, "Ausdruck ist für Konvertierung zu breit augestellt, übergebe gepackte Version an jl Skript Generierung","");
+            RETURNING_ASSERT(TRIGGER_ASSERT, "Ausdruck ist für Konvertierung zu breit aufgestellt, übergebe gepackte Version an jl Skript Generierung","");
         }
 
         res = generateTensorSequenceTullioString(depth + 1);

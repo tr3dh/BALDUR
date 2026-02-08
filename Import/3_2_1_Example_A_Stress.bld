@@ -150,42 +150,22 @@ decl evaluateExample(int orderTSM, int dimension){
     slog(tIDNResult)
     logSeparator()
 
-    slog("Writing Wrapped IDN to jl File")
+    //
+    slog("Writing Wrapped IDN to jl File ...")
 
+    //
     tIDNResult = toWrappedIDN(result)
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_wrapped" + tResultLabel + ".jl")
 
-    slog("Writing unwrapped IDN to jl File")
+    //
+    slog("Writing unwrapped IDN to jl File ...")
 
     //
     tIDNResult = toUnwrappedIDN(result)
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_unwrapped" + tResultLabel + ".jl")
 
     //
-    toIDN(trace(transpose(inverse(E0 . D))) + det(E0))->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_inv" + tResultLabel + ".jl")
-
-    //
-    toIDN(det(E0 . D))->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_det" + tResultLabel + ".jl")
-
-    //
-    setEqual(tmplA : identity(tmplA), trace(tmplA))
-
-    //
-    slog(simplified(E0 : identity(tExpr("a", 3))))
-
-    setDiffTemplate(tmplA : identity(tmplA), tmplB, epsilon)
-
-    slog(diff(E0 : identity(tExpr("a", 2)), epsilon))
-
-    //
-    slog(identity(tExpr("a", 3)))
-
-    //
-    slog(identity(tmplA)->isTmplDependencie())
-    slog(identity(tmplA))
-
-    //
-    slog("leaving Function")
+    slog("Example evaluated")
 }
 
 //

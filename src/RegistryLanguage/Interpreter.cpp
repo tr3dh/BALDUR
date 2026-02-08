@@ -197,6 +197,9 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     std::string ExecMode = "DEBUG";
     nullScope.constructAndReturnVariable("ExecMode")->constructByObject(new types::STRING(&ExecMode));
 
+    //
+    // nullScope.constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
+
     // Scope befüllen
     nullScope.constructVariable("__ScriptCalledAs__", types::INT::typeIndex);
 

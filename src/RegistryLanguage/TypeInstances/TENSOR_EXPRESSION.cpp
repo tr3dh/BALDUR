@@ -3,6 +3,8 @@
 
 bool unwrapOperands = false;
 
+bool g_compareTemplateDependencies = false;
+
 std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings = {
 
     {TensorExpressionOperator::None, "INV_OPS"},
@@ -343,13 +345,16 @@ bool TensorExpression::assembleSubstitutionMap(const TensorExpression& tmplExpr,
     // Einkommentieren für Tmpl Dependencies
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // if(tmplExpr.tensorOrder == -1 &&
-    //     ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
-    //     (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
-    //     (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
+    if(g_compareTemplateDependencies){
 
-    //     return true;
-    // }
+        if(tmplExpr.tensorOrder == -1 &&
+            ((tmplExpr.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros") ||
+            (tmplExpr.Operator == TensorExpressionOperator::Ones && expr.label == "ones") ||
+            (tmplExpr.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"))){
+
+            return true;
+        }
+    }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -629,35 +634,38 @@ bool TensorExpression::simplifyOnce(){
                 // Einkommentieren für Tmpl Dependencies
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                // if(k.containsTemplateDependencie()){
+                if(g_compareTemplateDependencies){
 
-                //     // disable Assertion Logging
-                //     DISABLE_ASSERTION_LOGGING();
+                    if(k.containsTemplateDependencie()){
 
-                //     // Konsistenz Check
-                //     bool isRepresentationDependencieSafe = true;
-                //     TensorExpression source = k;
+                        // disable Assertion Logging
+                        DISABLE_ASSERTION_LOGGING();
 
-                //     // for(const auto& [k, v] : subsMap){
+                        // Konsistenz Check
+                        bool isRepresentationDependencieSafe = true;
+                        TensorExpression source = k;
 
-                //     //     LOG << k.toString() << " <> " << v.toString() << endl;
-                //     // }
+                        // for(const auto& [k, v] : subsMap){
 
-                //     //
-                //     replaceBySubstitutions(source, subsMap);
-                //     source = source.rebuild();
+                        //     LOG << k.toString() << " <> " << v.toString() << endl;
+                        // }
 
-                //     //
-                //     if(!(*this == source)){
-                //         isRepresentationDependencieSafe = false;
-                //     }
+                        //
+                        replaceBySubstitutions(source, subsMap);
+                        source = source.rebuild();
 
-                //     //
-                //     RESET_ASSERTION_LOGGING();
+                        //
+                        if(!(*this == source)){
+                            isRepresentationDependencieSafe = false;
+                        }
 
-                //     //
-                //     if(!isRepresentationDependencieSafe){ continue; }
-                // }
+                        //
+                        RESET_ASSERTION_LOGGING();
+
+                        //
+                        if(!isRepresentationDependencieSafe){ continue; }
+                    }
+                }
 
                 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1482,35 +1490,38 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     // Einkommentieren für Tmpl Dependencies
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // //
-    // bool lhsIsTmplDepn = isTemplateDependencie();
-    // bool rhsIsTmplDepn = other.isTemplateDependencie();
+    if(g_compareTemplateDependencies){
 
-    // //
-    // if(lhsIsTmplDepn != rhsIsTmplDepn){
+        //
+        bool lhsIsTmplDepn = isTemplateDependencie();
+        bool rhsIsTmplDepn = other.isTemplateDependencie();
 
-    //     //
-    //     const TensorExpression& tmplDep = lhsIsTmplDepn ? *this : other;
-    //     const TensorExpression& expr = lhsIsTmplDepn ? other : *this;
+        //
+        if(lhsIsTmplDepn != rhsIsTmplDepn){
 
-    //     //
-    //     if(expr.Relation != TkType::Argument || expr.isTemplate()){
+            //
+            const TensorExpression& tmplDep = lhsIsTmplDepn ? *this : other;
+            const TensorExpression& expr = lhsIsTmplDepn ? other : *this;
 
-    //         return false;
-    //     }
+            //
+            if(expr.Relation != TkType::Argument || expr.isTemplate()){
 
-    //     if(tmplDep.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"){
-    //         return true;
-    //     }
-    //     else if(tmplDep.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros"){
-    //         return true;
-    //     }
-    //     else if(tmplDep.Operator == TensorExpressionOperator::Ones && expr.label == "ones"){
-    //         return true;
-    //     }
+                return false;
+            }
 
-    //     return false;
-    // }
+            if(tmplDep.Operator == TensorExpressionOperator::Identity && expr.label == "Identity"){
+                return true;
+            }
+            else if(tmplDep.Operator == TensorExpressionOperator::Zeros && expr.label == "zeros"){
+                return true;
+            }
+            else if(tmplDep.Operator == TensorExpressionOperator::Ones && expr.label == "ones"){
+                return true;
+            }
+
+            return false;
+        }
+    }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1688,38 +1699,41 @@ void TensorExpression::diffAssign(const TensorExpression& other){
             // Einkommentieren für Tmpl Dependencies
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            // Konsistenz Check
+            if(g_compareTemplateDependencies){
 
-            // if(it->first.first.containsTemplateDependencie() || it->first.second.containsDimensions()){
+                // Konsistenz Check
 
-            //     //
-            //     DISABLE_ASSERTION_LOGGING();
+                if(it->first.first.containsTemplateDependencie() || it->first.second.containsDimensions()){
 
-            //     bool isRepresentationDependencieSafe = true;
+                    //
+                    DISABLE_ASSERTION_LOGGING();
 
-            //     TensorExpression sourceA = it->first.first;
-            //     TensorExpression sourceB = it->first.second;
+                    bool isRepresentationDependencieSafe = true;
 
-            //     // for(const auto& [k, v] : subsMap){
+                    TensorExpression sourceA = it->first.first;
+                    TensorExpression sourceB = it->first.second;
 
-            //     //     LOG << k.toString() << " <> " << v.toString() << endl;
-            //     // }
+                    // for(const auto& [k, v] : subsMap){
 
-            //     //
-            //     replaceBySubstitutions(sourceA, subsMap);
-            //     replaceBySubstitutions(sourceB, subsMap);
-            //     sourceA = sourceA.rebuild();
-            //     sourceB = sourceB.rebuild();
+                    //     LOG << k.toString() << " <> " << v.toString() << endl;
+                    // }
 
-            //     //
-            //     if((!(*this == sourceA)) || !(other == sourceB)){ isRepresentationDependencieSafe = false; }
+                    //
+                    replaceBySubstitutions(sourceA, subsMap);
+                    replaceBySubstitutions(sourceB, subsMap);
+                    sourceA = sourceA.rebuild();
+                    sourceB = sourceB.rebuild();
 
-            //     //
-            //     RESET_ASSERTION_LOGGING();
+                    //
+                    if((!(*this == sourceA)) || !(other == sourceB)){ isRepresentationDependencieSafe = false; }
 
-            //     //
-            //     if(!isRepresentationDependencieSafe){ continue; }
-            // }
+                    //
+                    RESET_ASSERTION_LOGGING();
+
+                    //
+                    if(!isRepresentationDependencieSafe){ continue; }
+                }
+            }
 
             // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3398,6 +3412,40 @@ namespace types{
 
                 //
                 ret0->getMember() = unwrapOperands;
+        },
+        {BOOL::typeIndex});
+
+        //
+        registerFunction("setCompareTemplateDependencies", {BOOL::typeIndex},
+            [__functionLabel__ = "setCompareTemplateDependencies", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                GET_ARG(BOOL, 0);
+
+                //
+                g_compareTemplateDependencies = arg0->getMember();
+        },
+        {});
+
+        //
+        registerFunction("getCompareTemplateDependencies", {},
+            [__functionLabel__ = "getCompareTemplateDependencies", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                //
+                GET_RETURN(BOOL, 0);
+
+                //
+                ret0->getMember() = g_compareTemplateDependencies;
         },
         {BOOL::typeIndex});
 

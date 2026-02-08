@@ -248,14 +248,22 @@ setEqual(0 + tmplA, tmplA)
 setEqual(tmplA - 0, tmplA)
 setEqual(0 - tmplA, (-1) * tmplA)
 
-// //
-// setEqual(tmplA . inverse(tmplA), identity(tmplA))
-// setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+//
+setEqual(tmplA . inverse(tmplA), identity(tmplA))
+setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+
+// Optionale Template Optionen
 
 // //
+// setCompareTemplateDependencies(true)
+
+// // Dieser Ausdruck erfordert zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
+// // Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
+// // dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
+// // 'setCompareTemplateDependencies(true)'
 // setEqual(tmplA : identity(tmplA), trace(tmplA))
 
-// // Emplace kosten viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
+// // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
 // setEqual(tmplA + tmplA, 2 * tmplA)
 
 //
