@@ -1,8 +1,12 @@
 # Julia Skript
 #
 # unique external nodes :
+# | arg 'deltaEpsilon', order [1], dimensions {3}
 # | arg 'E0', order [2], dimensions {3, 3}
-# | arg 'D', order [2], dimensions {3, 3}
+# | arg 'epsilon', order [1], dimensions {3}
+# | arg 'deltaU', order [1], dimensions {3}
+# | arg 'b', order [1], dimensions {3}
+# | arg 't', order [1], dimensions {3}
 
 using LinearAlgebra
 using Tullio
@@ -60,28 +64,26 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_sigmaTSM_t(E0, D)
+function autodiff_F(deltaEpsilon, E0, epsilon, deltaU, b, t)
 
+	@assert length(deltaEpsilon) == 3
 	@assert size(E0) == (3, 3)
-	@assert size(D) == (3, 3)
+	@assert length(epsilon) == 3
+	@assert length(deltaU) == 3
+	@assert length(b) == 3
+	@assert length(t) == 3
 
-	println("[Ausdruck mit 2 temporären Dependencies substituiert]")
+	println("[Ausdruck mit 0 temporären Dependencies substituiert]")
 
-	println("[Evaluating 'tmpRes_0', Komplexität 2(0, 0)]")
-	@tullio tmpRes_0[idx17867, idx17870] := (E0[idx17867, idx17868] * D[idx17868, idx17870])
-
-	println("[Evaluating 'tmpRes_1', Komplexität 1(0)]")
-	tmpRes_1 = (det(tmpRes_0))
-
-	println("[Evaluating final Result, Komplexität 0()]")
-	@tullio res[] := tmpRes_1[]
+	println("[Evaluating final Result, Komplexität 12(8, 2)]")
+	@tullio res[] := ((((deltaEpsilon[idx19] * E0[idx19, idx21]) * epsilon[idx21]) - (deltaU[idx26] * b[idx26])) - (deltaU[idx30] * t[idx30]))
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3))
+res = autodiff_F(rand(3), rand(3, 3), rand(3), rand(3), rand(3), rand(3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)

@@ -2101,16 +2101,21 @@ std::string TensorExpression::toString(size_t depth) const{
         res += "Invalid Expr";
     }
 
-    // res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
+    // Auskommentieren für Logging ohne Dimensions und Stufen angabe
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // if(depth > 0 && containsDimensions()){
+    res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
 
-    //     res += "(";
-    //     for(const auto& dim : dimensions){
-    //         res += std::to_string(dim) + ",";
-    //     }
-    //     res += ")";
-    // }
+    if(depth > 0 && containsDimensions()){
+
+        res += "(";
+        for(const auto& dim : dimensions){
+            res += std::to_string(dim) + ",";
+        }
+        res += ")";
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     return res;
 }
@@ -3258,6 +3263,28 @@ namespace types{
         },
         {});
 
+        registerFunction("removeEmplacedDiff", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "removeEmplacedDiff", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); 
+                GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+                
+                auto key = std::make_pair(member0, member1);
+                size_t removed = tensorExpressionDiffs.erase(key);
+                
+                RETURNING_ASSERT(removed > 0, "Kein Differential für gegebenes Tensortemplatepaar gefunden : " + member0.toString() + "|" + member1.toString(),);
+        },
+        {});
+
         //
         registerFunction("setEqual", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "setEqual", __numArgs__ = 2](FREG_ARGS){
@@ -3274,6 +3301,26 @@ namespace types{
 
                 RETURNING_ASSERT(tensorExpressionSimplifications.try_emplace(member0, member1).second,
                                  "Simplification für gegebenes Tensorpaar bereits gesetzt",);
+        },
+        {});
+
+        //
+        registerFunction("logPresetDiffs", {},
+            [__functionLabel__ = "logPresetDiffs", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                LOG << "Found " << tensorExpressionDiffs.size() << " registered Diffs :" << endl;
+
+                for(const auto& [k,v] : tensorExpressionDiffs){
+
+                    LOG << "diff[ " << k.first.toString(1) << ", " << k.second.toString(1) << " ] = " << v.toString(1) << endl;
+                }
+
+                LOG << endl;
         },
         {});
 
@@ -3519,6 +3566,7 @@ namespace types{
 
                 // schreiben in returns
                 TensorExpression::rawReplaceBySubstitutions(mb->getMember(), subsMap);
+                mb->getMember() = mb->getMember().rebuild();
         },
         {});
 

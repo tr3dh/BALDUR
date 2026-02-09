@@ -1,8 +1,11 @@
 # Julia Skript
 #
 # unique external nodes :
-# | arg 'E0', order [2], dimensions {3, 3}
-# | arg 'D', order [2], dimensions {3, 3}
+# | arg 'BMat', order [2], dimensions {3, 3}
+# | arg 'sigma', order [1], dimensions {3}
+# | arg 'rho', order [0], dimensions {}
+# | arg 'N', order [2], dimensions {3, 3}
+# | arg 'du2_dt2', order [1], dimensions {3}
 
 using LinearAlgebra
 using Tullio
@@ -60,34 +63,25 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_sigmaTSM_t(E0, D)
+function autodiff_FTSM(BMat, sigma, rho, N, du2_dt2)
 
-	@assert size(E0) == (3, 3)
-	@assert size(D) == (3, 3)
+	@assert size(BMat) == (3, 3)
+	@assert length(sigma) == 3
+	@assert ndims(rho) == 0
+	@assert size(N) == (3, 3)
+	@assert length(du2_dt2) == 3
 
-	println("[Ausdruck mit 4 temporären Dependencies substituiert]")
+	println("[Ausdruck mit 0 temporären Dependencies substituiert]")
 
-	println("[Evaluating 'tmpRes_0', Komplexität 2(0, 0)]")
-	@tullio tmpRes_0[idx17841, idx17844] := (E0[idx17841, idx17842] * D[idx17842, idx17844])
-
-	println("[Evaluating 'tmpRes_1', Komplexität 1(0)]")
-	tmpRes_1 = (inv(tmpRes_0))
-
-	println("[Evaluating 'tmpRes_2', Komplexität 0()]")
-	@tullio tmpRes_2[idx17849, idx17850] := E0[idx17849, idx17850]
-
-	println("[Evaluating 'tmpRes_3', Komplexität 1(0)]")
-	tmpRes_3 = (det(tmpRes_2))
-
-	println("[Evaluating final Result, Komplexität 4(2, 0)]")
-	@tullio res[] := (tmpRes_1[idx17846, idx17846] + tmpRes_3[])
+	println("[Evaluating final Result, Komplexität 9(3, 4)]")
+	@tullio res[idx15] := ((BMat[idx14, idx15] * sigma[idx14]) + ((rho[] * N[idx15, idx21]) * du2_dt2[idx21]))
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3))
+res = autodiff_FTSM(rand(3, 3), rand(3), rand(), rand(3, 3), rand(3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)

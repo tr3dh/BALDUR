@@ -251,6 +251,7 @@ struct IndexNotatedTensorExpression{
 
     //
     bool containsDimensions() const;
+    bool containsIndices() const;
 
     //
     size_t getNumOfNodes() const;

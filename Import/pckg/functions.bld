@@ -49,7 +49,7 @@ decl factorial(int ref member){
 }
 
 //
-decl tExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
+decl vdotsTExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
 
     //
     tExpr res
@@ -62,6 +62,30 @@ decl tExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
 
         // momentane Lösung statt exponential Funktion
         for(int i = 0, i < order, i++){ tmp := x }
+
+        // Hier wird x durch konkreten Wert x0 ersetzt
+        res += wrpSimplified(tmp)
+    }
+
+    wrpSimplify(res)
+
+    return res
+}
+
+//
+decl dotTExprTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
+
+    //
+    tExpr res
+
+    //
+    for(int order = 0, order < seriesOrder + 1, order++){
+        
+        static{ tExpr tmp }
+        tmp = (1.0/factorial(order)) * diff(function, x, order)
+
+        // momentane Lösung statt exponential Funktion
+        for(int i = 0, i < order, i++){ tmp .= x }
 
         // Hier wird x durch konkreten Wert x0 ersetzt
         res += wrpSimplified(tmp)
@@ -123,4 +147,87 @@ decl toUnwrappedIDN(tExpr ref expr){
     setUnwrapOperands(tmp)
 
     return [<-res]
+}
+
+//
+decl requireDiffs(int ref order, tExpr ref expr, tExpr ref dExpr, string ref exprLabel, string ref dExprLabel){
+
+    // taylorReihen enthalten ableitungen 1 bis orderTSM
+    for(int i = 1, i < order + 1, i++){
+
+        static{
+            string [prevTExprLabel, currentTExprLabel] = exprLabel, " "
+            tExpr [prevDiff, currentDiff] = expr, tExpr()
+        }
+
+        // prevDiff muss hier geupdated werden, da gesetzte Ableitungsregel aus dem letzten durchlauf
+        // berücksichtig werden soll
+        currentTExprLabel = "d" + exprLabel + string(i) + "_d" + dExprLabel + string(i)
+        prevDiff, currentDiff = diff(expr, dExpr, i-1), diff(expr, dExpr, i),
+
+        //
+        setDiff(prevDiff->asExternalNode(prevTExprLabel), dExpr, currentDiff->asExternalNode(currentTExprLabel))
+        
+        //
+        prevTExprLabel = currentTExprLabel
+    }
+}
+
+//
+decl removeRequiredDiffs(int ref order, tExpr ref expr, tExpr ref dExpr, string ref exprLabel, string ref dExprLabel){
+
+    // taylorReihen enthalten ableitungen 1 bis orderTSM
+    for(int i = 1, i < order + 1, i++){
+
+        static{
+            string [prevTExprLabel, currentTExprLabel] = exprLabel, " "
+            tExpr [prevDiff, currentDiff] = expr, tExpr()
+        }
+
+        // prevDiff muss hier geupdated werden, da gesetzte Ableitungsregel aus dem letzten durchlauf
+        // berücksichtig werden soll
+        currentTExprLabel = "d" + exprLabel + string(i) + "_d" + dExprLabel + string(i)
+        prevDiff, currentDiff = diff(expr, dExpr, i-1), diff(expr, dExpr, i),
+
+        //
+        removeEmplacedDiff(prevDiff->asExternalNode(prevTExprLabel), dExpr)
+        
+        //
+        prevTExprLabel = currentTExprLabel
+    }
+}
+
+decl __expAssign__(tExpr ref lhs, int ref rhs){
+
+    if(rhs < 1){
+
+        lhs <- zeros(lhs)
+        return {}
+    }
+
+    //
+    tExpr res <+ lhs
+
+    //
+    for(int i = 0, i < rhs - 1, i++){
+
+        res .= lhs
+    }
+
+    lhs <- res
+}
+
+decl exp(tExpr ref x){
+
+    //
+    tExpr res 
+
+    //
+    for(int i = 0, i < orderTSM + 1, i++){
+
+        res += (1.0/factorial(i)) * (x ^ i) 
+    }
+
+    wrpSimplify(res)
+    return res
 }

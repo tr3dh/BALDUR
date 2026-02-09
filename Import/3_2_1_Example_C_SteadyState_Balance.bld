@@ -11,64 +11,103 @@
 // $ ./build/ProcLang_d execute Import/3_2_1_Example_C_SteadyState_Balance.bld
 
 // Includes
-fetch script ["pckg/preDecls"]
+fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.1", "TSM - Modelling Steady State balance of linear momentum"
-
-int orderTSM = 15
-
-//
-// setUnwrapOperands(true)
+int [orderTSM, dimension] = 3, 2
 
 //
-decl evaluateExample(int orderTSM){
+// setUnwrapOperands(false)
+// disableDiffTemplateDefaults()
+
+//
+decl evaluateExample(int orderTSM, int dimension){
 
     //
     tExpr ref result
+    string tResultLabel
+    int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
-    void [E0, Xi] = tExpr("E0", 2), tExpr("Xi", 2)
-    void [ETSM] = E + D
+    tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \
+                                                tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
 
-    tExpr [BMat, NMat] = tExpr("BMat", 2), tExpr("NMat", 2)
-    tExpr DMat = tExpr("DMat", 2)
-    tExpr bstar = tExpr("bstar", 1)
-
-    //
-    setDiffTemplate(DMat, tmplA, zeros(DMat \(x) tmplA))
+    tExpr [sigma, E] = tExpr("sigma", 1, args(nVoigtComps)), tExpr("E", 2, args(nVoigtComps, nVoigtComps))
+    void [E0, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
+    void [bodyForces, tractionForces] = tExpr("b", 1, args(nVoigtComps)), tExpr("t", 1, args(nVoigtComps))
 
     //
-    tExpr F = DMat . sigma - bstar
-    tExpr [uTSM, epsilonTSM] = tExprTaylorSeries(u, Xi, orderTSM), tExprTaylorSeries(epsilon, Xi, orderTSM)
+    requireDiffs(orderTSM, u, Xi, "u", "Xi")
+    requireDiffs(orderTSM, epsilon, Xi, "epsilon", "Xi")
+    requireDiffs(orderTSM, deltaU, Xi, "deltaU", "Xi")
+    requireDiffs(orderTSM, deltaEpsilon, Xi, "deltaEpsilon", "Xi")
 
     //
-    tExpr sigmaTSM = ETSM . (BMat . u)
-    tExpr FTSM = F->getReplaced(sigma, sigmaTSM)
+    tExpr uTSM = vdotsTExprTaylorSeries(u, Xi, orderTSM)
+    tExpr epsilonTSM = vdotsTExprTaylorSeries(epsilon, Xi, orderTSM)
+    tExpr deltaUTSM = vdotsTExprTaylorSeries(deltaU, Xi, orderTSM)
+    tExpr deltaEpsilonTSM = vdotsTExprTaylorSeries(deltaEpsilon, Xi, orderTSM)
+
+    // 
+    tExpr F = (deltaEpsilonTSM . (E0 + Xi) . epsilonTSM) \
+              - (deltaUTSM . bodyForces) \
+              - (deltaUTSM . tractionForces)
+    
+    wrpSimplify(F)
 
     //
-    tExpr [dFdXi, d2Fd2Xi]  = diff(FTSM, Xi), diff(FTSM, Xi, 2)
+    tExpr F_Xieq0 = F
+    F_Xieq0->replace(Xi, zeros(Xi))
+    wrpSimplify(F_Xieq0)
 
     //
-    result << d2Fd2Xi
+    tExpr dFdXi_Xieq0 = diff(F, Xi)
+    dFdXi_Xieq0->replace(Xi, zeros(Xi))
+    wrpSimplify(dFdXi_Xieq0)
 
     //
-    slog("Skript wird fuer TSM", orderTSM, "ter Stufe ausgefuehrt")
+    result << dFdXi_Xieq0
+    tResultLabel = "dFdXi_Xieq0"
+
+    // unter Umständen muss der Ausdruck hier nochmal gewrapped werden damit eine Übereinstimmung mit den gängigen Simplify Templates angewendet werden kann
+    // Diese Vereinfachungen / Vereinfachungstemplates können nicht für eine beliebige anzahl an operanden definiert werden. Deshalb empfiehlt es sich sie nur für konkret zwei
+    // Operanden zu definieren und wenn nötig die Ausdrucksstruktur in diese Form zu bringen
 
     //
-    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes")
-    // logSeparator()
+    wrpSimplify(result)
 
     //
-    // slog(sigmaTSM_t)
-    // logSeparator()
-
-    slog("Ergebnis Indexnotation mit", toIDN(result)->getNumOfNodes(), "Nodes")
+    slog("Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
     logSeparator()
 
     //
-    // slog(toIDN(sigmaTSM_t))
+    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
     // logSeparator()
+
+    //
+    slog(result)
+    logSeparator()
+
+    //
+    void tIDNResult = toIDN(result)
+    slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
+    // logSeparator()
+
+    //
+    slog(tIDNResult)
+    logSeparator()
+
+    // //
+    // slog("Writing Wrapped IDN to jl File ...")
+
+    // //
+    // tIDNResult = toWrappedIDN(result)
+    // tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    //     examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
+
+    //
+    slog("Example evaluated")
 }
 
 //
@@ -78,6 +117,7 @@ decl main(){
 
     // logTypeRegister()
     // logNullRefs()
+    // logFunctionRegister()
     // logDiffTemplates(); logSeparator()
     // logSimplifications(); logSeparator()
 
@@ -87,8 +127,8 @@ decl main(){
     logSeparator()
 
     //
-    evaluateExample(orderTSM)
-    
+    evaluateExample(orderTSM, dimension)
+
     return 0
 }
 

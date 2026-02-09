@@ -58,6 +58,27 @@ bool IndexNotatedTensorExpression::containsDimensions() const {
     return dimensions.size() == tensorOrder;
 }
 
+bool IndexNotatedTensorExpression::containsIndices() const{
+
+    //
+    if(tensorOrder > 0){
+        return true;
+    }
+
+    //
+    else{
+
+        for(const auto& child : children){
+
+            if(child.containsIndices()){
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 size_t IndexNotatedTensorExpression::getNumOfNodes() const{
 
     size_t numOfNodes = children.size();
@@ -1256,12 +1277,19 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     if(isConstant){ res += string::strippedString(value); }
     else if(Relation == TkType::Argument){
 
-        res += getArgLabel(*this) + (useTensorNotation ? "" : ("[" +
-            fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + "]"));
+        if(tensorOrder < 1){
+
+            res += getArgLabel(*this);
+        }
+        else{
+
+            res += getArgLabel(*this) + (useTensorNotation ? "" : ("[" +
+                fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + "]"));
+        }
     }
     else if(Relation == TkType::Operator){
 
-        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)) + " " + children.front().toString() + " " + children.back().toString(), "");
+        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)) + ", Node : " + toString(), "");
 
         //
         res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& child){
@@ -1306,7 +1334,9 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                 // res += "(inv(" + children.front().generateTensorSequenceTullioString(depth + 1, false, true) + ")[" + \
                 //         fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + "])";
 
-                res += "(inv(" + children.front().generateTensorSequenceTullioString(depth + 1, false, true) + "))";
+                bool returnScalar = tensorOrder == 0;
+
+                res += (returnScalar ? "(1/" : "(inv(") + children.front().generateTensorSequenceTullioString(depth + 1, false, true) + (returnScalar ? ")" : "))");
 
                 std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
                 int complexity = getNumOfNodes();
@@ -1368,11 +1398,14 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
         //
         dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
 
+        bool returnScalar = !containsIndices();
+
         //
         dependencieAssignment += "\tprintln(\"[Evaluating '" + extNodeLabel + \
                         "', Komplexität " + std::to_string(complexity) + \
-                        fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + \
-                        "\n\t@tullio " + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + " := " + res + "\n\n";
+                        fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
+
+        dependencieAssignment +=  (returnScalar ? "\n\t" : "\n\t@tullio ") + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + (returnScalar ? " = " : " := ") + res + "\n\n";
 
         *this = asExternalNode(extNodeLabel);
         res = generateTensorSequenceTullioString(depth + 1);
@@ -1381,12 +1414,14 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     //
     if(depth == 0){
 
+        bool returnScalar = !containsIndices();
+
         res = "\tprintln(\"[Ausdruck mit " + std::to_string(dependencieIdx) + " temporären Dependencies substituiert]\")\n\n" + \
             /* dependencieDecls + "\n" + */ dependencieAssignment + \
             /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
             "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + \
                         fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + \
-            "\n\t@tullio " + asExternalNode("res").generateTensorSequenceTullioString(1) + " := " + res + "\n\n\treturn res";
+            (returnScalar ? "\n\t" : "\n\t@tullio ") + asExternalNode("res").generateTensorSequenceTullioString(1) + (returnScalar ? " = " : " := ") + res + "\n\n\treturn res";
     }
 
     //

@@ -95,29 +95,12 @@ decl evaluateExample(int orderTSM, int dimension){
     // void sigmav = E . (epsilon - epsilonv)
 
     // taylorReihen enthalten ableitungen 1 bis orderTSM
-    for(int i = 1, i <= (orderTSM ^ 2) + 1, i++){
-
-        static{
-            string [prevTExprLabel, currentTExprLabel] = "epsilonv", " "
-            tExpr [prevDiff, currentDiff] = epsilonv, tExpr()
-        }
-
-        // prevDiff muss hier geupdated werden, da gesetzte Ableitungsregel aus dem letzten durchlauf
-        // berücksichtig werden soll
-        currentTExprLabel = "depsilonv" + string(i) + "_dD" + string(i)
-        prevDiff, currentDiff = diff(epsilonv, D, i-1), diff(epsilonv, D, i),
-
-        //
-        setDiff(prevDiff->asExternalNode(prevTExprLabel), D, currentDiff->asExternalNode(currentTExprLabel))
-        
-        //
-        prevTExprLabel = currentTExprLabel
-    }
+    requireDiffs(orderTSM ^ 2, epsilonv, D, "epsilonv", "D")
 
     // interne Variable wird über Taylorreihe entwickelt
-    void epsilonv_t = tExprTaylorSeries(epsilonv, D, orderTSM)
+    void epsilonv_t = vdotsTExprTaylorSeries(epsilonv, D, orderTSM)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
-    void sigmaTSM_t = tExprTaylorSeries(sigma_t, D, orderTSM)
+    void sigmaTSM_t = vdotsTExprTaylorSeries(sigma_t, D, orderTSM)
 
     result << sigmaTSM_t
     tResultLabel = "sigmaTSM_t"
@@ -155,14 +138,16 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_wrapped" + tResultLabel + ".jl")
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     //
     slog("Writing unwrapped IDN to jl File ...")
 
     //
     tIDNResult = toUnwrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/autodiff_unwrapped" + tResultLabel + ".jl")
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_autodiff_unwrapped" + tResultLabel + ".jl")
 
     //
     slog("Example evaluated")

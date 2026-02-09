@@ -1,20 +1,20 @@
 // Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
 // "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
 // von Hedrik Geisler, 2025
-// Kapitel : 3.2.1, Example B : TSM - Modelling ReactionForce, S.34 ff
+// Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
+// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_A_ve_evolutionequation.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_A_ve_evolutionequation.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
-// $ ./build/ProcLang_d execute Import/3_2_1_Example_B_ReactionForce.bld
+// $ ./build/ProcLang_d execute Import/3_2_2_Example_A_ve_evolutionequation.bld
 
 // Includes
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
-string [examplePrefix, exampleChapter, exampleTitle] = "B", "3.2.1", "TSM - Modelling ReactionForce"
+string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling of the evolution equation of viscoelasticity"
 int [orderTSM, dimension] = 3, 2
 
 //
@@ -30,25 +30,23 @@ decl evaluateExample(int orderTSM, int dimension){
     int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
-    tExpr Xi = tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
-    tExpr [BMat, NMat] = tExpr("BMat", 2, args(nVoigtComps, nVoigtComps)), tExpr("NMat", 2, args(nVoigtComps, nVoigtComps))
-    tExpr [N] = tExpr("N", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \
+                                                tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
+
+    void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [sigma, E] = tExpr("sigma", 1, args(nVoigtComps)), tExpr("E", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
+    tExpr epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
+    tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
 
     //
-    tExpr [sigma, u] = tExpr("sigma", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps))
+    tExpr epsilonv_dot_t = (inverse(eta) * S) . E . (epsilon - epsilonv)
+    tExpr epsilonv_t = (inverse(eta) * S) . E . exp((inverse(eta) * S) . E) . epsilon 
+    tExpr epsilonv_TSM_t = vdotsTExprTaylorSeries(epsilonv_t, Xi, orderTSM)
 
     //
-    requireDiffs([if(orderTSM < 2){ return 2 }; else{ return orderTSM }], u, t, "u", "t")
-
-    //
-    tExpr F = transpose(BMat) . sigma + (rho * N) . diff(u, t, 2)
-
-    //
-    void du2TSM = vdotsTExprTaylorSeries(diff(u, t, 2), Xi, orderTSM)  
-
-    void FTSM = vdotsTExprTaylorSeries(F, Xi, orderTSM)
-    result << FTSM
-    tResultLabel = "FTSM"
+    result << epsilonv_TSM_t
+    tResultLabel = "epsilonv_TSM_t"
 
     // unter Umständen muss der Ausdruck hier nochmal gewrapped werden damit eine Übereinstimmung mit den gängigen Simplify Templates angewendet werden kann
     // Diese Vereinfachungen / Vereinfachungstemplates können nicht für eine beliebige anzahl an operanden definiert werden. Deshalb empfiehlt es sich sie nur für konkret zwei
