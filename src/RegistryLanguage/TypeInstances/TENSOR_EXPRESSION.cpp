@@ -697,7 +697,8 @@ void TensorExpression::addAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::Addition;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1, "Addition von Tensoren unterschiedlicher Stufe versucht",);
+    RETURNING_ASSERT(tensorOrder == other.tensorOrder || tensorOrder == -1 || other.tensorOrder == -1,
+        "Addition von Tensoren unterschiedlicher Stufe versucht : " + toString(0) + " | " + other.toString(0),);
     
     //
     if(!isValid()){
@@ -1793,7 +1794,7 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         }
     }
     else if(((Relation == TkType::Argument && other.Relation == TkType::Argument) ||
-            (Operator == TensorExpressionOperator::Diff || Operator == TensorExpressionOperator::Multiplication))){
+            (Operator == TensorExpressionOperator::Diff))){ //  || Operator == TensorExpressionOperator::Multiplication
 
         rawDiffAssign(other);
     }
@@ -2104,16 +2105,16 @@ std::string TensorExpression::toString(size_t depth) const{
     // Auskommentieren für Logging ohne Dimensions und Stufen angabe
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
+    // res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
 
-    if(depth > 0 && containsDimensions()){
+    // if(depth > 0 && containsDimensions()){
 
-        res += "(";
-        for(const auto& dim : dimensions){
-            res += std::to_string(dim) + ",";
-        }
-        res += ")";
-    }
+    //     res += "(";
+    //     for(const auto& dim : dimensions){
+    //         res += std::to_string(dim) + ",";
+    //     }
+    //     res += ")";
+    // }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2377,6 +2378,42 @@ namespace types{
                 ret0->getMember() = mb->getMember().asExternalNode(arg0->getMember());
         },
         {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getOrder", {},
+            [__functionLabel__ = "getOrder", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(INT, 0);
+                
+                // schreiben in returns
+                ret0->getMember() = mb->getMember().tensorOrder;
+        },
+        {INT::typeIndex});
+
+        // Konstruktoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getLabel", {},
+            [__functionLabel__ = "getLabel", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(STRING, 0);
+                
+                // schreiben in returns
+                ret0->getMember() = mb->getMember().label;
+        },
+        {STRING::typeIndex});
 
         // Operator Überladung
         registerFunction("__addAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
@@ -3592,6 +3629,7 @@ namespace types{
 
                 // schreiben in returns
                 TensorExpression::rawReplaceBySubstitutions(ret0->getMember(), subsMap);
+                ret0->getMember() = ret0->getMember().rebuild();
         },
         {TENSOR_EXPRESSION::typeIndex});
 

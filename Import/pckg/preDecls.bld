@@ -227,16 +227,8 @@ setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
 setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplate))
 
-//
-setEqual(identity(tmplA) . tmplA, tmplA)
-setEqual(tmplA . identity(tmplA), tmplA)
-
-// // Hier müssen Dependencie templates verwendet werden um die Konsistenz bezüglich den
-// // Tensorstufen zu gewährleisten
-// setEqual(identityInstanceTemplate .. tmplA, trace(tmplA))
-// setEqual(tmplA .. identityInstanceTemplate, trace(tmplA))
-// setEqual(identityInstanceTemplate : tmplA, trace(tmplA))
-// setEqual(tmplA : identityInstanceTemplate, trace(tmplA))
+// Algemeine Vereinfachungen für Identity
+setEqual(identityInstanceTemplate . identityInstanceTemplate, identityInstanceTemplate) 
 
 //
 setEqual(tmplA * 1, tmplA)
@@ -254,14 +246,17 @@ setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
 
 // Optionale Template Optionen
 
-// //
+//
 // setCompareTemplateDependencies(true)
 
 // // Dieser Ausdruck erfordert zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
 // // Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
 // // dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
 // // 'setCompareTemplateDependencies(true)'
-// setEqual(tmplA : identity(tmplA), trace(tmplA))
+setEqual(identity(tmplA) . tmplA, tmplA)                                                                                            // .
+setEqual(tmplA . identity(tmplA), tmplA)
+setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
+setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityInstanceTemplate \(x) identityInstanceTemplate))     // \(x)
 
 // // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
 // setEqual(tmplA + tmplA, 2 * tmplA)
@@ -352,3 +347,4 @@ setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) t
 setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
 setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
 setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
+setDiffTemplate(CnstTmpl, tmplA, zeros(tmplA))

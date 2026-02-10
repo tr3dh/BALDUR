@@ -1255,6 +1255,14 @@ std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString() const
     return copy.generateTensorSequenceTullioString();
 }
 
+// std::string IndexNotatedTensorExpression::wrapTensorSequenceIDNString() const{
+
+// }
+
+// std::string IndexNotatedTensorExpression::generateTensorSequenceIDNString(size_t depth = 0, bool forceSubstitution, bool useTensorNotation){
+
+// }
+
 // Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
 // dafür gibts die wrapper funktion
 std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(size_t depth, bool forceSubstitution, bool useTensorNotation){

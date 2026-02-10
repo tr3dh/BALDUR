@@ -302,7 +302,11 @@ struct IndexNotatedTensorExpression{
 
     void evaluateIndexDimensions(std::map<int, int>& indexDimensions) const;
 
+    // std::string wrapTensorSequenceIDNString() const;
+    // std::string generateTensorSequenceIDNString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false);
+
     std::string generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth = 0) const;
+
     std::string wrapTensorSequenceTullioString() const;
     std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false);
     std::string toJuliaString(const std::string& instanceLabel = "Tmp") const;

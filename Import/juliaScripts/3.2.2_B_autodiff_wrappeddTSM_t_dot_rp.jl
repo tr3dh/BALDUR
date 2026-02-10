@@ -1,11 +1,11 @@
 # Julia Skript
 #
 # unique external nodes :
-# | arg 'BMat', order [2], dimensions {3, 3}
-# | arg 'sigma', order [1], dimensions {3}
-# | arg 'rho', order [0], dimensions {}
-# | arg 'N', order [2], dimensions {3, 3}
-# | arg 'du2_dt2', order [1], dimensions {3}
+# | arg 'd', order [0], dimensions {}
+# | arg 'dd1_dXi1', order [2], dimensions {3, 3}
+# | arg 'Xi', order [2], dimensions {3, 3}
+# | arg 'dd2_dXi2', order [4], dimensions {3, 3, 3, 3}
+# | arg 'dd3_dXi3', order [6], dimensions {3, 3, 3, 3, 3, 3}
 
 using LinearAlgebra
 using Tullio
@@ -63,25 +63,31 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_FTSM(BMat, sigma, rho, N, du2_dt2)
+function autodiff_dTSM_t_dot_rp(d, dd1_dXi1, Xi, dd2_dXi2, dd3_dXi3)
 
-	@assert size(BMat) == (3, 3)
-	@assert length(sigma) == 3
-	@assert ndims(rho) == 0
-	@assert size(N) == (3, 3)
-	@assert length(du2_dt2) == 3
+	@assert ndims(d) == 0
+	@assert size(dd1_dXi1) == (3, 3)
+	@assert size(Xi) == (3, 3)
+	@assert size(dd2_dXi2) == (3, 3, 3, 3)
+	@assert size(dd3_dXi3) == (3, 3, 3, 3, 3, 3)
 
-	println("[Ausdruck mit 0 temporären Dependencies substituiert]")
+	println("[Ausdruck mit 2 temporären Dependencies substituiert]")
 
-	println("[Evaluating final Result, Komplexität 9(3, 4)]")
-	@tullio res[idx15] := ((BMat[idx14, idx15] * sigma[idx14]) + ((rho * N[idx15, idx21]) * du2_dt2[idx21]))
+	println("[Evaluating 'tmpRes_0', Komplexität 12(4, 6)]")
+	@tullio tmpRes_0 := ((d + (dd1_dXi1[idx52, idx53] * Xi[idx52, idx53])) + (((0.5 * dd2_dXi2[idx60, idx61, idx62, idx63]) * Xi[idx62, idx63]) * Xi[idx60, idx61]))
+
+	println("[Evaluating 'tmpRes_1', Komplexität 8(6, 0)]")
+	@tullio tmpRes_1 := ((((0.166667 * dd3_dXi3[idx78, idx79, idx80, idx81, idx82, idx83]) * Xi[idx82, idx83]) * Xi[idx80, idx81]) * Xi[idx78, idx79])
+
+	println("[Evaluating final Result, Komplexität 2(0, 0)]")
+	res = (tmpRes_0 + tmpRes_1)
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_FTSM(rand(3, 3), rand(3), rand(), rand(3, 3), rand(3))
+res = autodiff_dTSM_t_dot_rp(rand(), rand(3, 3), rand(3, 3), rand(3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)
