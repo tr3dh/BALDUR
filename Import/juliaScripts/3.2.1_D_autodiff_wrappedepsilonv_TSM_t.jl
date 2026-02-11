@@ -3,8 +3,10 @@
 # unique external nodes :
 # | arg 'eta', order [0], dimensions {}
 # | arg 'S', order [2], dimensions {3, 3}
-# | arg 'E', order [2], dimensions {3, 3}
+# | arg 'E0', order [2], dimensions {3, 3}
+# | arg 'Xi', order [2], dimensions {3, 3}
 # | arg 'epsilon', order [1], dimensions {3}
+# | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
 
 using LinearAlgebra
 using Tullio
@@ -62,14 +64,16 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_epsilonv_TSM_t(eta, S, E, epsilon)
+function autodiff_epsilonv_TSM_t(eta, S, E0, Xi, epsilon)
 
 	@assert ndims(eta) == 0
 	@assert size(S) == (3, 3)
-	@assert size(E) == (3, 3)
+	@assert size(E0) == (3, 3)
+	@assert size(Xi) == (3, 3)
 	@assert length(epsilon) == 3
+	Identity_ord4_dm3333 = create_Identity(3, 3, 3, 3)
 
-	println("[Ausdruck mit 16 temporären Dependencies substituiert]")
+	println("[Ausdruck mit 15 temporären Dependencies substituiert]")
 
 	println("[Evaluating 'tmpRes_0', Komplexität 0()]")
 	tmpRes_0 = eta
@@ -83,20 +87,20 @@ function autodiff_epsilonv_TSM_t(eta, S, E, epsilon)
 	println("[Evaluating 'tmpRes_3', Komplexität 1(0)]")
 	tmpRes_3 = (1/tmpRes_2)
 
-	println("[Evaluating 'tmpRes_4', Komplexität 0()]")
-	tmpRes_4 = eta
+	println("[Evaluating 'tmpRes_4', Komplexität 16(14, 0)]")
+	@tullio tmpRes_4[idx92] := ((((tmpRes_1 * S[idx92, idx93]) * (E0[idx93, idx99] + Xi[idx93, idx99])) * ((tmpRes_3 * S[idx99, idx107]) * (E0[idx107, idx113] + Xi[idx107, idx113]))) * epsilon[idx113])
 
-	println("[Evaluating 'tmpRes_5', Komplexität 1(0)]")
-	tmpRes_5 = (1/tmpRes_4)
+	println("[Evaluating 'tmpRes_5', Komplexität 0()]")
+	tmpRes_5 = eta
 
-	println("[Evaluating 'tmpRes_6', Komplexität 0()]")
-	tmpRes_6 = eta
+	println("[Evaluating 'tmpRes_6', Komplexität 1(0)]")
+	tmpRes_6 = (1/tmpRes_5)
 
-	println("[Evaluating 'tmpRes_7', Komplexität 1(0)]")
-	tmpRes_7 = (1/tmpRes_6)
+	println("[Evaluating 'tmpRes_7', Komplexität 0()]")
+	tmpRes_7 = eta
 
-	println("[Evaluating 'tmpRes_8', Komplexität 18(4, 12)]")
-	@tullio tmpRes_8[idx65, idx73] := (((tmpRes_3 * S[idx65, idx69]) * E[idx69, idx73]) + (0.5 * (((tmpRes_5 * S[idx65, idx77]) * E[idx77, idx81]) * ((tmpRes_7 * S[idx81, idx85]) * E[idx85, idx73]))))
+	println("[Evaluating 'tmpRes_8', Komplexität 1(0)]")
+	tmpRes_8 = (1/tmpRes_7)
 
 	println("[Evaluating 'tmpRes_9', Komplexität 0()]")
 	tmpRes_9 = eta
@@ -110,24 +114,21 @@ function autodiff_epsilonv_TSM_t(eta, S, E, epsilon)
 	println("[Evaluating 'tmpRes_12', Komplexität 1(0)]")
 	tmpRes_12 = (1/tmpRes_11)
 
-	println("[Evaluating 'tmpRes_13', Komplexität 0()]")
-	tmpRes_13 = eta
+	println("[Evaluating 'tmpRes_13', Komplexität 14(12, 0)]")
+	@tullio tmpRes_13[idx92, idx129, idx130] := ((((tmpRes_6 * S[idx92, idx123]) * Identity_ord4_dm3333[idx123, idx129, idx130, idx131]) * ((tmpRes_8 * S[idx131, idx135]) * (E0[idx135, idx141] + Xi[idx135, idx141]))) * epsilon[idx141])
 
-	println("[Evaluating 'tmpRes_14', Komplexität 1(0)]")
-	tmpRes_14 = (1/tmpRes_13)
+	println("[Evaluating 'tmpRes_14', Komplexität 14(12, 0)]")
+	@tullio tmpRes_14[idx92, idx129, idx130] := ((((tmpRes_10 * S[idx92, idx151]) * (E0[idx151, idx157] + Xi[idx151, idx157])) * ((tmpRes_12 * S[idx157, idx165]) * Identity_ord4_dm3333[idx165, idx129, idx130, idx173])) * epsilon[idx173])
 
-	println("[Evaluating 'tmpRes_15', Komplexität 16(10, 4)]")
-	@tullio tmpRes_15[idx65, idx73] := ((((tmpRes_10 * S[idx65, idx93]) * E[idx93, idx97]) * ((tmpRes_12 * S[idx97, idx101]) * E[idx101, idx105])) * ((tmpRes_14 * S[idx105, idx109]) * E[idx109, idx73]))
-
-	println("[Evaluating final Result, Komplexität 12(10, 0)]")
-	@tullio res[idx60] := ((((tmpRes_1 * S[idx60, idx61]) * E[idx61, idx65]) * (tmpRes_8[idx65, idx73] + (0.166667 * tmpRes_15[idx65, idx73]))) * epsilon[idx73])
+	println("[Evaluating final Result, Komplexität 6(0, 4)]")
+	@tullio res[idx92] := (tmpRes_4[idx92] + ((tmpRes_13[idx92, idx129, idx130] + tmpRes_14[idx92, idx129, idx130]) * Xi[idx129, idx130]))
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_epsilonv_TSM_t(rand(), rand(3, 3), rand(3, 3), rand(3))
+res = autodiff_epsilonv_TSM_t(rand(), rand(3, 3), rand(3, 3), rand(3, 3), rand(3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)

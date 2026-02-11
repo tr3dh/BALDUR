@@ -18,11 +18,16 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "D", "3.2.1", "Modelling of the evolution equation of viscoelasticity with analytical solution"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 1, 2
 
 //
 // setUnwrapOperands(false)
 // disableDiffTemplateDefaults()
+
+decl exp(tExpr ref expr){
+
+    return [<-exp(expr, orderTSM)]
+}
 
 //
 decl evaluateExample(int orderTSM, int dimension){
@@ -37,7 +42,7 @@ decl evaluateExample(int orderTSM, int dimension){
                                                 tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
 
     void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
-    tExpr [sigma, E] = tExpr("sigma", 1, args(nVoigtComps)), tExpr("E", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + Xi)
     tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
     tExpr epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
     tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
@@ -45,6 +50,7 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     tExpr epsilonv_dot_t = (inverse(eta) * S) . E . (epsilon - epsilonv)
     tExpr epsilonv_t = (inverse(eta) * S) . E . exp((inverse(eta) * S) . E) . epsilon 
+
     tExpr epsilonv_TSM_t = vdotsTExprTaylorSeries(epsilonv_t, Xi, orderTSM)
 
     //

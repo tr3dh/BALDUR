@@ -64,7 +64,7 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_epsilonv_TSM_t_dot(depsilonv1_dXi1, depsilonv2_dXi2, Xi, depsilonv3_dXi3, depsilonv4_dXi4)
+function autodiff_epsilonv_TSM_dot_t_dot_Xi(depsilonv1_dXi1, depsilonv2_dXi2, Xi, depsilonv3_dXi3, depsilonv4_dXi4)
 
 	@assert size(depsilonv1_dXi1) == (3, 3, 3)
 	@assert size(depsilonv2_dXi2) == (3, 3, 3, 3, 3)
@@ -95,7 +95,7 @@ function autodiff_epsilonv_TSM_t_dot(depsilonv1_dXi1, depsilonv2_dXi2, Xi, depsi
 end
 
 start_time = time()
-res = autodiff_epsilonv_TSM_t_dot(rand(3, 3, 3), rand(3, 3, 3, 3, 3), rand(3, 3), rand(3, 3, 3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3, 3, 3))
+res = autodiff_epsilonv_TSM_dot_t_dot_Xi(rand(3, 3, 3), rand(3, 3, 3, 3, 3), rand(3, 3), rand(3, 3, 3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3, 3, 3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)
