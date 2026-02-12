@@ -254,13 +254,13 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     for(auto& [idx, scope] : g_staticScopes){ scope.parent = nullptr; }
     // g_staticScopes.clear();
 
-    // nullScope wird geläscht ...
-    // --- ab hier sind alle ptrs auf die nullScope ungültig 
-
     //
     g_getErrorContext = nullptr;
 
     return isolatedObjects;
+
+    // nullScope wird geläscht ...
+    // --- ab hier sind alle ptrs auf die nullScope ungültig 
 }
 
 ProcessingResult executeScript(const std::string& scriptPath, Scope* nullScope, ExecuteScriptAs execAs){

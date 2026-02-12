@@ -57,7 +57,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 2, 2
 
 //
 // setUnwrapOperands(false)
@@ -98,10 +98,11 @@ decl evaluateExample(int orderTSM, int dimension){
     requireDiffs(orderTSM ^ 2, epsilonv, D, "epsilonv", "D")
 
     // interne Variable wird über Taylorreihe entwickelt
-    void epsilonv_t = vdotsTExprTaylorSeries(epsilonv, D, orderTSM)
+    void epsilonv_t = vdotsTExprTaylorSeries(epsilonv, D, 0)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
-    void sigmaTSM_t = vdotsTExprTaylorSeries(sigma_t, D, orderTSM)
+    void sigmaTSM_t = vdotsTExprTaylorSeries(sigma_t, D, 1)
 
+    //
     result << sigmaTSM_t
     tResultLabel = "sigmaTSM_t"
 
@@ -141,16 +142,31 @@ decl evaluateExample(int orderTSM, int dimension){
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
-    //
-    slog("Writing unwrapped IDN to jl File ...")
+    // //
+    // slog("Writing unwrapped IDN to jl File ...")
+
+    // //
+    // tIDNResult = toUnwrappedIDN(result)
+    // tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    //     examplePrefix + "_autodiff_unwrapped" + tResultLabel + ".jl")
 
     //
-    tIDNResult = toUnwrappedIDN(result)
+    result << sigma_t
+    tResultLabel = "sigma_t"
+
+    //
+    tIDNResult = toWrappedIDN(result)
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_autodiff_unwrapped" + tResultLabel + ".jl")
+        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     //
     slog("Example evaluated")
+
+    //
+    logSeparator()
+    slog(sigma_t)
+    logSeparator()
+    slog(sigmaTSM_t)
 }
 
 //

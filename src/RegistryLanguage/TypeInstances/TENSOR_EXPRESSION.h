@@ -135,6 +135,12 @@ struct TensorExpression{
 
     //
     TensorExpression asExternalNode(const std::string& label);
+    bool contains(const TensorExpression& other) const;
+    int countOccurences(const TensorExpression& other) const;
+
+    //
+    bool isWrapped() const;
+    bool isUnWrapped() const;
 
     // Operatoren
     void addAssign(const TensorExpression& other);
@@ -252,7 +258,7 @@ struct IndexNotatedTensorExpression{
     //
     bool containsDimensions() const;
     bool containsIndices() const;
-
+    
     //
     size_t getNumOfNodes() const;
     size_t getNumOfExternalNodes() const;

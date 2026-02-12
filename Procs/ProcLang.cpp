@@ -60,6 +60,8 @@ int main(int argc, char* argv[]){
         for(const auto& [cm, desc] : options){
             LOG << "\t" << cm << "\t\t" << desc << ENDL;
         }
+
+        return 0;
     }
 
     else if(std::string(argv[1]) == "--version"){
@@ -74,6 +76,8 @@ int main(int argc, char* argv[]){
         while (std::getline(file, line)) {
             LOG << line << ENDL;
         }
+
+        return 0;
     }
 
     else if(std::string(argv[1]) == "--license"){
@@ -90,9 +94,51 @@ int main(int argc, char* argv[]){
         while (std::getline(file, line)) {
             LOG << "\t" << line << ENDL;
         }
+
+        return 0;
+    }
+    // else if((argc - 1) % 2 != 0) {
+
+    //     LOG << "!! API wurde ohne valide Argumente angesprochen, invalider Aufruf" << ENDL;
+    //     LOG << "   um mehr zu Erfahren die API mit dem Argument '--help' aufrufen" << ENDL;
+
+    //     return 1;
+    // }
+
+    // //
+    // std::map<std::string, std::string> kwargs;
+
+    // //
+    // for(int kwargIdx = 1; kwargIdx < argc - 1; kwargIdx += 2){
+
+    //     kwargs.try_emplace(argv[kwargIdx], argv[kwargIdx+1]);
+    // }
+
+    // LOG << kwargs << endl;
+
+    if(std::string(argv[1]) == "execute"){
+
+        RETURNING_ASSERT(argc > 2, "bitte Pfad des Modells für die Simulation übergeben", 1);
+
+        std::string path;
+
+        if(argc > 3 && std::string(argv[3]) == "--absolute" || string::startsWith(std::string(argv[2]), "C:")){
+            path = argv[2];
+        }
+        else{
+            path = cwd + "/" + argv[2];
+        }
+
+        RETURNING_ASSERT(fs::exists(path), "Script existiert nicht", 1);
+
+        std::filesystem::current_path(exeDir);
+        // LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
+        // LOG << "Start Unpacking and Simulating " << path << ENDL;
+
+        auto result = executeProgram(path);
     }
 
-    else if(std::string(argv[1]) == "execute"){
+    else if(std::string(argv[1]) == "package"){
 
         RETURNING_ASSERT(argc > 2, "bitte Pfad des Modells für die Simulation übergeben", 1);
 

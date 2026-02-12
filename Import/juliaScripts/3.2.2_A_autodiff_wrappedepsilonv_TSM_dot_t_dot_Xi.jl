@@ -1,12 +1,14 @@
 # Julia Skript
 #
 # unique external nodes :
-# | arg 'depsilonv1_dXi1', order [3], dimensions {3, 3, 3}
-# | arg 'depsilonv2_dXi2', order [5], dimensions {3, 3, 3, 3, 3}
-# | arg 'Xi', order [2], dimensions {3, 3}
+# | arg 'eta', order [0], dimensions {}
+# | arg 'S', order [2], dimensions {3, 3}
+# | arg 'dE01_dXi1', order [4], dimensions {3, 3, 3, 3}
 # | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
-# | arg 'depsilonv3_dXi3', order [7], dimensions {3, 3, 3, 3, 3, 3, 3}
-# | arg 'depsilonv4_dXi4', order [9], dimensions {3, 3, 3, 3, 3, 3, 3, 3, 3}
+# | arg 'epsilon', order [1], dimensions {3}
+# | arg 'epsilonv', order [1], dimensions {3}
+# | arg 'E0', order [2], dimensions {3, 3}
+# | arg 'depsilonv1_dXi1', order [3], dimensions {3, 3, 3}
 
 using LinearAlgebra
 using Tullio
@@ -64,38 +66,46 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_epsilonv_TSM_dot_t_dot_Xi(depsilonv1_dXi1, depsilonv2_dXi2, Xi, depsilonv3_dXi3, depsilonv4_dXi4)
+function autodiff_epsilonv_TSM_dot_t_dot_Xi(eta, S, dE01_dXi1, epsilon, epsilonv, E0, depsilonv1_dXi1)
 
-	@assert size(depsilonv1_dXi1) == (3, 3, 3)
-	@assert size(depsilonv2_dXi2) == (3, 3, 3, 3, 3)
-	@assert size(Xi) == (3, 3)
+	@assert ndims(eta) == 0
+	@assert size(S) == (3, 3)
+	@assert size(dE01_dXi1) == (3, 3, 3, 3)
 	Identity_ord4_dm3333 = create_Identity(3, 3, 3, 3)
-	@assert size(depsilonv3_dXi3) == (3, 3, 3, 3, 3, 3, 3)
-	@assert size(depsilonv4_dXi4) == (3, 3, 3, 3, 3, 3, 3, 3, 3)
+	@assert length(epsilon) == 3
+	@assert length(epsilonv) == 3
+	@assert size(E0) == (3, 3)
+	@assert size(depsilonv1_dXi1) == (3, 3, 3)
 
-	println("[Ausdruck mit 4 temporären Dependencies substituiert]")
+	println("[Ausdruck mit 6 temporären Dependencies substituiert]")
 
-	println("[Evaluating 'tmpRes_0', Komplexität 16(8, 6)]")
-	@tullio tmpRes_0[idx237, idx238, idx239] := (((depsilonv1_dXi1[idx237, idx238, idx239] + (depsilonv2_dXi2[idx237, idx238, idx239, idx233, idx234] * Xi[idx233, idx234])) + (depsilonv1_dXi1[idx237, idx248, idx249] * Identity_ord4_dm3333[idx248, idx249, idx238, idx239])) + (((0.5 * depsilonv3_dXi3[idx237, idx238, idx239, idx264, idx265, idx266, idx267]) * Xi[idx266, idx267]) * Xi[idx264, idx265]))
+	println("[Evaluating 'tmpRes_0', Komplexität 0()]")
+	tmpRes_0 = eta
 
-	println("[Evaluating 'tmpRes_1', Komplexität 16(8, 6)]")
-	@tullio tmpRes_1[idx237, idx238, idx239] := ((tmpRes_0[idx237, idx238, idx239] + (((0.5 * depsilonv2_dXi2[idx237, idx238, idx239, idx284, idx285]) * Identity_ord4_dm3333[idx284, idx285, idx292, idx293]) * Xi[idx292, idx293])) + (((0.5 * depsilonv2_dXi2[idx237, idx304, idx305, idx306, idx307]) * Xi[idx306, idx307]) * Identity_ord4_dm3333[idx304, idx305, idx238, idx239]))
+	println("[Evaluating 'tmpRes_1', Komplexität 1(0)]")
+	tmpRes_1 = (1/tmpRes_0)
 
-	println("[Evaluating 'tmpRes_2', Komplexität 20(10, 8)]")
-	@tullio tmpRes_2[idx237, idx238, idx239] := ((tmpRes_1[idx237, idx238, idx239] + ((((0.166667 * depsilonv4_dXi4[idx237, idx238, idx239, idx332, idx333, idx334, idx335, idx336, idx337]) * Xi[idx336, idx337]) * Xi[idx334, idx335]) * Xi[idx332, idx333])) + ((((0.166667 * depsilonv3_dXi3[idx237, idx238, idx239, idx360, idx361, idx362, idx363]) * Identity_ord4_dm3333[idx362, idx363, idx370, idx371]) * Xi[idx370, idx371]) * Xi[idx360, idx361]))
+	println("[Evaluating 'tmpRes_2', Komplexität 0()]")
+	tmpRes_2 = eta
 
-	println("[Evaluating 'tmpRes_3', Komplexität 20(10, 8)]")
-	@tullio tmpRes_3[idx237, idx238, idx239] := ((tmpRes_2[idx237, idx238, idx239] + ((((0.166667 * depsilonv3_dXi3[idx237, idx238, idx239, idx390, idx391, idx392, idx393]) * Xi[idx392, idx393]) * Identity_ord4_dm3333[idx390, idx391, idx404, idx405]) * Xi[idx404, idx405])) + ((((0.166667 * depsilonv3_dXi3[idx237, idx418, idx419, idx420, idx421, idx422, idx423]) * Xi[idx422, idx423]) * Xi[idx420, idx421]) * Identity_ord4_dm3333[idx418, idx419, idx238, idx239]))
+	println("[Evaluating 'tmpRes_3', Komplexität 1(0)]")
+	tmpRes_3 = (1/tmpRes_2)
 
-	println("[Evaluating final Result, Komplexität 0()]")
-	@tullio res[idx237, idx238, idx239] := tmpRes_3[idx237, idx238, idx239]
+	println("[Evaluating 'tmpRes_4', Komplexität 10(6, 2)]")
+	@tullio tmpRes_4[idx58, idx69, idx70] := (((tmpRes_1 * S[idx58, idx59]) * (dE01_dXi1[idx59, idx69, idx70, idx71] + Identity_ord4_dm3333[idx59, idx69, idx70, idx71])) * (epsilon[idx71] - epsilonv[idx71]))
+
+	println("[Evaluating 'tmpRes_5', Komplexität 12(4, 6)]")
+	@tullio tmpRes_5[idx58, idx69, idx70] := (((tmpRes_3 * S[idx58, idx87]) * E0[idx87, idx91]) * (-1 * (depsilonv1_dXi1[idx91, idx69, idx70] + (depsilonv1_dXi1[idx91, idx103, idx104] * Identity_ord4_dm3333[idx103, idx104, idx69, idx70]))))
+
+	println("[Evaluating final Result, Komplexität 2(0, 0)]")
+	@tullio res[idx58, idx69, idx70] := (tmpRes_4[idx58, idx69, idx70] + tmpRes_5[idx58, idx69, idx70])
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_epsilonv_TSM_dot_t_dot_Xi(rand(3, 3, 3), rand(3, 3, 3, 3, 3), rand(3, 3), rand(3, 3, 3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3, 3, 3))
+res = autodiff_epsilonv_TSM_dot_t_dot_Xi(rand(), rand(3, 3), rand(3, 3, 3, 3), rand(3), rand(3), rand(3, 3), rand(3, 3, 3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)

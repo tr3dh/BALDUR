@@ -10,6 +10,7 @@
 #include "DOUBLE.h"
 #include "STRING.h"
 #include "TENSOR_EXPRESSION.h"
+#include "TENSOR_EXPRESSION_EQUATION.h"
 
 #include "Operations.h"
 

@@ -42,7 +42,7 @@ decl evaluateExample(int orderTSM, int dimension){
                                                 tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
 
     void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
-    tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + D)
+    tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + Xi)
     tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
     tExpr epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
     tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
@@ -62,11 +62,13 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr epsilonv_TSM_t = vdotsTExprTaylorSeries(epsilonv_t, Xi, orderTSM)
 
     //
-
-    //
     tExpr epsilonv_TSM_dot_t <+ epsilonv_t_dot
     epsilonv_TSM_dot_t->replace(epsilonv_t, epsilonv_TSM_t)
-    tExpr epsilonv_TSM_dot_t_dot_Xi = diff(epsilonv_TSM_t, Xi)
+    tExpr epsilonv_TSM_dot_t_dot_Xi = diff(epsilonv_TSM_dot_t, Xi)
+
+    //
+    epsilonv_TSM_dot_t_dot_Xi->replace(Xi, zeros(Xi))
+    wrpSimplify(epsilonv_TSM_dot_t_dot_Xi)
 
     //
     result << epsilonv_TSM_dot_t_dot_Xi

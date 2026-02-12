@@ -521,6 +521,69 @@ std::vector<std::string> TensorExpression::getRawLabels(){
     return res;
 }
 
+bool TensorExpression::contains(const TensorExpression& other) const{
+
+    if(*this == other){ return true; }
+    else{
+
+        for(const auto& child : children){
+
+            if(child.contains(other)){
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+int TensorExpression::countOccurences(const TensorExpression& other) const{
+
+    // Gleichheit entspricht einem Vorkommens
+    // Bei Ungleichheit mit einer externen Node (Argument) kann diese keine Vorkommen enthalten
+    if(*this == other){ return 1; }
+    else if(Relation == TkType::Argument){ return 0; }
+
+    //
+    int occurences = 0;
+
+    //
+    for(const auto& child : children){
+
+        occurences += child.countOccurences(other);
+    }
+
+    return occurences;
+}
+
+//
+bool TensorExpression::isUnWrapped() const{
+
+    //
+    if(children.size() > 2){
+        
+        return true;
+    }
+
+    //
+    for(const auto& child : children){
+
+        if(child.isUnWrapped()){
+
+            return true;
+        }
+    }
+
+    //
+    return false;
+}
+
+//
+bool TensorExpression::isWrapped() const{
+
+    return !isUnWrapped();
+}
+
 //
 TensorExpression TensorExpression::rebuild() const{
 
@@ -2105,16 +2168,16 @@ std::string TensorExpression::toString(size_t depth) const{
     // Auskommentieren für Logging ohne Dimensions und Stufen angabe
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
+    res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
 
-    // if(depth > 0 && containsDimensions()){
+    if(depth > 0 && containsDimensions()){
 
-    //     res += "(";
-    //     for(const auto& dim : dimensions){
-    //         res += std::to_string(dim) + ",";
-    //     }
-    //     res += ")";
-    // }
+        res += "(";
+        for(const auto& dim : dimensions){
+            res += std::to_string(dim) + ",";
+        }
+        res += ")";
+    }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3697,6 +3760,55 @@ namespace types{
                 GET_RETURN(BOOL, 0);
 
                 ret0->getMember() = mb->getMember().isTemplateDependencie();
+        },
+        {BOOL::typeIndex});
+
+        // Operatoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "contains", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "contains", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_ARG(TENSOR_EXPRESSION, 0);
+                GET_RETURN(BOOL, 0);
+
+                ret0->getMember() = mb->getMember().contains(arg0->getMember());
+        },
+        {BOOL::typeIndex});
+
+        // Operatoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "isWrapped", {},
+            [__functionLabel__ = "isWrapped", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(BOOL, 0);
+
+                ret0->getMember() = mb->getMember().isWrapped();
+        },
+        {BOOL::typeIndex});
+
+        // Operatoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "isUnWrapped", {},
+            [__functionLabel__ = "isUnWrapped", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(BOOL, 0);
+
+                ret0->getMember() = mb->getMember().isUnWrapped();
         },
         {BOOL::typeIndex});
 

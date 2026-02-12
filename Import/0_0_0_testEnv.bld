@@ -1,21 +1,32 @@
+// ---------------------------------------------------------------------------
+//                      Example 0.0.1 recursiveDemo
+// ---------------------------------------------------------------------------
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/0_0_0_testEnv.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/0_0_0_testEnv.bld
 //
-tExpr E0 = tExpr("E0", 2)
-tExpr [tmplA, tmplB] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1)
-tExpr epsilon = tExpr("eps",3)
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/ProcLang_d execute Import/0_0_0_testEnv.bld
 
-//
-setEqual(tmplA : identity(tmplA), trace(tmplA))
+// ...
 
-slog(tmplA == E0)
-slog(identity(tmplA) == identity(E0))
+if(calledAs(__MainProc__)){
 
+    //
+    slog("Test Umgebung aufgesetzt")
+    slog("------------------------")
 
-slog(tmplA : identity(tmplA) == E0 : identity(E0))
+    tExpr x = tExpr("x", 2)
+    tExpr y = tExpr ("y", 3)
+    tExpr a = tExpr("a", 2)
 
-slog(simplified(E0 : identity(epsilon)))
+    //
+    void eq = tExprEq(a, inverse(x)) 
+    slog(eq)
+    eq->rearangeFor(x)
+    slog(eq)
 
-setDiffTemplate(tmplA : identity(tmplA), tmplB, epsilon)
-
-slog(diff(E0 : identity(E0), epsilon))
-
-slog("lev fn main")
+    //
+    slog("------------------------")
+    slog("Test Umgebung wird geschlossen ...")
+}

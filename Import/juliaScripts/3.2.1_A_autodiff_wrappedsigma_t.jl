@@ -5,13 +5,6 @@
 # | arg 'D', order [2], dimensions {3, 3}
 # | arg 'epsilon', order [1], dimensions {3}
 # | arg 'epsilonv', order [1], dimensions {3}
-# | arg 'depsilonv1_dD1', order [3], dimensions {3, 3, 3}
-# | arg 'depsilonv2_dD2', order [5], dimensions {3, 3, 3, 3, 3}
-# | arg 'depsilonv3_dD3', order [7], dimensions {3, 3, 3, 3, 3, 3, 3}
-# | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
-# | arg 'depsilonv4_dD4', order [9], dimensions {3, 3, 3, 3, 3, 3, 3, 3, 3}
-# | arg 'depsilonv5_dD5', order [11], dimensions {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
-# | arg 'depsilonv6_dD6', order [13], dimensions {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}
 
 using LinearAlgebra
 using Tullio
@@ -69,26 +62,24 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1, depsilonv2_dD2, depsilonv3_dD3, depsilonv4_dD4, depsilonv5_dD5, depsilonv6_dD6)
+function autodiff_sigma_t(E0, D, epsilon, epsilonv)
 
 	@assert size(E0) == (3, 3)
 	@assert size(D) == (3, 3)
 	@assert length(epsilon) == 3
 	@assert length(epsilonv) == 3
-	@assert size(depsilonv1_dD1) == (3, 3, 3)
-	@assert size(depsilonv2_dD2) == (3, 3, 3, 3, 3)
-	@assert size(depsilonv3_dD3) == (3, 3, 3, 3, 3, 3, 3)
-	Identity_ord4_dm3333 = create_Identity(3, 3, 3, 3)
-	@assert size(depsilonv4_dD4) == (3, 3, 3, 3, 3, 3, 3, 3, 3)
-	@assert size(depsilonv5_dD5) == (3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
-	@assert size(depsilonv6_dD6) == (3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
 
+	println("[Ausdruck mit 0 temporären Dependencies substituiert]")
 
+	println("[Evaluating final Result, Komplexität 6(2, 2)]")
+	@tullio res[idx101] := ((E0[idx101, idx102] + D[idx101, idx102]) * (epsilon[idx102] - epsilonv[idx102]))
+
+	return res
 
 end
 
 start_time = time()
-res = autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3), rand(3), rand(3), rand(3, 3, 3), rand(3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3), rand(3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3))
+res = autodiff_sigma_t(rand(3, 3), rand(3, 3), rand(3), rand(3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)
