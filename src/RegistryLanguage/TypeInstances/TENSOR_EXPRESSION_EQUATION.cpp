@@ -94,10 +94,104 @@ bool TensorExpressionEquation::rearangeOnceFor(const TensorExpression& expr){
                 break;
             }
         }
+
+        return true;
     }
 
     //
+    else if(lhs.children.size() == 2){
 
+        //
+        TensorExpressionOperator Ops = lhs.Operator;
+
+        //
+        bool firstChildContainsExpr = lhs.children[0].contains(expr);
+        bool secondChildContainsExpr = lhs.children[1].contains(expr);
+
+        RETURNING_ASSERT(firstChildContainsExpr != secondChildContainsExpr, "...", false);
+
+        int exprChildIdx = firstChildContainsExpr ? 0 : 1;
+        int notExprChildIdx = exprChildIdx == 0 ? 1 : 0;
+    
+        switch(Ops){
+
+            case(TensorExpressionOperator::Addition):
+            {
+                //
+                rhs.subAssign(lhs.children[notExprChildIdx]);
+                lhs = std::move(lhs.children[exprChildIdx]);
+
+                break;
+            }
+            case(TensorExpressionOperator::Subtraction):
+            {
+                //
+                if(firstChildContainsExpr){
+
+                    // exprChildIdx = 0 | notExprChildIdx = 1 
+                    rhs.addAssign(lhs.children[notExprChildIdx]);
+                    lhs = std::move(lhs.children[exprChildIdx]);
+                }
+                else{
+
+                    //
+                    std::vector<TensorExpression> operands = std::move(lhs.children);
+
+                    // exprChildIdx = 1 | notExprChildIdx = 0 
+                    lhs = TensorExpression(-1);
+                    lhs.mulAssign(operands[exprChildIdx]);
+                    lhs.addAssign(operands[notExprChildIdx]);
+
+                    //
+                    return rearangeOnceFor(expr);
+                }
+
+                break;
+            }
+            case(TensorExpressionOperator::Multiplication):
+            {
+                //
+                bool scalarContainsExpr = lhs.children[exprChildIdx].tensorOrder == 0;
+                RETURNING_ASSERT(!scalarContainsExpr, "...", false);
+
+                TensorExpression tmp = std::move(lhs.children[notExprChildIdx]);
+                tmp.inverseAssign();
+                rhs.mulAssign(tmp);
+
+                lhs = std::move(lhs.children[exprChildIdx]);
+
+                break;
+            }
+            case(TensorExpressionOperator::DotProduct):
+            case(TensorExpressionOperator::MirroringDoubleContraction):
+            case(TensorExpressionOperator::CrossingDoubleContraction):{
+                
+                TensorExpression tmp = std::move(lhs.children[notExprChildIdx]);
+                tmp.inverseAssign();
+                if(secondChildContainsExpr){ tmp.transposeAssign(); } 
+
+                (rhs.*operatorMemberFunctions[lhs.Operator])(tmp);
+                lhs = std::move(lhs.children[exprChildIdx]);
+                
+                break;
+            }
+            default:{
+
+                //
+                RETURNING_ASSERT(TRIGGER_ASSERT, "Node kann nicht eindeutig nach entsprechender Größe umgeformt werden", false);
+
+                //
+                break;
+            }
+        }
+
+        return true;
+    }
+
+    //
+    RETURNING_ASSERT(TRIGGER_ASSERT, "Unverarbeitbares Format erhalten", false);
+
+    //
     return false;
 }
 
@@ -153,6 +247,6 @@ namespace types{
         },
         {});
 
-        return 0;
+        return 1;
     }
 }

@@ -243,6 +243,8 @@ setEqual(0 - tmplA, (-1) * tmplA)
 //
 setEqual(tmplA . inverse(tmplA), identity(tmplA))
 setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+setEqual(inverse(inverse(tmplA)), tmplA)
+setEqual(transpose(transpose(tmplA)), tmplA)
 
 // Optionale Template Optionen
 
