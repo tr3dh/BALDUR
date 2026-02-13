@@ -3,7 +3,6 @@
 # unique external nodes :
 # | arg 'eta', order [0], dimensions {}
 # | arg 'S', order [2], dimensions {3, 3}
-# | arg 'dE01_dXi1', order [4], dimensions {3, 3, 3, 3}
 # | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
 # | arg 'epsilon', order [1], dimensions {3}
 # | arg 'epsilonv', order [1], dimensions {3}
@@ -66,11 +65,10 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_epsilonv_TSM_dot_t_dot_Xi(eta, S, dE01_dXi1, epsilon, epsilonv, E0, depsilonv1_dXi1)
+function autodiff_epsilonv_TSM_dot_t_dot_Xi(eta, S, epsilon, epsilonv, E0, depsilonv1_dXi1)
 
 	@assert ndims(eta) == 0
 	@assert size(S) == (3, 3)
-	@assert size(dE01_dXi1) == (3, 3, 3, 3)
 	Identity_ord4_dm3333 = create_Identity(3, 3, 3, 3)
 	@assert length(epsilon) == 3
 	@assert length(epsilonv) == 3
@@ -91,21 +89,21 @@ function autodiff_epsilonv_TSM_dot_t_dot_Xi(eta, S, dE01_dXi1, epsilon, epsilonv
 	println("[Evaluating 'tmpRes_3', Komplexität 1(0)]")
 	tmpRes_3 = (1/tmpRes_2)
 
-	println("[Evaluating 'tmpRes_4', Komplexität 10(6, 2)]")
-	@tullio tmpRes_4[idx58, idx69, idx70] := (((tmpRes_1 * S[idx58, idx59]) * (dE01_dXi1[idx59, idx69, idx70, idx71] + Identity_ord4_dm3333[idx59, idx69, idx70, idx71])) * (epsilon[idx71] - epsilonv[idx71]))
+	println("[Evaluating 'tmpRes_4', Komplexität 8(4, 2)]")
+	@tullio tmpRes_4[idx46, idx53, idx54] := (((tmpRes_1 * S[idx46, idx47]) * Identity_ord4_dm3333[idx47, idx53, idx54, idx55]) * (epsilon[idx55] - epsilonv[idx55]))
 
 	println("[Evaluating 'tmpRes_5', Komplexität 12(4, 6)]")
-	@tullio tmpRes_5[idx58, idx69, idx70] := (((tmpRes_3 * S[idx58, idx87]) * E0[idx87, idx91]) * (-1 * (depsilonv1_dXi1[idx91, idx69, idx70] + (depsilonv1_dXi1[idx91, idx103, idx104] * Identity_ord4_dm3333[idx103, idx104, idx69, idx70]))))
+	@tullio tmpRes_5[idx46, idx53, idx54] := (((tmpRes_3 * S[idx46, idx63]) * E0[idx63, idx67]) * (-1 * (depsilonv1_dXi1[idx67, idx53, idx54] + (depsilonv1_dXi1[idx67, idx79, idx80] * Identity_ord4_dm3333[idx79, idx80, idx53, idx54]))))
 
 	println("[Evaluating final Result, Komplexität 2(0, 0)]")
-	@tullio res[idx58, idx69, idx70] := (tmpRes_4[idx58, idx69, idx70] + tmpRes_5[idx58, idx69, idx70])
+	@tullio res[idx46, idx53, idx54] := (tmpRes_4[idx46, idx53, idx54] + tmpRes_5[idx46, idx53, idx54])
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_epsilonv_TSM_dot_t_dot_Xi(rand(), rand(3, 3), rand(3, 3, 3, 3), rand(3), rand(3), rand(3, 3), rand(3, 3, 3))
+res = autodiff_epsilonv_TSM_dot_t_dot_Xi(rand(), rand(3, 3), rand(3), rand(3), rand(3, 3), rand(3, 3, 3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)

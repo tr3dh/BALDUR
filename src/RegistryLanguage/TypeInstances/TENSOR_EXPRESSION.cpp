@@ -2168,16 +2168,16 @@ std::string TensorExpression::toString(size_t depth) const{
     // Auskommentieren für Logging ohne Dimensions und Stufen angabe
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
+    // res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
 
-    if(depth > 0 && containsDimensions()){
+    // if(depth > 0 && containsDimensions()){
 
-        res += "(";
-        for(const auto& dim : dimensions){
-            res += std::to_string(dim) + ",";
-        }
-        res += ")";
-    }
+    //     res += "(";
+    //     for(const auto& dim : dimensions){
+    //         res += std::to_string(dim) + ",";
+    //     }
+    //     res += ")";
+    // }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -3,7 +3,7 @@ include("3.2.1_A_autodiff_wrappedsigmaTSM_t.jl")
 
 # Test mit vernünftigen Werten
 E0 = diagm([1.0, 1.0, 1.0])
-D = fill(0.1, 3,3)
+D = fill(0.0, 3,3)
 
 epsilon  = [1, 1, 1]
 epsilonv = fill(0.1, 3)
@@ -22,7 +22,7 @@ println(res1)
 
 res2 = autodiff_sigmaTSM_t(
     E0, D, epsilon, epsilonv,
-    depsilonv1_dD1
+    depsilonv1_dD1, depsilonv2_dD2
 )
 
 println("Ergebnis sigmaTSM_t:")

@@ -100,7 +100,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // interne Variable wird über Taylorreihe entwickelt
     void epsilonv_t = vdotsTExprTaylorSeries(epsilonv, D, 0)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
-    void sigmaTSM_t = vdotsTExprTaylorSeries(sigma_t, D, 1)
+    void sigmaTSM_t = vdotsTExprTaylorSeries(sigma_t, D, 2)
 
     //
     result << sigmaTSM_t

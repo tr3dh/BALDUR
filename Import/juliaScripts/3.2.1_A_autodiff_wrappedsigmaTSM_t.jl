@@ -7,6 +7,7 @@
 # | arg 'epsilonv', order [1], dimensions {3}
 # | arg 'Identity_ord4_dm3333', order [4], dimensions {3, 3, 3, 3}
 # | arg 'depsilonv1_dD1', order [3], dimensions {3, 3, 3}
+# | arg 'depsilonv2_dD2', order [5], dimensions {3, 3, 3, 3, 3}
 
 using LinearAlgebra
 using Tullio
@@ -64,7 +65,7 @@ function create_eps(dims::Integer...)
 end
 
 
-function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1)
+function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1, depsilonv2_dD2)
 
 	@assert size(E0) == (3, 3)
 	@assert size(D) == (3, 3)
@@ -72,24 +73,28 @@ function autodiff_sigmaTSM_t(E0, D, epsilon, epsilonv, depsilonv1_dD1)
 	@assert length(epsilonv) == 3
 	Identity_ord4_dm3333 = create_Identity(3, 3, 3, 3)
 	@assert size(depsilonv1_dD1) == (3, 3, 3)
+	@assert size(depsilonv2_dD2) == (3, 3, 3, 3, 3)
 
-	println("[Ausdruck mit 2 temporären Dependencies substituiert]")
+	println("[Ausdruck mit 3 temporären Dependencies substituiert]")
 
 	println("[Evaluating 'tmpRes_0', Komplexität 6(2, 2)]")
-	@tullio tmpRes_0[idx50] := ((E0[idx50, idx51] + D[idx50, idx51]) * (epsilon[idx51] - epsilonv[idx51]))
+	@tullio tmpRes_0[idx106] := ((E0[idx106, idx107] + D[idx106, idx107]) * (epsilon[idx107] - epsilonv[idx107]))
 
 	println("[Evaluating 'tmpRes_1', Komplexität 14(12, 0)]")
-	@tullio tmpRes_1[idx50] := (((Identity_ord4_dm3333[idx50, idx69, idx70, idx71] * (epsilon[idx71] - epsilonv[idx71])) + ((E0[idx50, idx77] + D[idx50, idx77]) * (-1 * depsilonv1_dD1[idx77, idx69, idx70]))) * D[idx69, idx70])
+	@tullio tmpRes_1[idx106] := (((Identity_ord4_dm3333[idx106, idx125, idx126, idx127] * (epsilon[idx127] - epsilonv[idx127])) + ((E0[idx106, idx133] + D[idx106, idx133]) * (-1 * depsilonv1_dD1[idx133, idx125, idx126]))) * D[idx125, idx126])
 
-	println("[Evaluating final Result, Komplexität 2(0, 0)]")
-	@tullio res[idx50] := (tmpRes_0[idx50] + tmpRes_1[idx50])
+	println("[Evaluating 'tmpRes_2', Komplexität 18(10, 6)]")
+	@tullio tmpRes_2[idx106, idx159, idx160, idx156, idx157] := (((Identity_ord4_dm3333[idx106, idx159, idx160, idx161] * (-1 * depsilonv1_dD1[idx161, idx156, idx157])) + (Identity_ord4_dm3333[idx106, idx159, idx160, idx175] * (-1 * depsilonv1_dD1[idx175, idx156, idx157]))) + ((E0[idx106, idx181] + D[idx106, idx181]) * (-1 * depsilonv2_dD2[idx181, idx159, idx160, idx156, idx157])))
+
+	println("[Evaluating final Result, Komplexität 10(2, 6)]")
+	@tullio res[idx106] := ((tmpRes_0[idx106] + tmpRes_1[idx106]) + (((0.5 * tmpRes_2[idx106, idx159, idx160, idx156, idx157]) * D[idx156, idx157]) * D[idx159, idx160]))
 
 	return res
 
 end
 
 start_time = time()
-res = autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3), rand(3), rand(3), rand(3, 3, 3))
+res = autodiff_sigmaTSM_t(rand(3, 3), rand(3, 3), rand(3), rand(3), rand(3, 3, 3), rand(3, 3, 3, 3, 3))
 elapsed = time() - start_time
 println("Laufzeit: ", elapsed, " s")
 println("Ergebnis: ", res)

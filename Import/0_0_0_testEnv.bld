@@ -21,7 +21,7 @@ if(calledAs(__MainProc__)){
     tExpr a = tExpr("a", 2)
 
     //
-    void eq = tExprEq(y, x . a + y) 
+    void eq = tExprEq(y, x . a + y)
     slog(eq)
     eq->rearangeFor(x)
     slog(eq)
