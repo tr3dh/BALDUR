@@ -17,6 +17,13 @@
 // Inkonsistente Ergebnisse der Indexnotation
 // . Tullio kommt mit den doppelten überschiebungen nicht klar !!
 // . einfach in Addition jeden Operanden als temporäre Dependencie auslagern
+// . nicht über Tullio sonder über TensorOperations.jl ??
+// . evtl ??
+// │  │ ```julia
+// │  │ using TensorOperations, Preferences
+// │  │ set_preferences!(TensorOperations, "precompile_workload" => true; force=true)
+// │  │ ```
+// . oder @tensor opt=true ... (term wie gehabt)
 
 // [FIXME | IMPLEMENTME]
 // Um einheitliche Form zu gewährleisten

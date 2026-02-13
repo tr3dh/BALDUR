@@ -10,7 +10,7 @@
 # | arg 'depsilonv1_dXi1', order [3], dimensions {3, 3, 3}
 
 using LinearAlgebra
-using Tullio
+using TensorOperations
 using Dates
 
 function create_zeros(dims::Integer...)
@@ -90,13 +90,13 @@ function autodiff_epsilonv_TSM_dot_t_dot_Xi(eta, S, epsilon, epsilonv, E0, depsi
 	tmpRes_3 = (1/tmpRes_2)
 
 	println("[Evaluating 'tmpRes_4', Komplexität 8(4, 2)]")
-	@tullio tmpRes_4[idx46, idx53, idx54] := (((tmpRes_1 * S[idx46, idx47]) * Identity_ord4_dm3333[idx47, idx53, idx54, idx55]) * (epsilon[idx55] - epsilonv[idx55]))
+	@tensor tmpRes_4[idx46, idx53, idx54] := (((tmpRes_1 * S[idx46, idx47]) * Identity_ord4_dm3333[idx47, idx53, idx54, idx55]) * (epsilon[idx55] - epsilonv[idx55]))
 
 	println("[Evaluating 'tmpRes_5', Komplexität 12(4, 6)]")
-	@tullio tmpRes_5[idx46, idx53, idx54] := (((tmpRes_3 * S[idx46, idx63]) * E0[idx63, idx67]) * (-1 * (depsilonv1_dXi1[idx67, idx53, idx54] + (depsilonv1_dXi1[idx67, idx79, idx80] * Identity_ord4_dm3333[idx79, idx80, idx53, idx54]))))
+	@tensor tmpRes_5[idx46, idx53, idx54] := (((tmpRes_3 * S[idx46, idx63]) * E0[idx63, idx67]) * (-1 * (depsilonv1_dXi1[idx67, idx53, idx54] + (depsilonv1_dXi1[idx67, idx79, idx80] * Identity_ord4_dm3333[idx79, idx80, idx53, idx54]))))
 
 	println("[Evaluating final Result, Komplexität 2(0, 0)]")
-	@tullio res[idx46, idx53, idx54] := (tmpRes_4[idx46, idx53, idx54] + tmpRes_5[idx46, idx53, idx54])
+	@tensor res[idx46, idx53, idx54] := (tmpRes_4[idx46, idx53, idx54] + tmpRes_5[idx46, idx53, idx54])
 
 	return res
 

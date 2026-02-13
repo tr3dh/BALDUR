@@ -1413,7 +1413,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                         "', Komplexität " + std::to_string(complexity) + \
                         fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
 
-        dependencieAssignment +=  (returnScalar ? "\n\t" : "\n\t@tullio ") + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + (returnScalar ? " = " : " := ") + res + "\n\n";
+        dependencieAssignment +=  (returnScalar ? "\n\t" : "\n\t@tensor ") + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + (returnScalar ? " = " : " := ") + res + "\n\n";
 
         *this = asExternalNode(extNodeLabel);
         res = generateTensorSequenceTullioString(depth + 1);
@@ -1429,7 +1429,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
             "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + \
                         fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + \
-            (returnScalar ? "\n\t" : "\n\t@tullio ") + asExternalNode("res").generateTensorSequenceTullioString(1) + (returnScalar ? " = " : " := ") + res + "\n\n\treturn res";
+            (returnScalar ? "\n\t" : "\n\t@tensor ") + asExternalNode("res").generateTensorSequenceTullioString(1) + (returnScalar ? " = " : " := ") + res + "\n\n\treturn res";
     }
 
     //
@@ -1461,7 +1461,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     }
 
     res += "\n";
-    res += "using LinearAlgebra\nusing Tullio\nusing Dates\n\n";
+    res += "using LinearAlgebra\nusing TensorOperations\nusing Dates\n\n";
 
     // Helper functions to create precomputed tensors
     res += "function create_zeros(dims::Integer...)\n";
@@ -1586,7 +1586,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     // else{
 
     //     //
-    //     res += "\t@tullio res[";
+    //     res += "\t@tensor res[";
 
     //     res += fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false);
 

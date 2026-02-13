@@ -7,7 +7,7 @@
 # | arg 'epsilonv', order [1], dimensions {3}
 
 using LinearAlgebra
-using Tullio
+using TensorOperations
 using Dates
 
 function create_zeros(dims::Integer...)
@@ -72,7 +72,7 @@ function autodiff_sigma_t(E0, D, epsilon, epsilonv)
 	println("[Ausdruck mit 0 temporären Dependencies substituiert]")
 
 	println("[Evaluating final Result, Komplexität 6(2, 2)]")
-	@tullio res[idx223] := ((E0[idx223, idx224] + D[idx223, idx224]) * (epsilon[idx224] - epsilonv[idx224]))
+	@tensor res[idx223] := ((E0[idx223, idx224] + D[idx223, idx224]) * (epsilon[idx224] - epsilonv[idx224]))
 
 	return res
 
