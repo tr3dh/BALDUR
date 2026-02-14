@@ -57,7 +57,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 2, 2
+int [orderTSM, dimension] = 3, 2
 
 //
 // setUnwrapOperands(false)
@@ -98,9 +98,9 @@ decl evaluateExample(int orderTSM, int dimension){
     requireDiffs(orderTSM ^ 2, epsilonv, D, "epsilonv", "D")
 
     // interne Variable wird über Taylorreihe entwickelt
-    void epsilonv_t = vdotsTExprTaylorSeries(epsilonv, D, 0)
+    void epsilonv_t = taylorSeries(epsilonv, D, orderTSM)
     void sigma_t = ETSM . (epsilon - epsilonv_t)
-    void sigmaTSM_t = vdotsTExprTaylorSeries(sigma_t, D, 2)
+    void sigmaTSM_t = taylorSeries(sigma_t, D, orderTSM)
 
     //
     result << sigmaTSM_t
@@ -161,12 +161,6 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     slog("Example evaluated")
-
-    //
-    logSeparator()
-    slog(sigma_t)
-    logSeparator()
-    slog(sigmaTSM_t)
 }
 
 //

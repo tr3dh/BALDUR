@@ -59,7 +59,7 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr d_t_dot = inverse(eta) * exp((-1) * d) * Psi0
     
     //
-    tExpr dTSM_t = vdotsTExprTaylorSeries(d, Xi, orderTSM)
+    tExpr dTSM_t = taylorSeries(d, Xi, orderTSM)
     tExpr dTSM_t_dot = dTSM_t \diff t
 
     //

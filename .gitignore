@@ -34,6 +34,10 @@ temp/
 tmp/
 bin/
 
+#
+Import/juliaScripts/*
+Import/!juliaScripts/.gitignore
+
 # Os Dateien
 .DS_Store
 Thumbs.db

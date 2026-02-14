@@ -13,18 +13,6 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_2_Example_A_ve_evolutionequation.bld
 
-// [FIXME]
-// Inkonsistente Ergebnisse der Indexnotation
-// . Tullio kommt mit den doppelten überschiebungen nicht klar !!
-// . einfach in Addition jeden Operanden als temporäre Dependencie auslagern
-// . nicht über Tullio sonder über TensorOperations.jl ??
-// . evtl ??
-// │  │ ```julia
-// │  │ using TensorOperations, Preferences
-// │  │ set_preferences!(TensorOperations, "precompile_workload" => true; force=true)
-// │  │ ```
-// . oder @tensor opt=true ... (term wie gehabt)
-
 // [FIXME | IMPLEMENTME]
 // Um einheitliche Form zu gewährleisten
 // Taylor reihe die Ableitungen nicht setzt sondern direkt externe nodes der for d ... d ... substituiert / festlegt
@@ -43,7 +31,8 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling of the evolution equation of viscoelasticity"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 2, 2
+tExpr nullRef
 
 //
 // setUnwrapOperands(false)
@@ -60,6 +49,8 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     tExpr ref result
     string tResultLabel
+    tIdn tIDNResult
+
     int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
@@ -78,61 +69,61 @@ decl evaluateExample(int orderTSM, int dimension){
     requireDiffs(orderTSM ^ 2, epsilonv, Xi)
     requireDiffs(orderTSM ^ 2, D, Xi)
 
+    // Evolutionsgleichung der internen Variable
+    tExpr epsilonv_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
+    
+    // Approximation der internen Variable durch Taylorreihe
+    tExpr epsilonv_TSM = taylorSeries(epsilonv, Xi, orderTSM, false)
+
+    // Einsetzen der Approximation der internen Variable in Evolutionsgleichung
+    tExpr epsilonv_dot_TSM <+ epsilonv_dot
+    epsilonv_dot_TSM->replace(epsilonv, epsilonv_TSM)
+
+    // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
+    // Ableitung der Approximation der internen Variable
+    // Dadurch ergibt sich die Gleichung (3.75) [Geisler]
     //
-    tExpr epsilonv_t_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
-    tExpr epsilonv_t = epsilonv
+    // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
+    // 
+    // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
+
+    // Ermitteln der Tangenten
+    for(int order = 0, order < orderTSM + 1, order++){
+
+        static{
+
+            // res container
+            tExpr tangent
+            result << tangent
+
+            //
+            tIdn tIDNResult
+        }
+
+        // Tangente i mal ableiten und Xi mit null substituieren
+        tangent = diff(epsilonv_dot_TSM, Xi, order)
+        tangent->replace(Xi, zeros(Xi))
+
+        // Tangente abschließend simplifizieren
+        wrpSimplify(tangent)
+
+        // Tangente in Julia Skript schreiben
+        tResultLabel = "epsilonv_dot_" + string(order)
+        
+        //
+        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // DREF
+        if(order == orderTSM){ result << nullRef }
+    }
 
     //
-    tExpr epsilonv_TSM_t = vdotsTExprTaylorSeries(epsilonv_t, Xi, orderTSM)
-
-    //
-    tExpr epsilonv_TSM_dot_t <+ epsilonv_t_dot
-    epsilonv_TSM_dot_t->replace(epsilonv_t, epsilonv_TSM_t)
-    tExpr epsilonv_TSM_dot_t_dot_Xi = diff(epsilonv_TSM_dot_t, Xi)
-
-    //
-    epsilonv_TSM_dot_t_dot_Xi->replace(Xi, zeros(Xi))
-    wrpSimplify(epsilonv_TSM_dot_t_dot_Xi)
-
-    //
-    result << epsilonv_TSM_dot_t_dot_Xi
-    tResultLabel = "epsilonv_TSM_dot_t_dot_Xi"
-
-    // unter Umständen muss der Ausdruck hier nochmal gewrapped werden damit eine Übereinstimmung mit den gängigen Simplify Templates angewendet werden kann
-    // Diese Vereinfachungen / Vereinfachungstemplates können nicht für eine beliebige anzahl an operanden definiert werden. Deshalb empfiehlt es sich sie nur für konkret zwei
-    // Operanden zu definieren und wenn nötig die Ausdrucksstruktur in diese Form zu bringen
-
-    //
-    wrpSimplify(result)
-
-    //
-    slog("Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
     logSeparator()
-
-    //
-    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
-    // logSeparator()
-
-    //
-    slog(result)
-    logSeparator()
-
-    //
-    void tIDNResult = toIDN(result)
-    slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
-    // logSeparator()
-
-    //
-    slog(tIDNResult)
-    logSeparator()
-
-    //
-    slog("Writing Wrapped IDN to jl File ...")
-
-    //
-    tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     //
     slog("Example evaluated")

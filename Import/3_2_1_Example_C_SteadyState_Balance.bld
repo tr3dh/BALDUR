@@ -47,10 +47,10 @@ decl evaluateExample(int orderTSM, int dimension){
     requireDiffs(orderTSM, deltaEpsilon, Xi, "deltaEpsilon", "Xi")
 
     //
-    tExpr uTSM = vdotsTExprTaylorSeries(u, Xi, orderTSM)
-    tExpr epsilonTSM = vdotsTExprTaylorSeries(epsilon, Xi, orderTSM)
-    tExpr deltaUTSM = vdotsTExprTaylorSeries(deltaU, Xi, orderTSM)
-    tExpr deltaEpsilonTSM = vdotsTExprTaylorSeries(deltaEpsilon, Xi, orderTSM)
+    tExpr uTSM = taylorSeries(u, Xi, orderTSM)
+    tExpr epsilonTSM = taylorSeries(epsilon, Xi, orderTSM)
+    tExpr deltaUTSM = taylorSeries(deltaU, Xi, orderTSM)
+    tExpr deltaEpsilonTSM = taylorSeries(deltaEpsilon, Xi, orderTSM)
 
     // 
     tExpr F = (deltaEpsilonTSM . (E0 + Xi) . epsilonTSM) \

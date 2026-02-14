@@ -1093,7 +1093,7 @@ std::string getArgLabel(const IndexNotatedTensorExpression& node){
 
 //
 bool usingTullio = false;
-bool generatingDebugProgram = true;
+bool generateDebugCall = true;
 
 std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth) const{
 
@@ -1246,8 +1246,8 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     return res;
 }
 
-int maxExprComplexity = 15;
-int criticalMaxExprComplexity = 20;
+int maxExprComplexity = 25;
+int criticalMaxExprComplexity = 30;
 
 std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString() const{
 
@@ -1413,7 +1413,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                         "', Komplexität " + std::to_string(complexity) + \
                         fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
 
-        dependencieAssignment +=  (returnScalar ? "\n\t" : "\n\t@tensor ") + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + (returnScalar ? " = " : " := ") + res + "\n\n";
+        dependencieAssignment +=  (returnScalar ? "\n\t" : "\n\t@tensor opt=true ") + asExternalNode(extNodeLabel).generateTensorSequenceTullioString(depth + 1) + (returnScalar ? " = " : " := ") + res + "\n\n";
 
         *this = asExternalNode(extNodeLabel);
         res = generateTensorSequenceTullioString(depth + 1);
@@ -1429,7 +1429,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
             "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + \
                         fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + \
-            (returnScalar ? "\n\t" : "\n\t@tensor ") + asExternalNode("res").generateTensorSequenceTullioString(1) + (returnScalar ? " = " : " := ") + res + "\n\n\treturn res";
+            (returnScalar ? "\n\t" : "\n\t@tensor opt=true ") + asExternalNode("res").generateTensorSequenceTullioString(1) + (returnScalar ? " = " : " := ") + res + "\n\n\treturn res";
     }
 
     //
@@ -1586,7 +1586,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     // else{
 
     //     //
-    //     res += "\t@tensor res[";
+    //     res += "\t@tensor opt=true res[";
 
     //     res += fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false);
 
@@ -1608,7 +1608,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     //
     res += "end\n\n";
 
-    if(generatingDebugProgram){
+    if(generateDebugCall){
 
         res += "start_time = time()\nres = autodiff_" + instanceLabel + "(";
 

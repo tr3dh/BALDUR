@@ -51,7 +51,7 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr epsilonv_dot_t = (inverse(eta) * S) . E . (epsilon - epsilonv)
     tExpr epsilonv_t = (inverse(eta) * S) . E . exp((inverse(eta) * S) . E) . epsilon 
 
-    tExpr epsilonv_TSM_t = vdotsTExprTaylorSeries(epsilonv_t, Xi, orderTSM)
+    tExpr epsilonv_TSM_t = taylorSeries(epsilonv_t, Xi, orderTSM)
 
     //
     result << epsilonv_TSM_t

@@ -8,6 +8,24 @@
 //    ╚══════╝   ╚═╝   ╚═════╝     ╚═════╝ ╚══════╝ ╚═════╝╚══════╝╚══════╝
 //                                                                                                                                         
 // ---------------------------------------------------------------------------
+// !! HINWEIS
+// ---------------------------------------------------------------------------
+// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
+// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
+// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
+// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
+// Dokumentation, Einführung oder Anleitung.
+// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
+// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
+// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert
+// denen die Ableitungen und Vereinfachungen in Folge unterliegen
+// Wir übernehmen keine Haftung oder Verantwortung für die Gültigkeit /
+// Richtigkeit der hier implementierten Inhalte und der Sprache / des
+// Backends im Allgemeinen!
+// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten
+// die Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit
+// überprüfen!
+// ---------------------------------------------------------------------------
 // MIT License
 // ---------------------------------------------------------------------------
 // Copyright (c) 2025-2026 Tim Rother, Dr. Hendrik Geisler
@@ -78,34 +96,32 @@
 //   stark abweichenden Evaluierzeiten verursachen
 // . dabei handelt es sich meistens um mit template Instanzen angereicherten Ausdrücke mit makroskopisch sehr ähnlichen
 //   Aufbauten zu vorkommenden Ausdrucksinstanzen 
-// . Diese müssen beim Abgleich mit anderen Instanzen (==, <, ...) häufig erst in eine gewisse rekursions tiefe gelangen
+// . Diese müssen beim Abgleich mit anderen Instanzen (==, <, ...) häufig erst in eine gewisse Rekursionstiefe gelangen,
 //   bis das Template von der Instanz unterschieden werden kann
 // > Beispiel : das Vereinfachungstemplate 'setEqual(tmplA + tmplA, 2 * tmplA)' allein kann die 
-//   Evaluierzeit extrem nachoben drücken. Und je komplexer die Ausdrücke werden, desto extremer wird die Evaluierzeit 
-//   verzögert Das liegt daran dass der Ausdruck 'tmplA + tmplA' grundsäzlich erstmal jede Additionsoperation mit zwei Nodes
+//   Evaluierzeit extrem verzögern. Und je komplexer die Ausdrücke werden, desto extremer wird die Evaluierzeit 
+//   verzögert. Das liegt daran dass der Ausdruck 'tmplA + tmplA' grundsäzlich erstmal jede Additionsoperation mit zwei Nodes
 //   (wrapped Expr) repräsentieren kann. Zum einen wird es deshalb in sehr vielen Fällen tiefergehend abgeglichen.
 //   Zum anderen muss bei jedem tiefergehenden Abgleich, zum Feststellen ob die Repräsentierung
-//   konsistent ist für das template und die sich aus der Kommutativität ergebende Permutation eine Substitutionsmaps
-//   erstellen und diese beim Befüllen auf Konsistenz prüfen. Bei diesen Konsistenzagleich kommt es wieder jeweils zum
+//   konsistent ist, für das template und die sich aus der Kommutativität ergebende Permutation eine Substitutionsmaps
+//   erstellt und diese beim Befüllen auf Konsistenz geprüft werden. Bei diesen Konsistenzagleichen kommt es wieder jeweils zum
 //   Agleich aller childs über mögliche kommutative Permutationen mit dem ersten beliebig komplexen eingelagerten Ausdruck
-//   (erste Child Node der gepackten Addition)
+//   (tmplA, erste Child Node der gepackten Addition)
 // . DiffInstanzen/Difftemplates/Vereinfachungsinstanzen/Vereinfachungstemplates die sehr instanzspezifisch sind,
-//   haben analog dazu kaum eine Auswirkung
-// . Vor Implementierung von vor allem allgemeinen Templates sollte deshalb geprüft werden, wie es sich auf Evaluierzeit
-//   auswirkt und unter Umständen eine spezifischeres gewählt werden
+//   führen analog dazu, zu keiner nennenswerten Verzögerung der Evaluierzeit 
+// . Vor Implementierung von vor allem allgemeinen Templates sollte deshalb geprüft werden, wie das Template sich auf Evaluierzeit
+//   auswirkt und unter Umständen eine spezifischere Formulierung gewählt werden
 // . Zudem empfiehlt sich die Überlegung ob spezifische templates wie Instance, Constant oder Arg templates, die meistens
 //   deutlich weniger Evaluierzeit brauchen nicht genausogut geeignet sind
 // > zb. statt 'setEqual(tmplA + tmplA, 2 * tmplA)' zu nutzen könnte 'setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)' genutzt werden
-//   dieses Template deckt zwar nicht den allgemeinen Fall ab, sorgt aber für keine nennenswerte Steiferung der Evaluierzeit
+//   dieses Template deckt zwar nicht den allgemeinen Fall ab, sorgt aber für keine nennenswerte Steigerung der Evaluierzeit
 //   der meisten moderaten Tensorausdrücke
-// . Wie stark Template- und Instanzvorlagen die Evaluierzeit hängt natürlich auch stark davon ab
-//   wie komplex der abzuleitende / zu vereinfachende Ausdruck und auch davon wie er ausgebaut ist
+// . Wie stark Template- und Instanzvorlagen die Evaluierzeit beeinflussen hängt natürlich auch stark davon ab
+//   wie komplex der abzuleitende / zu vereinfachende Ausdruck ist und wie er ausgebaut ist
 // > Wenn zb viele Dot Produkte mit beteiligten Inversen auftauchen kann 'setEqual(tmplA . inverse(tmplA), identity(tmplA))'
 //   ein bottleneck verursachen
-// . Bei der Formulierung sollte eher darauf geachtet werden den gepackten Fall abzudecken, da die Überführung und Vereinfachung
-//   von Ausdrücken für diese Struktur deutlich einfacher ist als die angabe aller benötigten Templates für den entpackten Fall
-
-// Dieser File dient dem Aufstellen und Übergeben spezifischer Ableitungsregeln
+// . Bei der Formulierung sollte eher darauf geachtet werden, den gepackten Fall abzudecken, da die Überführung und Vereinfachung
+//   von Ausdrücken für diese Struktur deutlich einfacher ist als die Angabe aller benötigten Templates für den entpackten Fall
 
 // Requires / Asserts für uniforms, args, aufruf, etc.
 assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
@@ -138,6 +154,7 @@ double MU_0                = 1.25663706212*10.0^(-6.0)          // magnetische F
 double FINE_STRUCTURE      = 7.2973525693*10.0^(-3.0)           // Feinstrukturkonstante α (dimensionlos)
 double GRAVITY_EARTH       = 9.80665                            // Normale Erdbeschleunigung g [m/s²]
 
+// Printformatierung
 int separatorWidth = 90
 string [space, separatorSequence] = " ", "="
 string separator = separatorWidth * separatorSequence
@@ -145,8 +162,6 @@ string separator = separatorWidth * separatorSequence
 //
 decl logSpace(){ log(space) }
 decl logSeparator(){ log(separator) }
-
-// Funktionen
 
 // Arg handling
 decl sum(args prms){ return [prms->chainByOperator("+=")] }
@@ -227,9 +242,6 @@ setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
 setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplate))
 
-// Algemeine Vereinfachungen für Identity
-setEqual(identityInstanceTemplate . identityInstanceTemplate, identityInstanceTemplate) 
-
 //
 setEqual(tmplA * 1, tmplA)
 setEqual(1 * tmplA, tmplA)
@@ -248,13 +260,13 @@ setEqual(transpose(transpose(tmplA)), tmplA)
 
 // Optionale Template Optionen
 
-//
-// setCompareTemplateDependencies(true)
+// Algemeine Vereinfachungen für Identity
+setEqual(identityInstanceTemplate . identityInstanceTemplate, identityInstanceTemplate)
 
-// // Dieser Ausdruck erfordert zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
-// // Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
-// // dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
-// // 'setCompareTemplateDependencies(true)'
+// Diese Ausdrücke erfordert teilweise zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
+// Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
+// dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
+// 'setCompareTemplateDependencies(true)'
 setEqual(identity(tmplA) . tmplA, tmplA)                                                                                            // .
 setEqual(tmplA . identity(tmplA), tmplA)
 setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
