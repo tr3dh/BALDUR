@@ -1176,6 +1176,15 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                 scope.getVariable("__script__")->clone(tmpScript);
             }
         }
+        else if(node.children.size() == 3 && node.children[0].argument == "fetch" &&
+                node.children[1].argument == "backend"){
+
+            for(auto& child : evaluateExpression(node.children[2], scope, scope, context).evalResults){
+
+                RETURNING_ASSERT(child.getTypeIndex() == types::STRING::typeIndex, "Fetch Syntax erwartet String Inputs", {});
+                fetchBackend(static_cast<types::STRING*>(child.getData())->getMember());
+            }
+        }
         else{
             
             _ERROR << "Invalid Chain Template" << endl;

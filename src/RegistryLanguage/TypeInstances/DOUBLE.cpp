@@ -16,7 +16,7 @@ namespace types{
         return sign * std::exp(std::log(std::abs(value)) / n);
     }
 
-    double DOUBLE::setUpClass(){
+    bool DOUBLE::setUpClass(){
 
         // register in TypeRegister
         if(!init("double", [](){ return new DOUBLE(); })){ return false; }

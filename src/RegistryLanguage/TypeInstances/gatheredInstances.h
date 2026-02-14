@@ -3,6 +3,7 @@
 #include "InstanceIncludes.h"
 
 // Types
+#include "../LanguageRegister/BackendRegister.h"
 #include "VOID.h"
 #include "ARGS.h"
 #include "BOOL.h"
@@ -14,4 +15,5 @@
 
 #include "Operations.h"
 
+bool setUpCore();
 void setUpTypes();

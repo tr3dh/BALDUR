@@ -33,6 +33,9 @@
 // THE SOFTWARE.
 // ---------------------------------------------------------------------------
 
+//
+fetch backend ["core", "tensor"]
+
 decl getNumOfVoigtComponents(int dimension){
 
     double dimensionDb = double(dimension)
@@ -42,9 +45,7 @@ decl getNumOfVoigtComponents(int dimension){
 //
 decl factorial(int ref member){
     
-    if(member <= 1){ 
-        return 1 
-    }
+    if(member <= 1){ return 1 }
     return [member * factorial(member - 1)]
 }
 

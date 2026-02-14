@@ -10,7 +10,7 @@ namespace types{
 
     public:
 
-        static double setUpClass();
+        static bool setUpClass();
 
         DOUBLE() = default;
         DOUBLE(double i) : INativeObject(i){}

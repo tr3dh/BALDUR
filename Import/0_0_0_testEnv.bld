@@ -8,7 +8,9 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/0_0_0_testEnv.bld
 
-// ...
+// Includes
+fetch backend ["tensor"]
+fetch script ["pckg/functions"]
 
 if(calledAs(__MainProc__)){
 
@@ -16,15 +18,7 @@ if(calledAs(__MainProc__)){
     slog("Test Umgebung aufgesetzt")
     slog("------------------------")
 
-    tExpr x = tExpr("x", 2)
-    tExpr y = tExpr ("y", 2)
-    tExpr a = tExpr("a", 2)
-
-    //
-    void eq = tExprEq(y, x . a + y)
-    slog(eq)
-    eq->rearangeFor(x)
-    slog(eq)
+    // ...
 
     //
     slog("------------------------")

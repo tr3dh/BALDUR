@@ -7,6 +7,7 @@
 #include "IdentifyNodeCases.h"
 #include "../TypeInstances/STRUCT.h"
 #include "../Interpreter.h"
+#include "../LanguageRegister/BackendRegister.h"
 
 enum class Context : uint8_t{
 

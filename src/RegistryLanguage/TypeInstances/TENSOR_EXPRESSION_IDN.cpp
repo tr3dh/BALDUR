@@ -386,8 +386,6 @@ void IndexNotatedTensorExpression::addAssign(const IndexNotatedTensorExpression&
     children.emplace_back(copySelf ? children.back() : other);
     if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
 
-    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
-
     //
     const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
     const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
@@ -705,7 +703,9 @@ void IndexNotatedTensorExpression::crossProductAssign(const IndexNotatedTensorEx
     }
 
     //
+    int vectorLen = children.front().dimensions.front();
     IndexNotatedTensorExpression civitaDelta("eps", 3);
+    civitaDelta.dimensions = {vectorLen, vectorLen, vectorLen};
 
     civitaDelta.notatedIndices = {IndexNotatedTensorExpression::NotationIndexCounter++, operand0Indices.back(), operand1Indices.back()};
     children.emplace_back(std::move(civitaDelta));
@@ -1093,7 +1093,7 @@ std::string getArgLabel(const IndexNotatedTensorExpression& node){
 
 //
 bool usingTullio = false;
-bool generateDebugCall = true;
+bool generateDebugCall = false;
 
 std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth) const{
 
@@ -1988,7 +1988,7 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
 
 namespace types{
 
-    int INDEX_NOTATED_TENSOR_EXPRESSION::setUpClass(){
+    bool INDEX_NOTATED_TENSOR_EXPRESSION::setUpClass(){
 
         // register in TypeRegister
         if(!init("tIdn", [](){ return new INDEX_NOTATED_TENSOR_EXPRESSION(); })){ return false; }

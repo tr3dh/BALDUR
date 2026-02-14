@@ -123,6 +123,9 @@
 // . Bei der Formulierung sollte eher darauf geachtet werden, den gepackten Fall abzudecken, da die Überführung und Vereinfachung
 //   von Ausdrücken für diese Struktur deutlich einfacher ist als die Angabe aller benötigten Templates für den entpackten Fall
 
+//
+fetch backend ["core", "tensor"]
+
 // Requires / Asserts für uniforms, args, aufruf, etc.
 assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
 

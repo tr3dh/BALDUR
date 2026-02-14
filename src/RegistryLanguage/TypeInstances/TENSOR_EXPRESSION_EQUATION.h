@@ -25,7 +25,7 @@ namespace types{
 
         public:
 
-            static int setUpClass();
+            static bool setUpClass();
 
             TENSOR_EXPRESSION_EQUATION() = default;
             TENSOR_EXPRESSION_EQUATION(TensorExpressionEquation* Ptr) : INativeObject(Ptr){}

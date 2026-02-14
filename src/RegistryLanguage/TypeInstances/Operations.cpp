@@ -134,7 +134,7 @@ std::map<std::string, std::string> g_ArgChainOperations = {
 };
 
 //
-void emplaceStdOperations(){
+bool emplaceStdOperations(){
 
     registerFunction("__assign__", {IObject::ARBITATRY_TYPE, IObject::ARBITATRY_TYPE},
         [__functionLabel__ = "__assign__", __numArgs__ = 2](FREG_ARGS){
@@ -791,4 +791,6 @@ void emplaceStdOperations(){
             LOG << g_TypeRegister << endl;
     },
     {});
+
+    return true;
 }

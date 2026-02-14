@@ -20,4 +20,4 @@ extern std::map<std::string, std::string> g_TwoArgOperations;
 extern std::map<std::string, std::string> g_ArgChainOperations;
 
 //
-void emplaceStdOperations();
+bool emplaceStdOperations();

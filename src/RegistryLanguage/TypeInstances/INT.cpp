@@ -18,7 +18,7 @@ constexpr void intPow(int& base, int exp) {
 
 namespace types{
 
-    int INT::setUpClass(){
+    bool INT::setUpClass(){
 
         // register in TypeRegister
         if(!init("int", [](){ return new INT(); })){ return false; }

@@ -2210,7 +2210,7 @@ namespace types{
         LOG << member->toString();
     }
 
-    int TENSOR_EXPRESSION::setUpClass(){
+    bool TENSOR_EXPRESSION::setUpClass(){
 
         // register in TypeRegister
         if(!init("tExpr", [](){ return new TENSOR_EXPRESSION(); })){ return false; }

@@ -9,7 +9,7 @@ namespace types{
 
     public:
 
-        static int setUpClass();
+        static bool setUpClass();
 
         INT() = default;
         INT(int i) : INativeObject(i){}

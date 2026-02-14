@@ -203,7 +203,7 @@ namespace types{
         LOG << *member;
     }
 
-    int TENSOR_EXPRESSION_EQUATION::setUpClass(){
+    bool TENSOR_EXPRESSION_EQUATION::setUpClass(){
 
         // register in TypeRegister
         if(!init("tExprEq", [](){ return new TENSOR_EXPRESSION_EQUATION(); })){ return false; }
@@ -247,6 +247,6 @@ namespace types{
         },
         {});
 
-        return 1;
+        return true;
     }
 }

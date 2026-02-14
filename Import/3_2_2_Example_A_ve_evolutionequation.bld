@@ -13,19 +13,6 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_2_Example_A_ve_evolutionequation.bld
 
-// [FIXME | IMPLEMENTME]
-// Um einheitliche Form zu gewährleisten
-// Taylor reihe die Ableitungen nicht setzt sondern direkt externe nodes der for d ... d ... substituiert / festlegt
-// >> ableitungen on depsilonvidXii werden null
-
-// [IMPLEMENTME]
-// Um Tangenten zu isolieren
-// Form (3.75) TaylorReihe der Ableitung der erweiterten/approximierten inneren Variablen (mit Tangenten) = ...
-// > (3.75) Xi zu null setzen und es kommt die Tangente epsilon_dot_v_(0) raus
-// > (3.75) nach Xi ableiten und Xi zu null setzen und es kommt die Tangente epsilon_dot_v_(1) raus
-// > ...
-// > (3.75) i-mal nach Xi ableiten und Xi zu null setzen und es kommt die Tangente epsilon_dot_v_(i) raus
-
 // Includes
 fetch script ["pckg/preDecls", "pckg/functions"]
 
@@ -95,9 +82,6 @@ decl evaluateExample(int orderTSM, int dimension){
             // res container
             tExpr tangent
             result << tangent
-
-            //
-            tIdn tIDNResult
         }
 
         // Tangente i mal ableiten und Xi mit null substituieren

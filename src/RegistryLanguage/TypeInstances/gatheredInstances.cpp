@@ -1,18 +1,51 @@
 #include "gatheredInstances.h"
 
+//
+bool setUpCore(){
+
+    fetchBackend("void");
+    fetchBackend("args");
+    fetchBackend("bool");
+    fetchBackend("int");
+    fetchBackend("double");
+    fetchBackend("string");
+
+    fetchBackend("argOps");
+    fetchBackend("stdOps");
+
+    return true;
+}
+
+//
+bool setupTensorBackend(){
+
+    fetchBackend("tensorExpr");
+    fetchBackend("tensorIdn");
+    fetchBackend("tensorEq");
+
+    return true;
+}
+
 void setUpTypes(){
 
-    ASSERT(types::VOID::setUpClass(), "Type VOID konnte nicht aufgesetzt werden");
-    ASSERT(types::ARGS::setUpClass(), "Type ARGS konnte nicht aufgesetzt werden");
-    ASSERT(types::BOOL::setUpClass(), "Type BOOL konnte nicht aufgesetzt werden");
-    ASSERT(types::INT::setUpClass(), "Type INT konnte nicht aufgesetzt werden");
-    ASSERT(types::DOUBLE::setUpClass(), "Type DOUBLE konnte nicht aufgesetzt werden");
-    ASSERT(types::STRING::setUpClass(), "Type STRING konnte nicht aufgesetzt werden");
-    ASSERT(types::TENSOR_EXPRESSION::setUpClass(), "Type TENSOR_EXPRESSION konnte nicht aufgesetzt werden");
-    ASSERT(types::INDEX_NOTATED_TENSOR_EXPRESSION::setUpClass(), "Type INDEX_NOTATED_TENSOR_EXPRESSION konnte nicht aufgesetzt werden");
-    ASSERT(types::TENSOR_EXPRESSION_EQUATION::setUpClass(), "Type TENSOR_EXPRESSION_EQUATION konnte nicht aufgesetzt werden");
+    RETURNING_ASSERT(setUpBackendRegister(), "Backendregister konnte nicht aufgesetzt werden",);
 
-    ASSERT(types::ARGS::emplaceOperations(), "Operationen für ARGS Type konnten nicht implementiert werden");
-   
-    emplaceStdOperations();
+    emplaceBackend("void", &types::VOID::setUpClass);
+    emplaceBackend("args", &types::ARGS::setUpClass);
+    emplaceBackend("bool", &types::BOOL::setUpClass);
+    emplaceBackend("int", &types::INT::setUpClass);
+    emplaceBackend("double", &types::DOUBLE::setUpClass);
+    emplaceBackend("string", &types::STRING::setUpClass);
+
+    emplaceBackend("argOps", &types::ARGS::emplaceOperations);
+    emplaceBackend("stdOps", &emplaceStdOperations);
+
+    emplaceBackend("tensorExpr", &types::TENSOR_EXPRESSION::setUpClass);
+    emplaceBackend("tensorIdn", &types::INDEX_NOTATED_TENSOR_EXPRESSION::setUpClass);
+    emplaceBackend("tensorEq", &types::TENSOR_EXPRESSION_EQUATION::setUpClass);
+
+    emplaceBackend("core", &setUpCore);
+    fetchBackend("core");
+
+    emplaceBackend("tensor", &setupTensorBackend);
 }

@@ -329,7 +329,7 @@ namespace types{
 
     public:
 
-        static int setUpClass();
+        static bool setUpClass();
 
         TENSOR_EXPRESSION() = default;
         TENSOR_EXPRESSION(TensorExpression* Ptr) : INativeObject(Ptr){}
@@ -342,7 +342,7 @@ namespace types{
 
     public:
 
-        static int setUpClass();
+        static bool setUpClass();
 
         INDEX_NOTATED_TENSOR_EXPRESSION() = default;
         INDEX_NOTATED_TENSOR_EXPRESSION(IndexNotatedTensorExpression* Ptr) : INativeObject(Ptr){}
