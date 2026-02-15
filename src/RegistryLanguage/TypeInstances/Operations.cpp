@@ -25,7 +25,8 @@ std::vector<std::string> g_UsedOperators = {
     KOMMA,                                          //
     "~", "'", "°", "$",                             // Ops für Index Notation
     "^~", "^'", "^°",                               // Ops für Index Notation
-    "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes                     
+    "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
+    "dref",              
 };
 
 //
@@ -45,6 +46,7 @@ std::map<std::string, std::string> g_OneArgOperations{
     {"^'", "__transposeInplaceAssign__"},
     {"^°", "__traceInplaceAssign__"},
     {"$", "__sectionAssign__"},
+    {"dref", "__dereference__"},
 };
 
 // Map der Form Operator | Funktionslabel
@@ -132,6 +134,21 @@ std::map<std::string, std::string> g_ArgChainOperations = {
     {"°", "__traceAssign__"},
     {"\\diff", "__diffAssign__"},
 };
+
+//
+std::vector<EvalResult*> convertEvalResultsVecToPtrVec(std::vector<EvalResult>& resVec){
+
+    //
+    std::vector<EvalResult*> memberPtrs;
+    memberPtrs.reserve(resVec.size());
+
+    for(auto& m : resVec){
+
+        memberPtrs.emplace_back(&m);
+    }
+
+    return memberPtrs;
+}
 
 //
 bool emplaceStdOperations(){
@@ -789,6 +806,86 @@ bool emplaceStdOperations(){
             PREPARE_RETURNS;
 
             LOG << g_TypeRegister << endl;
+    },
+    {});
+
+    //
+    registerFunction("call", {types::STRING::typeIndex, types::ARGS::typeIndex},
+        [__functionLabel__ = "call", __numArgs__ = 2](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            GET_ARG(types::STRING, 0);
+            GET_ARG(types::ARGS, 1);
+
+            callFunction(arg0->getMember(), returns, convertEvalResultsVecToPtrVec(arg1->getMember()), returnToScope);
+    },
+    {});
+
+    //
+    registerFunction("callOnExtendedStack", {types::STRING::typeIndex, types::INT::typeIndex, types::ARGS::typeIndex},
+        [__functionLabel__ = "callOnExtendedStack", __numArgs__ = 3](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            GET_ARG(types::STRING, 0);  // Funktionsname
+            GET_ARG(types::INT, 1);     // Stack-Größe in MB
+            GET_ARG(types::ARGS, 2);    // Argumente
+
+            // Stack Größe in Bytes
+            size_t stackSize = static_cast<size_t>(arg1->getMember()) * 1024 * 1024;
+            
+            // Daten für Thread vorbereiten
+            struct ThreadData {
+                std::string functionName;
+                std::vector<EvalResult*> args;
+                std::vector<EvalResult>* returns;
+                Scope* returnToScope;
+            };
+            
+            ThreadData data = {
+                arg0->getMember(),
+                convertEvalResultsVecToPtrVec(arg2->getMember()),
+                &returns,
+                &returnToScope
+            };
+            
+            // Thread Funktion
+            auto threadFunc = [](void* arg) -> void* {
+                ThreadData* d = static_cast<ThreadData*>(arg);
+                callFunction(d->functionName, *(d->returns), d->args, *(d->returnToScope));
+                return nullptr;
+            };
+            
+            // pthread mit extended stack
+            pthread_attr_t attr;
+            pthread_attr_init(&attr);
+            pthread_attr_setstacksize(&attr, stackSize);
+            
+            pthread_t thread;
+            pthread_create(&thread, &attr, threadFunc, &data);
+            pthread_join(thread, nullptr);
+            
+            pthread_attr_destroy(&attr);
+    },
+    {});
+
+    //
+    registerFunction("__dereference__", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "dereference", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            if(inputs[0]->getVariableRef().isReference()){
+
+                inputs[0]->getVariableRef().reference(&g_nullRefs[inputs[0]->getTypeIndex()]);
+            }
     },
     {});
 

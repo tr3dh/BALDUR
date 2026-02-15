@@ -21,6 +21,10 @@ else
 	LDFLAGS += $(NATIVEWIN_FLAGS) -flto -fuse-linker-plugin -Wl,-O2 -Wl,--gc-sections -Wl,--as-needed
 endif
 
+# Wenn mehr Stack gebraucht wird
+# gewisse Rekursionen (zb tExprs führen zu nem stackoverflow ab ner gewissen größe)
+# LDFLAGS += -Wl,--stack,100000000
+
 ifeq ($(USE_LLVM),TRUE)
     CXXFLAGS += -DUSE_LLVM
 endif

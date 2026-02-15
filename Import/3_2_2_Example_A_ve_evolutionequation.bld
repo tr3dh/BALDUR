@@ -18,8 +18,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling of the evolution equation of viscoelasticity"
-int [orderTSM, dimension] = 2, 2
-tExpr nullRef
+int [orderTSM, dimension] = 4, 2
 
 //
 // setUnwrapOperands(false)
@@ -65,6 +64,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // Einsetzen der Approximation der internen Variable in Evolutionsgleichung
     tExpr epsilonv_dot_TSM <+ epsilonv_dot
     epsilonv_dot_TSM->replace(epsilonv, epsilonv_TSM)
+    wrpSimplify(epsilonv_dot_TSM)
 
     // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
     // Ableitung der Approximation der internen Variable
@@ -103,7 +103,7 @@ decl evaluateExample(int orderTSM, int dimension){
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF
-        if(order == orderTSM){ result << nullRef }
+        if(order == orderTSM){ dref result }
     }
 
     //
@@ -130,7 +130,7 @@ decl main(){
     logSeparator()
 
     //
-    evaluateExample(orderTSM, dimension)
+    callOnExtendedStack("evaluateExample", 200, args(orderTSM, dimension))
 
     return 0
 }

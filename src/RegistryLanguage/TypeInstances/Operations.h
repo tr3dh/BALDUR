@@ -3,6 +3,7 @@
 #include "../SemanticAnalysis/AST.h"
 #include "InstanceIncludes.h"
 #include "VOID.h"
+#include "ARGS.h"
 #include "BOOL.h"
 #include "INT.h"
 #include "STRING.h"

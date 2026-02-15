@@ -81,11 +81,13 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
     return res
 }
 
+int g_unwrapComplexityThreshold = 100000
+
 //
 decl wrpSimplify(tExpr ref expr){
 
     // Wenn unwrapOperands bereits auf false gesetzt ist unterscheidet ist wrpSimplify gleichbedeutend mit simplify
-    if(!(unwrapOperands => getUnwrapOperands())){
+    if(!getUnwrapOperands() || (expr->getNumOfNodes() > g_unwrapComplexityThreshold)){
         
         simplify(expr)
         return {}
