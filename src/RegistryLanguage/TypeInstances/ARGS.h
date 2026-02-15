@@ -45,6 +45,25 @@ namespace types{
             eliminateLValues();
         }
 
+        ARGS(ARGS& other){
+
+            //
+            for(auto& res : other.getMember()){
+
+                //
+                RETURNING_ASSERT(res.isValid(), "Invalide Variable in ARGS die kopiert werden sollen",);
+
+                if(res.getVariableRef().isReference()){ getMember().emplace_back(); getMember().back().reference(res); }
+                else{ getMember().emplace_back(); getMember().back().cloneIntoRValue(res.getVariableRef()); }
+            }
+        }
+
+        //
+        std::unique_ptr<IObject> clone() override {
+
+            return std::make_unique<ARGS>(*this); 
+        }
+
         void moveFrom(const FunctionParams& params){
 
             member->clear();
@@ -52,15 +71,63 @@ namespace types{
 
             for(const auto& param : params){
 
-                member->emplace_back();
+                if(param->getTypeIndex() == IObject::ARGS_TYPE){
 
-                if(param->isLValue()){
+                    // es soll verhindert werden dass die ARGS ein Referenz auf sich selbst enthalten die
+                    // bei einer zuweisung dann ungültig werden
+                    // zb bei prms = args(prms)
+                    // >> der rvalue args(prms) enthält eine referenz auf prms, 
 
-                    member->back().setLValue(&param->getVariableRef());
+                    //
+                    EvalResult res;
+                    res.cloneIntoRValue(param->getVariableRef());
+
+                    //
+                    member->emplace_back(std::move(res));
+                }
+                else if(param->isLValue()){
+                    
+                    member->emplace_back().setLValue(&param->getVariableRef());
                 }
                 else{
 
-                    member->back().moveIntoRValue(param->getVariableRef());
+                    member->emplace_back().moveIntoRValue(param->getVariableRef());
+                }
+            }
+
+            eliminateLValues();
+        }
+
+        //
+        void emplace(const FunctionParams& params, bool forceCopy = false){
+
+            //
+            // member->reserve(member->size() + params.size());
+
+            for(const auto& param : params){
+
+                //
+                if(this == param->getData()){
+
+                    // Wenn zuerst der emplace passiert ist das object mit einer invaliden Varable
+                    // gefüllt wenn es geclont wird. Deshalb muss eine tempräre Kopie gemacht werden
+
+                    //
+                    EvalResult res;
+                    res.cloneIntoRValue(param->getVariableRef());
+
+                    //
+                    member->emplace_back(std::move(res));
+                }
+                else if(param->isLValue()){
+
+                    //
+                    member->emplace_back().setLValue(&param->getVariableRef());
+                }
+                else{
+
+                    //
+                    member->emplace_back().moveIntoRValue(param->getVariableRef());
                 }
             }
 

@@ -14,6 +14,7 @@
 // $ ./build/ProcLang_d execute Import/3_2_2_Example_A_ve_evolutionequation.bld
 
 // Includes
+fetch backend []
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
@@ -21,13 +22,7 @@ string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling 
 int [orderTSM, dimension] = 4, 2
 
 //
-// setUnwrapOperands(false)
-// disableDiffTemplateDefaults()
-
-decl exp(tExpr ref expr){
-
-    return [<-exp(expr, orderTSM)]
-}
+decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
 
 //
 decl evaluateExample(int orderTSM, int dimension){
@@ -46,14 +41,8 @@ decl evaluateExample(int orderTSM, int dimension){
     void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
     tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + Xi)
     tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
-    tExpr epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
+    tExpr [epsilonv] = tExpr("epsilonv", 1, args(nVoigtComps))
     tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
-
-    //
-    requireDiffs(orderTSM ^ 2, epsilon, t, "epsilon", "t")
-    requireDiffs(orderTSM ^ 2, epsilonv, t, "epsilonv", "t")
-    requireDiffs(orderTSM ^ 2, epsilonv, Xi)
-    requireDiffs(orderTSM ^ 2, D, Xi)
 
     // Evolutionsgleichung der internen Variable
     tExpr epsilonv_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
@@ -102,7 +91,7 @@ decl evaluateExample(int orderTSM, int dimension){
         tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
-        // DREF
+        // DREF vor Schleifenabbruch
         if(order == orderTSM){ dref result }
     }
 
@@ -116,20 +105,38 @@ decl evaluateExample(int orderTSM, int dimension){
 //
 decl main(){
 
-    // Check Registers
-
+    // // Check Registers
+    // logRegisteredBackends()
     // logTypeRegister()
     // logNullRefs()
     // logFunctionRegister()
-    // logDiffTemplates(); logSeparator()
-    // logSimplifications(); logSeparator()
-
+    // logPresetDiffs()
+    // logDiffTemplates()
+    // logSimplifications()
+    
     //
     logSeparator()
     log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
     logSeparator()
 
-    //
+    // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.
+    // Rekursive Aufrufe verbrauchen sehr schnell Stack-Speicher, da sich das Programm die
+    // Return Adresse, Variablen aus lokalen Scopes, etc. für jeden rekursiven Funktionsaufruf
+    // im Stack abspeichern muss und den Speicher solange nicht wieder freigeben kann bis der
+    // Return stattgefunden hat. Damit wächst der benötigte Speicher im Stack bis zur maximalen
+    // Rekursionstiefe mit an. Aus diesen Grund reicht der Standardstack für Tensorausdrücke mit
+    // hoher Komplexität häufig nicht mehr aus.
+    // Selbst simple, kaum rechenintensive Operationen wie 'wrap', 'unwrap', 'replace', 'rebuild', etc.
+    // führen bei Tensorausdrücken mit hoher Komplexität (Check über 'mb->getNumOfNodes()')
+    // zum Overflow des 2MB Interpreter Stacks.
+    // Zum Umgehen des Problems kann der Interpreter mit der entsprechenden Linkerflag kompiliert
+    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer pthread
+    // erzeugt werden (laufzeitfähig), der einen stack der gewünschten Größe allokiert.
+    // Dazu dient die im folgenden aufgerufene Funktion.
+    // Die Funktion nimmt das Funktionslabel, die Stackgröße in MB und die Funktionsinputs gepackt als
+    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen pthread mit einem Stack der übergebenen
+    // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
+    // und der Thread wieder freigegeben. 
     callOnExtendedStack("evaluateExample", 200, args(orderTSM, dimension))
 
     return 0

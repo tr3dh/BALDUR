@@ -348,6 +348,19 @@ namespace types{
         },
         {IObject::ARGS_TYPE});
 
+        // Member
+        registerMemberFunction(ARGS::typeIndex, "emplace", {IObject::ARGS_TYPE},
+            [__functionLabel__ = "emplace"](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+
+                // Returns | Inputs
+                GET_MEMBER(ARGS);
+                mb->emplace(inputs);
+        },
+        {});
+
         return true;
     }
 }

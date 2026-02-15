@@ -14,6 +14,7 @@
 // $ ./build/ProcLang_d execute Import/3_2_2_Example_B_viscousdamage_evogl
 
 // Includes
+fetch backend []
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
@@ -21,13 +22,7 @@ string [examplePrefix, exampleChapter, exampleTitle] = "B", "3.2.2", "Modelling 
 int [orderTSM, dimension] = 3, 2
 
 //
-// setUnwrapOperands(false)
-// disableDiffTemplateDefaults()
-
-decl exp(tExpr ref expr){
-
-    return [<-exp(expr, orderTSM)]
-}
+decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
 
 //
 decl evaluateExample(int orderTSM, int dimension){
@@ -35,6 +30,8 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     tExpr ref result
     string tResultLabel
+    tIdn tIDNResult
+
     int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
@@ -42,68 +39,64 @@ decl evaluateExample(int orderTSM, int dimension){
                                                 tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
 
     void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
-    tExpr [sigma, E] = tExpr("sigma", 1, args(nVoigtComps)), tExpr("E", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + Xi)
     tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
-    tExpr epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
+    tExpr [epsilonv] = tExpr("epsilonv", 1, args(nVoigtComps))
     tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
-    tExpr [d] = tExpr("d", 0)
 
-    //
-    requireDiffs(orderTSM ^ 2, epsilon, t)
-    requireDiffs(orderTSM ^ 2, epsilonv, t)
-    requireDiffs(orderTSM ^ 2, d, t)
-    requireDiffs(orderTSM ^ 2, d, Xi)
-
-    //
-    tExpr Psi0 = ((1.0/2.0) * epsilon) . E . epsilon
-    tExpr d_t_dot = inverse(eta) * exp((-1) * d) * Psi0
+    // Evolutionsgleichung der internen Variable
+    tExpr epsilonv_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
     
+    // Approximation der internen Variable durch Taylorreihe
+    tExpr epsilonv_TSM = taylorSeries(epsilonv, Xi, orderTSM, false)
+
+    // Einsetzen der Approximation der internen Variable in Evolutionsgleichung
+    tExpr epsilonv_dot_TSM <+ epsilonv_dot
+    epsilonv_dot_TSM->replace(epsilonv, epsilonv_TSM)
+    wrpSimplify(epsilonv_dot_TSM)
+
+    // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
+    // Ableitung der Approximation der internen Variable
+    // Dadurch ergibt sich die Gleichung (3.75) [Geisler]
     //
-    tExpr dTSM_t = taylorSeries(d, Xi, orderTSM)
-    tExpr dTSM_t_dot = dTSM_t \diff t
+    // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
+    // 
+    // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
+
+    // Ermitteln der Tangenten
+    for(int order = 0, order < orderTSM + 1, order++){
+
+        static{
+
+            // res container
+            tExpr tangent
+            result << tangent
+        }
+
+        // Tangente i mal ableiten und Xi mit null substituieren
+        tangent = diff(epsilonv_dot_TSM, Xi, order)
+        tangent->replace(Xi, zeros(Xi))
+
+        // Tangente abschließend simplifizieren
+        wrpSimplify(tangent)
+
+        // Tangente in Julia Skript schreiben
+        tResultLabel = "epsilonv_dot_" + string(order)
+        
+        //
+        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // DREF vor Schleifenabbruch
+        if(order == orderTSM){ dref result }
+    }
 
     //
-    tExpr dTSM_t_dot_rp = dTSM_t_dot->getReplaced(d, dTSM_t)
-
-    //
-    result << dTSM_t
-    tResultLabel = "dTSM_t_dot_rp"
-
-    // unter Umständen muss der Ausdruck hier nochmal gewrapped werden damit eine Übereinstimmung mit den gängigen Simplify Templates angewendet werden kann
-    // Diese Vereinfachungen / Vereinfachungstemplates können nicht für eine beliebige anzahl an operanden definiert werden. Deshalb empfiehlt es sich sie nur für konkret zwei
-    // Operanden zu definieren und wenn nötig die Ausdrucksstruktur in diese Form zu bringen
-
-    //
-    wrpSimplify(result)
-
-    //
-    slog("Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
     logSeparator()
-
-    //
-    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
-    // logSeparator()
-
-    //
-    slog(result)
-    logSeparator()
-
-    //
-    void tIDNResult = toIDN(result)
-    slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
-    // logSeparator()
-
-    //
-    slog(tIDNResult)
-    logSeparator()
-
-    //
-    slog("Writing Wrapped IDN to jl File ...")
-
-    //
-    tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     //
     slog("Example evaluated")
@@ -112,21 +105,39 @@ decl evaluateExample(int orderTSM, int dimension){
 //
 decl main(){
 
-    // Check Registers
-
+    // // Check Registers
+    // logRegisteredBackends()
     // logTypeRegister()
     // logNullRefs()
     // logFunctionRegister()
-    // logDiffTemplates(); logSeparator()
-    // logSimplifications(); logSeparator()
-
+    // logPresetDiffs()
+    // logDiffTemplates()
+    // logSimplifications()
+    
     //
     logSeparator()
     log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
     logSeparator()
 
-    //
-    evaluateExample(orderTSM, dimension)
+    // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.
+    // Rekursive Aufrufe verbrauchen sehr schnell Stack-Speicher, da sich das Programm die
+    // Return Adresse, Variablen aus lokalen Scopes, etc. für jeden rekursiven Funktionsaufruf
+    // im Stack abspeichern muss und den Speicher solange nicht wieder freigeben kann bis der
+    // Return stattgefunden hat. Damit wächst der benötigte Speicher im Stack bis zur maximalen
+    // Rekursionstiefe mit an. Aus diesen Grund reicht der Standardstack für Tensorausdrücke mit
+    // hoher Komplexität häufig nicht mehr aus.
+    // Selbst simple, kaum rechenintensive Operationen wie 'wrap', 'unwrap', 'replace', 'rebuild', etc.
+    // führen bei Tensorausdrücken mit hoher Komplexität (Check über 'mb->getNumOfNodes()')
+    // zum Overflow des 2MB Interpreter Stacks.
+    // Zum Umgehen des Problems kann der Interpreter mit der entsprechenden Linkerflag kompiliert
+    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer pthread
+    // erzeugt werden (laufzeitfähig), der einen stack der gewünschten Größe allokiert.
+    // Dazu dient die im folgenden aufgerufene Funktion.
+    // Die Funktion nimmt das Funktionslabel, die Stackgröße in MB und die Funktionsinputs gepackt als
+    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen pthread mit einem Stack der übergebenen
+    // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
+    // und der Thread wieder freigegeben.
+    callOnExtendedStack("evaluateExample", 200, args(orderTSM, dimension))
 
     return 0
 }

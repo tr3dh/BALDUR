@@ -60,14 +60,22 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
 
     //
     tExpr res
+    args tangets
 
     //
     for(int order = 0, order < seriesOrder + 1, order++){
         
-        static{ tExpr tmp }
-        tmp = (1.0/factorial(order)) * \
-            {if(emplaceDiffs){ return { diff(function, x, order) } }; \
+        static{ tExpr [tmp, tangent] }
+
+        //
+        tangent = { if(emplaceDiffs){ return { diff(function, x, order) } }; \
             else { return { diff(function, x, order)->asExternalNode(function->getLabel() + "_" + string(order)) } }}
+
+        //
+        tangets->emplace(4)
+
+        //
+        tmp = (1.0/factorial(order)) * tangent
 
         // momentane Lösung statt exponential Funktion
         for(int i = 0, i < order, i++){ tmp := x }
