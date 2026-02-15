@@ -960,7 +960,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                             EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                             //
-                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex){
+                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex && paramIdx == paramRes.evalResults.size() - 1){
 
                                 static_cast<types::ARGS*>(paramVarN.getVariableRef().getData())->moveFrom(
                                     FunctionParams(std::next(inputs.begin(), paramIdx), inputs.end()));
@@ -1020,7 +1020,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                             EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                             //
-                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex){
+                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex && paramIdx == paramRes.evalResults.size() - 1){
 
                                 static_cast<types::ARGS*>(paramVarN.getVariableRef().getData())->moveFrom(
                                     FunctionParams(std::next(inputs.begin(), paramIdx), inputs.end()));
@@ -1081,7 +1081,7 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                             EvalResult& paramVarN = paramRes.evalResults[paramIdx];
 
                             //
-                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex){
+                            if(paramVarN.getTypeIndex() == types::ARGS::typeIndex && paramIdx == paramRes.evalResults.size() - 1){
 
                                 static_cast<types::ARGS*>(paramVarN.getVariableRef().getData())->moveFrom(
                                     FunctionParams(std::next(inputs.begin(), paramIdx), inputs.end()));

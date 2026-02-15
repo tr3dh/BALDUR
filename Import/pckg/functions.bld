@@ -52,19 +52,21 @@ decl factorial(int ref member){
 //
 decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
 
-    return { taylorSeries(function, x, seriesOrder, true) }
+    return { taylorSeries(function, x, seriesOrder, true, false) }
 }
 
 //
-decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplaceDiffs){
+decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplaceDiffs, bool returnTangents){
 
     //
     tExpr res
-    args tangets
+    
+    args tangents
 
     //
     for(int order = 0, order < seriesOrder + 1, order++){
         
+        //
         static{ tExpr [tmp, tangent] }
 
         //
@@ -72,11 +74,9 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
             else { return { diff(function, x, order)->asExternalNode(function->getLabel() + "_" + string(order)) } }}
 
         //
-        tangets->emplace(4)
-
-        //
+        tangents->emplace(<+tangent)
         tmp = (1.0/factorial(order)) * tangent
-
+        
         // momentane Lösung statt exponential Funktion
         for(int i = 0, i < order, i++){ tmp := x }
 
@@ -86,7 +86,7 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
 
     wrpSimplify(res)
 
-    return res
+    return { if(returnTangents){ return [res, tangents] }; else{ return [res] } }
 }
 
 int g_unwrapComplexityThreshold = 100000
@@ -142,6 +142,36 @@ decl toUnwrappedIDN(tExpr ref expr){
     setUnwrapOperands(tmp)
 
     return [<-res]
+}
+
+//
+decl requireDiffs(int ref order, args tangents, tExpr ref dExpr){
+    
+    //
+    for(int i = 0, i < tangents->size(), i++){
+
+        static{ tExpr ref expr }
+        expr << tangents->get(i)
+
+        requireDiffs(order, expr, dExpr)
+
+        if(i == tangents->size() - 1){ dref expr }
+    }
+}
+
+//
+decl removeRequiredDiffs(int ref order, args ref tangents, tExpr ref dExpr){
+
+    //
+    for(int i = 0, i < tangents->size(), i++){
+
+        static{ tExpr ref expr }
+        expr << tangents->get(i)
+
+        removeRequiredDiffs(order, expr, dExpr)
+
+        if(i == tangents->size() - 1){ dref expr }
+    }
 }
 
 //

@@ -90,10 +90,7 @@ namespace types{
                 RETURNING_ASSERT(arg0->getMember() < mb->getMember().size(), "...",);
 
                 // schreiben in returns
-                returns.emplace_back();
-                returns.back();
-
-                returns.back().reference(mb->getMember()[arg0->getMember()]);
+                returns.emplace_back().reference(mb->getMember()[arg0->getMember()]);
         },
         {IObject::ARBITATRY_TYPE});
 

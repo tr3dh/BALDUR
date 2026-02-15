@@ -19,10 +19,14 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling of the evolution equation of viscoelasticity"
-int [orderTSM, dimension] = 4, 2
+int [orderTSM, dimension] = 3, 2
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
+
+decl printArgs(int a, args b, int c){
+    slog(b)
+}
 
 //
 decl evaluateExample(int orderTSM, int dimension){
@@ -48,7 +52,13 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr epsilonv_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
     
     // Approximation der internen Variable durch Taylorreihe
-    tExpr epsilonv_TSM = taylorSeries(epsilonv, Xi, orderTSM, false)
+    [tExpr epsilonv_TSM, args tangents] = taylorSeries(epsilonv, Xi, orderTSM, false, true)
+
+    //
+    requireDiffs(orderTSM, tangents, t)
+    tExpr epsilonv_TSM_dot = diff(epsilonv_TSM, t)
+    wrpSimplify(epsilonv_TSM_dot)
+    removeRequiredDiffs(orderTSM, tangents, t)
 
     // Einsetzen der Approximation der internen Variable in Evolutionsgleichung
     tExpr epsilonv_dot_TSM <+ epsilonv_dot
@@ -62,6 +72,9 @@ decl evaluateExample(int orderTSM, int dimension){
     // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
     // 
     // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
+
+    //
+    // slog("Setze", epsilonv_TSM_dot, "gleich mit", epsilonv_dot_TSM)
 
     // Ermitteln der Tangenten
     for(int order = 0, order < orderTSM + 1, order++){

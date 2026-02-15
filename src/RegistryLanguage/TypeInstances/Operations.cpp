@@ -217,7 +217,7 @@ bool emplaceStdOperations(){
             bool sourceIsRValue = source.isRValue();
 
             //
-            RETURNING_ASSERT(!recipientIsRValue && !sourceIsRValue, "Bei Referenzierung sind rvalues mit im Spiel ",);
+            RETURNING_ASSERT(!recipientIsRValue && (!sourceIsRValue || source.getVariableRef().isReference()), "Bei Referenzierung sind rvalues mit im Spiel ",);
 
             ASSERT(recipient.getTypeIndex() == types::VOID::typeIndex || recipient.getTypeIndex() == source.getTypeIndex(), 
                     "narrowing conversion");
