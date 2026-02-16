@@ -54,7 +54,8 @@ decl evaluateExample(int orderTSM, int dimension){
     // Approximation der internen Variable durch Taylorreihe
     [tExpr epsilonv_TSM, args tangents] = taylorSeries(epsilonv, Xi, orderTSM, false, true)
 
-    //
+    // Dieser Ausdruck wird eigentlich benötigt es handelt es um die Gleichung mit der
+    // die erweiterte Evolutionsgleichung der internen Variable gleichgesetzt wird um die Tangenten zu ermitteln
     requireDiffs(orderTSM, tangents, t)
     tExpr epsilonv_TSM_dot = diff(epsilonv_TSM, t)
     wrpSimplify(epsilonv_TSM_dot)

@@ -71,7 +71,7 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
 
         //
         tangent = { if(emplaceDiffs){ return { diff(function, x, order) } }; \
-            else { return { diff(function, x, order)->asExternalNode(function->getLabel() + "_" + string(order)) } }}
+            else { return { diff(function, x, order)->asExternalNode(function->getLabel() + string(order)) } }}
 
         //
         tangents->emplace(<+tangent)

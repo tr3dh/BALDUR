@@ -38,22 +38,33 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \
                                                 tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
 
+    //
     void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
     tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + Xi)
     tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
     tExpr [epsilonv] = tExpr("epsilonv", 1, args(nVoigtComps))
     tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
 
-    // Evolutionsgleichung der internen Variable
-    tExpr epsilonv_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
-    
-    // Approximation der internen Variable durch Taylorreihe
-    tExpr epsilonv_TSM = taylorSeries(epsilonv, Xi, orderTSM, false)
+    //
+    tExpr [d, Psi0] = tExpr("d", 0), [(1.0/2.0) * epsilon . E . epsilon]
 
-    // Einsetzen der Approximation der internen Variable in Evolutionsgleichung
-    tExpr epsilonv_dot_TSM <+ epsilonv_dot
-    epsilonv_dot_TSM->replace(epsilonv, epsilonv_TSM)
-    wrpSimplify(epsilonv_dot_TSM)
+    // Evolutionsgleichung der internen Variable
+    tExpr d_dot = inverse(eta) * exp((-1) * d) * Psi0
+
+    //
+    [tExpr d_TSM, args tangents] = taylorSeries(d, Xi, orderTSM, false, true)
+
+    // Dieser Ausdruck wird eigentlich benötigt es handelt es um die Gleichung mit der
+    // die erweiterte Evolutionsgleichung der internen Variable gleichgesetzt wird um die Tangenten zu ermitteln
+    requireDiffs(orderTSM, tangents, t)
+    tExpr d_TSM_dot = diff(d_TSM, t)
+    wrpSimplify(d_TSM_dot)
+    removeRequiredDiffs(orderTSM, tangents, t)
+
+    // Erweitern der Evolutionsgleichung
+    tExpr d_dot_TSM <+ d_dot
+    d_dot_TSM->replace(d, d_TSM)
+    wrpSimplify(d_dot_TSM)
 
     // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
     // Ableitung der Approximation der internen Variable
@@ -74,22 +85,25 @@ decl evaluateExample(int orderTSM, int dimension){
         }
 
         // Tangente i mal ableiten und Xi mit null substituieren
-        tangent = diff(epsilonv_dot_TSM, Xi, order)
-        tangent->replace(Xi, zeros(Xi))
-
-        // Tangente abschließend simplifizieren
-        wrpSimplify(tangent)
-
-        // Tangente in Julia Skript schreiben
-        tResultLabel = "epsilonv_dot_" + string(order)
+        // tangent = diff(d_dot_TSM, Xi, order)
         
-        //
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        return {}
 
-        //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+    //     tangent->replace(Xi, zeros(Xi))
+
+    //     // Tangente abschließend simplifizieren
+    //     wrpSimplify(tangent)
+
+    //     // Tangente in Julia Skript schreiben
+    //     tResultLabel = "d_dot_" + string(order)
+        
+    //     //
+    //     log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+    //     //
+    //     tIDNResult = toWrappedIDN(result)
+    //     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    //         examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch
         if(order == orderTSM){ dref result }

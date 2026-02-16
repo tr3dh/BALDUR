@@ -646,6 +646,11 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                         stayInLoop = false;
                         break;
                     }
+                    case(ExitCase::Return):{
+
+                        return SectionRes;
+                        break;
+                    }
                     default:{
 
                         break;
@@ -707,6 +712,11 @@ ProcessingResult evaluateExpression(const ASTNode& node, Scope& scope, Scope& re
                     case(ExitCase::Break):{
                         
                         stayInLoop = false;
+                        break;
+                    }
+                    case(ExitCase::Return):{
+
+                        return SectionRes;
                         break;
                     }
                     default:{

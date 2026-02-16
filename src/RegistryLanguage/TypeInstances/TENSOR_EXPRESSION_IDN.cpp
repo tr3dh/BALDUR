@@ -725,8 +725,8 @@ void IndexNotatedTensorExpression::dyadProductAssign(const IndexNotatedTensorExp
     static TensorExpressionOperator operation = TensorExpressionOperator::DyadicProduct;
 
     // ASSERTS
-    RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0,
-                    "Dyadproduktbildung mit skalaren Operanden funktioniert nicht",);
+    // RETURNING_ASSERT(tensorOrder > 0 && other.tensorOrder > 0,
+    //                 "Dyadproduktbildung mit skalaren Operanden funktioniert nicht",);
 
     //
     bool copySelf = false;

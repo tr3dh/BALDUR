@@ -4,10 +4,10 @@
 </p>
 
 # ALBERICH
-Assembling Library for Building Embedded Runtime and Independent Interpreters for Controlling High Performance C Backends
+Assembling Library for Building Embedded Runtime and Independent Interpreters Controlling Native High Performance Resources
 
 # BALDUR
-Basic Algebraic Language for Deriving underscored Tensor Representations
+Basic Algebraic Language for Deriving unified Tensor Representations
 
 # 🤝 Many thanks
 
