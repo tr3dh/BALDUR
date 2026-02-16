@@ -74,10 +74,6 @@ decl evaluateExample(int orderTSM, int dimension){
     // 
     // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
 
-    //
-    disableDiffTemplateDefaults()
-    slog(diff(d * Xi * d, epsilon))
-
     // Ermitteln der Tangenten
     for(int order = 0, order < orderTSM + 1, order++){
 
@@ -89,25 +85,22 @@ decl evaluateExample(int orderTSM, int dimension){
         }
 
         // Tangente i mal ableiten und Xi mit null substituieren
-        // tangent = diff(d_dot_TSM, Xi, order)
+        tangent = diff(d_dot_TSM, Xi, order)
+        tangent->replace(Xi, zeros(Xi))
+
+        // Tangente abschließend simplifizieren
+        wrpSimplify(tangent)
+
+        // Tangente in Julia Skript schreiben
+        tResultLabel = "d_dot_" + string(order)
         
-        return {}
+        //
+        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 
-    //     tangent->replace(Xi, zeros(Xi))
-
-    //     // Tangente abschließend simplifizieren
-    //     wrpSimplify(tangent)
-
-    //     // Tangente in Julia Skript schreiben
-    //     tResultLabel = "d_dot_" + string(order)
-        
-    //     //
-    //     log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
-
-    //     //
-    //     tIDNResult = toWrappedIDN(result)
-    //     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
-    //         examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch
         if(order == orderTSM){ dref result }
