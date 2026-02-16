@@ -894,8 +894,14 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     //
     static TensorExpressionOperator operation = TensorExpressionOperator::Multiplication;
 
-    // ASSERTS
-    RETURNING_ASSERT(tensorOrder == 0 || other.tensorOrder == 0 || tensorOrder == -1 || other.tensorOrder == -1, "Skalar Multiplikation ohne Skalar versucht",);
+    // // ASSERTS
+    // RETURNING_ASSERT(tensorOrder == 0 || other.tensorOrder == 0 || tensorOrder == -1 || other.tensorOrder == -1, "Skalar Multiplikation ohne Skalar versucht",);
+
+    //
+    if(tensorOrder > 0 && other.tensorOrder > 0){
+
+        return dyadProductAssign(other);
+    }
 
     //
     if(!isValid()){

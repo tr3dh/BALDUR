@@ -74,6 +74,10 @@ decl evaluateExample(int orderTSM, int dimension){
     // 
     // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
 
+    //
+    disableDiffTemplateDefaults()
+    slog(diff(d * Xi * d, epsilon))
+
     // Ermitteln der Tangenten
     for(int order = 0, order < orderTSM + 1, order++){
 
