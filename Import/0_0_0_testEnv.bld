@@ -10,7 +10,9 @@
 
 // Includes
 fetch backend ["tensor"]
-fetch script ["pckg/functions"]
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+disableDiffTemplateDefaults()
 
 if(calledAs(__MainProc__)){
 
@@ -19,6 +21,23 @@ if(calledAs(__MainProc__)){
     slog("------------------------")
 
     // ...
+    tExpr [A, B] = tExpr("A", 2, args(3,3)), tExpr("B", 2, args(3,3))
+    tExpr [c] = tExpr("c", 0)
+    slog(diff(trace(A), B))
+
+    slog(cofactor(A))
+
+    slog(macaulay(trace(A)))
+
+    tExpr result = A + B
+
+    slog(diff(result, c))
+
+    //
+    tIDNResult = toWrappedIDN(c * c + tExpr(5) + trace(A) + det(inverse(A)) + macaulay(signum(tExpr(-1))))
+
+    slog(tIDNResult->toJuliaString("dexpr"))
+    tIDNResult->toJuliaString("dexpr")->writeToFile("../Import/JuliaScripts/testEnv.jl")
 
     //
     slog("------------------------")

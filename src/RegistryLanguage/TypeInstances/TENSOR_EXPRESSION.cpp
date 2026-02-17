@@ -50,6 +50,8 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
     {TensorExpressionOperator::Zeros, &TensorExpression::zerosAssign},
     {TensorExpressionOperator::Ones, &TensorExpression::onesAssign},
     {TensorExpressionOperator::Identity, &TensorExpression::identityAssign},
+    {TensorExpressionOperator::Macaulay, &TensorExpression::macaulayAssign},
+    {TensorExpressionOperator::Signum, &TensorExpression::signumAssign},
 };
 
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
@@ -1411,6 +1413,44 @@ void TensorExpression::determinantAssign(){
 
     //
     static TensorExpressionOperator operation = TensorExpressionOperator::Determinant;
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::macaulayAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Macaulay;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::signumAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Signum;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
 
     //
     moveSelfIntoFirstChild();
@@ -3066,6 +3106,40 @@ namespace types{
 
                 GET_RETURN(TENSOR_EXPRESSION, 0);
                 ret0->getMember().determinantAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("macaulay", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "macaulay", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().macaulayAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+        
+        //
+        registerFunction("signum", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "signum", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().signumAssign();
         },
         {TENSOR_EXPRESSION::typeIndex});
 

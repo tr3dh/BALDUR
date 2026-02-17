@@ -20,6 +20,8 @@ enum class IndexNotationOperator{
     Inversion,
     Trace,
     Determinant,
+    Macaulay,
+    Signum,
 
     Diff,
 
@@ -56,6 +58,8 @@ enum class TensorExpressionOperator{
     Transposition,
     Trace,
     Determinant,
+    Macaulay,
+    Signum,
     Ones,
     Zeros,
     Identity,
@@ -126,8 +130,6 @@ struct TensorExpression{
     TensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn);
     TensorExpression(float valueIn);
 
-    bool containsDimensions() const;
-
     bool operator==(const TensorExpression& other) const;
 
     //
@@ -137,7 +139,8 @@ struct TensorExpression{
     TensorExpression asExternalNode(const std::string& label);
     bool contains(const TensorExpression& other) const;
     int countOccurences(const TensorExpression& other) const;
-
+    bool containsDimensions() const;
+    
     //
     bool isWrapped() const;
     bool isUnWrapped() const;
@@ -200,6 +203,8 @@ struct TensorExpression{
     void traceAssign();
 
     void determinantAssign();
+    void macaulayAssign();
+    void signumAssign();
 
     void sectionAssign();
 
@@ -258,6 +263,7 @@ struct IndexNotatedTensorExpression{
     //
     bool containsDimensions() const;
     bool containsIndices() const;
+    bool containsOnlyScalars() const;
     
     //
     size_t getNumOfNodes() const;
@@ -301,6 +307,9 @@ struct IndexNotatedTensorExpression{
     void traceAssign();
 
     void determinantAssign();
+
+    void macaulayAssign();
+    void signumAssign();
 
     // void reEvaluateIndices();
 

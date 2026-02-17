@@ -19,7 +19,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "B", "3.2.2", "Modelling of the evolution equation of viscous damage"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 1, 2
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
@@ -90,6 +90,8 @@ decl evaluateExample(int orderTSM, int dimension){
 
         // Tangente abschließend simplifizieren
         wrpSimplify(tangent)
+
+        slog(tangent)
 
         // Tangente in Julia Skript schreiben
         tResultLabel = "d_dot_" + string(order)

@@ -8,6 +8,24 @@
 //   ╚══════╝   ╚═╝   ╚═════╝     ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝╚══════╝                                                                       
 //                                                                                                                                         
 // ---------------------------------------------------------------------------
+// !! HINWEIS
+// ---------------------------------------------------------------------------
+// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
+// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
+// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
+// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
+// Dokumentation, Einführung oder Anleitung.
+// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
+// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
+// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert
+// denen die Ableitungen und Vereinfachungen in Folge unterliegen
+// Wir übernehmen keine Haftung oder Verantwortung für die Gültigkeit /
+// Richtigkeit der hier implementierten Inhalte und der Sprache / des
+// Backends im Allgemeinen!
+// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten
+// die Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit
+// überprüfen!
+// ---------------------------------------------------------------------------
 // MIT License
 // ---------------------------------------------------------------------------
 // Copyright (c) 2025-2026 Tim Rother, Dr. Hendrik Geisler
@@ -89,13 +107,24 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
     return { if(returnTangents){ return [res, tangents] }; else{ return [res] } }
 }
 
-int g_unwrapComplexityThreshold = 100000
+int g_unwrapComplexityThreshold = 200000
 
 //
 decl wrpSimplify(tExpr ref expr){
 
+    //
+    if(expr->getNumOfNodes() > g_unwrapComplexityThreshold){
+
+        //
+        slog("Simplifizierung geschieht aufgrund des zu komplexen Ausdrucks ohne vorherige Anpassung der Packungsstruktur")
+        slog("Komplexität des Ausdrucks", expr->getNumOfNodes())
+
+        simplify(expr)
+        return {}
+    }
+
     // Wenn unwrapOperands bereits auf false gesetzt ist unterscheidet ist wrpSimplify gleichbedeutend mit simplify
-    if(!getUnwrapOperands() || (expr->getNumOfNodes() > g_unwrapComplexityThreshold)){
+    if(!getUnwrapOperands()){
         
         simplify(expr)
         return {}
