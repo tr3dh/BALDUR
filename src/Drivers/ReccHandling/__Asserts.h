@@ -44,10 +44,10 @@ void RESET_ASSERTION_LOGGING();
         if (!(condition) && !(g_suppressAssertionWarnings)) {\
             std::ostringstream oss;\
             oss << "[" << getTimestamp() << "] Assertion Failed : '" << message << "'\n" << \
-            ">> Source : " << __FILE__ << ":" << __LINE__ << " >> " << __FUNCTION__ << "\n";\
+            ">> Source : " << __FILE__ << ":" << __LINE__ << " >> " << __FUNCTION__;\
             \
             if(g_getErrorContext != nullptr){ \
-                oss << ">> Context : " <<  g_getErrorContext(); \
+                oss << g_getErrorContext(); \
             } \
             _ERROR << oss.str() << ENDL;\
         }}\

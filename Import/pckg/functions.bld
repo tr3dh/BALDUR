@@ -269,12 +269,12 @@ decl __expAssign__(tExpr ref lhs, int ref rhs){
 
     if(rhs < 1 && !lhsIsScalar){
 
-        lhs <- zeros(lhs)
+        lhs <- identity(lhs)
         return {}
     }
     else if(rhs < 1){
 
-        lhs <- tExpr(0)
+        lhs <- tExpr(1)
         return {}
     }
 
@@ -291,7 +291,9 @@ decl __expAssign__(tExpr ref lhs, int ref rhs){
     lhs <- res
 }
 
-decl exp(tExpr ref x, int ref order){
+decl exp(tExpr ref x, int ref order){ return [exp(x, order, true)] }
+
+decl exp(tExpr ref x, int ref order, bool simplifyResult){
 
     //
     tExpr res 

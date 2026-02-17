@@ -94,6 +94,9 @@ public:
 
         FunctionRegisterKey key = {functionLabel, functionArgsTypes};
         functions[key] = {func,functionReturnTypes};
+
+        // auto [it, inserted] = functions.try_emplace(key, std::make_pair(func,functionReturnTypes));
+        // RETURNING_ASSERT(inserted, "Funktion " + functionLabel + " wurde bereits definiert, neue Definition wird ignoriert",);
     }
 
     std::vector<TypeIndex> getArgTypes(const FunctionParams& params) {

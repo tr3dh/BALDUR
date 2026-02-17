@@ -15,15 +15,15 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 string [examplePrefix, exampleChapter, exampleTitle] = "0", "0.0.1", "Recursive Demo"
 
 //
-int [g_fibonacciCalls, g_facultyCalls]
+int [g_fibonacciCalls, g_factorialCalls]
 
-decl faculty(int ref member){
+decl factorial(int ref member){
     
-    g_facultyCalls++
+    g_factorialCalls++
     if(member == 0 || member == 1){ 
         return 1 
     }
-    return [member * faculty(member - 1)]
+    return [member * factorial(member - 1)]
 }
 
 decl fibonacci(int ref member){
@@ -39,8 +39,8 @@ decl runRecursiveDemo(){
 
     // Fakultäten
     slog(" ")
-    for([int [i, numFaculty] = 0,10], i < numFaculty, i++){
-        slog("Faculty(", i, ") =", faculty(i))
+    for([int [i, numFactorial] = 0,10], i < numFactorial, i++){
+        slog("Factorial(", i, ") =", factorial(i))
     }
 
     // Fibonacci
@@ -51,7 +51,7 @@ decl runRecursiveDemo(){
 
     // Log der Funktionsaufrufe
     slog(" ")
-    slog("faculty called :", g_facultyCalls, "times")
+    slog("factorial called :", g_factorialCalls, "times")
     slog("fibonacci called :", g_fibonacciCalls, "times")
 }
 

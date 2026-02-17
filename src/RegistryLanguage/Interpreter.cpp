@@ -107,8 +107,13 @@ std::string getErrorContext(){
             }
         }
 
+        //
+        res += "\n>> Context : ";
+
         // Header mit Dateiname und Zeilennummer
-        res += g_currentlyEvaluatedScript->scriptPath + ":" + std::to_string(linePos + 1) + "\n";
+        std::string normalizedPath = fs::absolute(g_currentlyEvaluatedScript->scriptPath).string();
+        std::replace(normalizedPath.begin(), normalizedPath.end(), '\\', '/');
+        res += normalizedPath + ":" + std::to_string(linePos + 1) + "\n";
 
         // Debug output
         // res += std::to_string(position) + " " + std::to_string(len) + "\n";

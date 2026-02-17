@@ -176,10 +176,9 @@ decl cofactor(tExpr ref lhs){
     return [det(lhs) * transpose(inverse(lhs))]
 }
 
-decl frobenius(tExpr ref lhs){
-
-    return [trace(transpose(lhs) . lhs)]
-}
+// Beide Notationen sind korrekt
+decl frobenius(tExpr ref lhs){ return [lhs .n lhs] }
+// decl frobenius(tExpr ref lhs){ return [trace(transpose(lhs) . lhs)]}
 
 // Standardmatritzen für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
@@ -275,7 +274,7 @@ setEqual(transpose(transpose(tmplA)), tmplA)
 // Optionale Template Optionen
 
 // Algemeine Vereinfachungen für Identity
-setEqual(identityInstanceTemplate . identityInstanceTemplate, identityInstanceTemplate)
+// setEqual(identityInstanceTemplate . identityInstanceTemplate, identityInstanceTemplate)
 
 // Diese Ausdrücke erfordert teilweise zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
 // Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
@@ -287,9 +286,9 @@ setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityIns
 setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityInstanceTemplate \(x) identityInstanceTemplate))     // \(x)
 
 // // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
-// setEqual(tmplA + tmplA, 2 * tmplA)
+// // setEqual(tmplA + tmplA, 2 * tmplA)
 
-//
+
 setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
 setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
 setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
@@ -298,22 +297,22 @@ setEqual(tmplA - CnstTmplA * tmplA, (CnstTmplA - 1) * tmplA)
 setEqual(CnstTmplA * tmplA - CnstTmplB * tmplA, (CnstTmplA - CnstTmplB) * tmplA)
 
 //
-setEqual(tExprIdentity(2) + H, F)                       // F = I + H
-setEqual((L + L') * 0.5, D)                             // D = 0.5 * (L + L^T)
-setEqual((L - L') * 0.5, W)                             // W = 0.5 * (L - L^T)
+// setEqual(tExprIdentity(2) + H, F)                       // F = I + H
+// setEqual((L + L') * 0.5, D)                             // D = 0.5 * (L + L^T)
+// setEqual((L - L') * 0.5, W)                             // W = 0.5 * (L - L^T)
 
 // Cauchy-Green Tensoren
-setEqual(F' . F, C)                                     // C = F^T · F
-setEqual(F . F', B)                                     // B = F · F^T
+// setEqual(F' . F, C)                                     // C = F^T · F
+// setEqual(F . F', B)                                     // B = F · F^T
 
 // Verzerrungsmaße
-setEqual((C - tExprIdentity(2)) * 0.5, E)               // E = 0.5 * (C - I)
-setEqual((tExprIdentity(2) - inverse(B)) * 0.5, e)      // e = 0.5 * (I - B^(-1))
-setEqual(epsilon_c, (B - tExprIdentity(2)) * 0.5)       // ε = 0.5 * (B - I)
+// setEqual((C - tExprIdentity(2)) * 0.5, E)               // E = 0.5 * (C - I)
+// setEqual((tExprIdentity(2) - inverse(B)) * 0.5, e)      // e = 0.5 * (I - B^(-1))
+// setEqual(epsilon_c, (B - tExprIdentity(2)) * 0.5)       // ε = 0.5 * (B - I)
 
 // Polare Zerlegung
-setEqual(R . U, F)
-setEqual(V . R, F)
+// setEqual(R . U, F)
+// setEqual(V . R, F)
 
 // Direkte Ersetzung und Vereinfachung
 setDiff(x, X, F)                                        // Deformationsgradient: ∂x/∂X = F

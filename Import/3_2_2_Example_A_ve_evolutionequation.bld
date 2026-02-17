@@ -31,6 +31,13 @@ decl printArgs(int a, args b, int c){
 //
 decl evaluateExample(int orderTSM, int dimension){
 
+    // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
+    // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
+    // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten 
+    tExpr expDiff
+    for(i = 0, i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
+    setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
+
     //
     tExpr ref result
     string tResultLabel
