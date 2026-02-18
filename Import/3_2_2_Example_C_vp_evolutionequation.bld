@@ -105,6 +105,9 @@ decl evaluateExample(int orderTSM, int dimension){
     // 
     // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
 
+    //
+    args outputs
+
     // Ermitteln der Tangenten
     for(int order = 0, order < orderTSM + 1, order++){
 
@@ -117,6 +120,7 @@ decl evaluateExample(int orderTSM, int dimension){
         // Tangente i mal ableiten und D mit null substituieren
         tangentE = diff(epsilonvp_dot_TSM, D, order)
         tangentE->replace(D, zeros(D))
+        tangentE->replace(sigmaYTild, zeros(sigmaYTild))
         wrpSimplify(tangentE)
 
         logSeparator()
@@ -125,6 +129,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
         tangentY = diff(epsilonvp_dot_TSM, sigmaYTild, order)
+        tangentY->replace(D, zeros(D))
         tangentY->replace(sigmaYTild, zeros(sigmaYTild))
         wrpSimplify(tangentY)
 
@@ -132,6 +137,9 @@ decl evaluateExample(int orderTSM, int dimension){
         slog("Tangente epsilonvp_Y_" + string(order))
         slog(tangentY)
         
+        //
+        outputs->emplace(<+tangentE, <+tangentY)
+
         //
         logSeparator()
 

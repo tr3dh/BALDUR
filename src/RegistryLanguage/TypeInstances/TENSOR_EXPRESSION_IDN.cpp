@@ -1339,12 +1339,11 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     std::string res = "";
 
     //
-    if(isConstant){ res += string::strippedString(value); return res; }
+    if(isConstant){ res += string::strippedString(value); }
     else if(Relation == TkType::Argument){
 
         if(tensorOrder < 1){ res += getArgLabel(*this); }
         else{ res += getArgLabel(*this) + (useTensorNotation ? "" : ("[" + fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + "]")); }
-        return res;
     }
     else if(Relation == TkType::Operator){
 
@@ -1445,7 +1444,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     bool useTOps = (returnScalar && !onlyScalars) || !returnScalar;
 
     //
-    if(returnScalar){ forceSubstitution = true; }
+    if(returnScalar && Relation == TkType::Operator){ forceSubstitution = true; }
 
     //
     if(depth == 0){
@@ -1521,14 +1520,23 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     // Helper functions to create precomputed tensors
     res += "function create_zeros(dims::Integer...)\n";
+    res += "    if length(dims) == 0\n";
+    res += "        return 0\n";
+    res += "    end\n";
     res += "    return zeros(Float64, dims...)\n";
     res += "end\n\n";
 
     res += "function create_ones(dims::Integer...)\n";
+    res += "    if length(dims) == 0\n";
+    res += "        return 1\n";
+    res += "    end\n";
     res += "    return ones(Float64, dims...)\n";
     res += "end\n\n";
 
     res += "function create_Identity(dims::Integer...)\n";
+    res += "    if length(dims) == 0\n";
+    res += "        return 1\n";
+    res += "    end\n";
     res += "    n = dims[1]\n";
     res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Identity\"\n";
     res += "    tensor = zeros(Float64, dims...)\n";

@@ -656,6 +656,8 @@ bool TensorExpression::simplifyOnce(){
 
     bool IsRepresentableByTemplate;
 
+    RETURNING_ASSERT(!isTemplate(), "Templates sind nicht für Simplifizierungen ausgelegt", false);
+
     for(const auto& [k, v] : tensorExpressionSimplifications){
 
         if(k == *this){
