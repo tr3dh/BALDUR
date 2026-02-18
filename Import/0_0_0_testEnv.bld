@@ -21,6 +21,13 @@ if(calledAs(__MainProc__)){
     slog("------------------------")
 
     // ...
+
+    tExpr [A, b] = tExpr("A", 2, args(3,3)), tExpr("b", 0)
+
+    //
+    string tResultLabel = "testEnv"
+    tIdn tIDNResult = toWrappedIDN((A . A) * ((A .. A) - b))
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + tResultLabel + ".jl")
     
     //
     slog("------------------------")

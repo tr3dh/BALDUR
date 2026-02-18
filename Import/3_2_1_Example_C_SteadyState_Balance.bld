@@ -101,13 +101,13 @@ decl evaluateExample(int orderTSM, int dimension){
     slog(tIDNResult)
     logSeparator()
 
-    // //
-    // slog("Writing Wrapped IDN to jl File ...")
+    //
+    slog("Writing Wrapped IDN to jl File ...")
 
-    // //
-    // tIDNResult = toWrappedIDN(result)
-    // tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
-    //     examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
+    //
+    tIDNResult = toWrappedIDN(result)
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     //
     slog("Example evaluated")

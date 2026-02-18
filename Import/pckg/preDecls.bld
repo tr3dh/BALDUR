@@ -177,8 +177,13 @@ decl cofactor(tExpr ref lhs){
 }
 
 // Beide Notationen sind korrekt
-decl frobenius(tExpr ref lhs){ return [lhs .n lhs] }
-// decl frobenius(tExpr ref lhs){ return [trace(transpose(lhs) . lhs)]}
+// decl frobenius(tExpr ref lhs){ return [lhs .n lhs] }
+decl frobenius(tExpr ref lhs){
+
+    if(lhs->getOrder() == 0){ return lhs }
+    else if(lhs->getOrder() == 1){ return [lhs . lhs]}
+    return [trace(transpose(lhs) . lhs)]
+}
 
 // Standardmatritzen für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
@@ -288,7 +293,6 @@ setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityI
 // // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
 // // setEqual(tmplA + tmplA, 2 * tmplA)
 
-
 setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
 setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
 setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
@@ -369,10 +373,10 @@ setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 // Für Operationen
 setDiffTemplate(inverse(tmplScalar), tmplB, (-1) * inverse(tmplScalar * tmplScalar) * diff(tmplScalar, tmplB))
 setDiffTemplate(inverse(tmplA), tmplB, ((-1) * inverse(tmplA)) . diff(tmplA, tmplB) . inverse(tmplA))
-setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
+setDiffTemplate(transpose(tmplA), tmplB, transpose(diff(tmplA, tmplB)))
 setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmplA, tmplB)))
-setDiffTemplate(trace(tmplA), tmplB, trace(diff(tmplA, tmplB)))
-setDiffTemplate(macaulay(tmplA), tmplB, (signum(tmplA) + 1) * 0.5 * diff(tmplA, tmplB))
+setDiffTemplate(trace(tmplA), tmplB, identity(tmplA) : (diff(tmplA, tmplB)))
+setDiffTemplate(macaulay(tmplScalar), tmplB, (signum(tmplScalar) + 1) * 0.5 * diff(tmplScalar, tmplB))
 setDiffTemplate(signum(tmplA), tmplB, zeros(tmplA \(x) tmplB))
 
 // Für standard Instanzen

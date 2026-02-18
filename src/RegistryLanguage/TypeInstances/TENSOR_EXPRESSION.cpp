@@ -648,7 +648,18 @@ TensorExpression TensorExpression::wrap() const{
 
 void TensorExpression::simplify(){
 
-    while(simplifyOnce()){}
+    const char spinner[] = {'|', '/', '-', '\\'};
+    int spinnerIdx = 0;
+    int step = 0;
+
+    while(simplifyOnce()){
+
+        LOG << "\r" << spinner[spinnerIdx % 4] << " - smplf step " << step << std::flush;
+        spinnerIdx++;
+        step++;
+    }
+
+    LOG << "\r" << std::string(100, ' ') << "\r" << std::flush;
 }
 
 //
@@ -1594,7 +1605,7 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
 
     // wenn ein member des Abgleichs eine templated node (Standardtemplate) ist und der andere kein Template
     // >> template und einsetzungs parameter
-    if(((isArgTemplate() && !other.isTemplate() && other.children.size() < 2) || (!isTemplate() && children.size() < 2 && other.isArgTemplate()))){
+    if(((isArgTemplate() && !other.isTemplate() && other.children.size() < 1) || (!isTemplate() && children.size() < 1 && other.isArgTemplate()))){
 
         return true;
     }

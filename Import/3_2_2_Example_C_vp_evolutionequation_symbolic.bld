@@ -7,18 +7,18 @@
 // Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_symbolic.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_symbolic.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
-// $ ./build/ProcLang_d execute Import/3_2_2_Example_C_vp_evolutionequation.bld
+// $ ./build/ProcLang_d execute Import/3_2_2_Example_C_vp_evolutionequation_symbolic.bld
 
 // Includes
 fetch backend []
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
-string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
+string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2_symbolic", "Modelling of the evolution equation of elasto-viscoplasticity"
 int [orderTSM, dimension] = 3, 2
 bool seperateFluctuations = true
 
@@ -61,11 +61,13 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [sigmaY] = sigmaY0 + sigmaYTild
 
     // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
-    // removeEmplacedDiffTemplate(macaulay(tmplA), tmplB)
-    // setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
+    removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
+    setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
 
     //
-    tExpr devSigma = S . E . (epsilon - epsilonvp)
+    tExpr devSigma = tExpr("devSigma", 1, args(nVoigtComps))
+    requireDiffs(orderTSM, devSigma, D)
+    requireDiffs(orderTSM, devSigma, sigmaYTild)
 
     // Evolutionsgleichung der internen Variable
     tExpr epsilonvp_dot = inverse(eta) * macaulay((frobenius(devSigma) - sigmaY)) * inverse(frobenius(devSigma)) * (devSigma)
@@ -132,7 +134,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         logSeparator()
         slog("Tangente epsilonvp_E_" + string(order))
-        // slog(tangentE)
+        slog(tangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
         tangentY = diff(epsilonvp_dot_TSM, sigmaYTild, order)
@@ -142,7 +144,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         logSeparator()
         slog("Tangente epsilonvp_Y_" + string(order))
-        // slog(tangentY)
+        slog(tangentY)
         
         //
         outputs->emplace(<+tangentE, <+tangentY)
