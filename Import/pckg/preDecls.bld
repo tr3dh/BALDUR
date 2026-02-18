@@ -367,8 +367,8 @@ enableDiffTemplateDefaults()
 setDiffTemplate(tmplScalar * tmplA, tmplB, tmplScalar * diff(tmplA, tmplB))
 
 // Für Operationen
-setDiffTemplate(inverse(tmplScalar), tmplB, (-1) * inverse(tmplScalar) * diff(tmplScalar, tmplB) * inverse(tmplScalar))
-setDiffTemplate(inverse(tmplA), tmplB, (-1) * inverse(tmplA) . diff(tmplA, tmplB) . inverse(tmplA))
+setDiffTemplate(inverse(tmplScalar), tmplB, (-1) * inverse(tmplScalar * tmplScalar) * diff(tmplScalar, tmplB))
+setDiffTemplate(inverse(tmplA), tmplB, ((-1) * inverse(tmplA)) . diff(tmplA, tmplB) . inverse(tmplA))
 setDiffTemplate(tmplA', tmplB, diff(tmplA, tmplB)')
 setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmplA, tmplB)))
 setDiffTemplate(trace(tmplA), tmplB, trace(diff(tmplA, tmplB)))
