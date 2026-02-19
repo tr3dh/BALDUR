@@ -28,6 +28,14 @@ if(calledAs(__MainProc__)){
     string tResultLabel = "testEnv"
     tIdn tIDNResult = toWrappedIDN((A . A) * ((A .. A) - b))
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + tResultLabel + ".jl")
+
+    //
+    int aint = 7
+    int ref raint << aint
+
+    aint <- 8
+
+    slog(raint)
     
     //
     slog("------------------------")

@@ -181,7 +181,7 @@ decl cofactor(tExpr ref lhs){
 decl frobenius(tExpr ref lhs){
 
     if(lhs->getOrder() == 0){ return lhs }
-    else if(lhs->getOrder() == 1){ return [lhs . lhs]}
+    else if(lhs->getOrder() == 1){ return [lhs . lhs] }
     return [trace(transpose(lhs) . lhs)]
 }
 

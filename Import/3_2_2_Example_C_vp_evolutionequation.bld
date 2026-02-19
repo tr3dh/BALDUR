@@ -61,7 +61,7 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [sigmaY] = sigmaY0 + sigmaYTild
 
     // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
-    // removeEmplacedDiffTemplate(macaulay(tmplA), tmplB)
+    // removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
     // setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
 
     //
@@ -76,8 +76,12 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     tExpr s_epsilonvp_TSM, args s_tangents
 
+    tExpr tangent = epsilonvp->asExternalNode("epsilonvp_0")
+    s_tangents->emplace(<+tangent)
+    s_epsilonvp_TSM += tangent
+
     //
-    for(int order = 0, order < orderTSM + 1, order++){
+    for(int order = 1, order < orderTSM + 1, order++){
         
         //
         static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
@@ -99,6 +103,9 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     wrpSimplify(s_epsilonvp_TSM)
 
+    //
+    devSigma->replace(epsilonvp, s_epsilonvp_TSM)
+
     // Erweitern der Evolutionsgleichung, ändert hier tatsächlich nichts, nur Platzhalter für nicht subtituierten Fall
     tExpr epsilonvp_dot_TSM <+ epsilonvp_dot
     epsilonvp_dot_TSM->replace(epsilonvp, s_epsilonvp_TSM)
@@ -115,14 +122,28 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     args outputs
 
+    logSeparator()
+    slog("Tangente epsilonvp_0")
+
+    // Tangente i mal ableiten und D mit null substituieren
+    tangent = epsilonvp_dot_TSM
+    tangent->replace(D, zeros(D))
+    tangent->replace(sigmaYTild, zeros(sigmaYTild))
+
+    // Tangente in Julia Skript schreiben
+    result << tangent
+    tResultLabel = "epsilonvp_0"
+    log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+    //
+    tIDNResult = toWrappedIDN(result)
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
     // Ermitteln der Tangenten
-    for(int order = 0, order < orderTSM + 1, order++){
+    for(int order = 1, order < orderTSM + 1, order++){
 
-        static{
-
-            // res container
-            tExpr [tmpY, tangetY]
-        }
+        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
 
         // Tangente i mal ableiten und D mit null substituieren
         tangentE = diff(epsilonvp_dot_TSM, D, order)
