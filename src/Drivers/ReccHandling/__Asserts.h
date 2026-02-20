@@ -69,6 +69,7 @@ void RESET_ASSERTION_LOGGING();
         RESOLVE_CONDITION(condition);\
         ASSERT(resolvedCondition, message);\
         if (!(resolvedCondition)) {\
+            std::terminate();\
             return returnVal;\
         }\
     }\

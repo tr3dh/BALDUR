@@ -20,8 +20,10 @@ enum class IndexNotationOperator{
     Inversion,
     Trace,
     Determinant,
+    Frobenius,
     Macaulay,
     Signum,
+    Sqrt,
 
     Diff,
 
@@ -58,8 +60,10 @@ enum class TensorExpressionOperator{
     Transposition,
     Trace,
     Determinant,
+    Frobenius,
     Macaulay,
     Signum,
+    Sqrt,
     Ones,
     Zeros,
     Identity,
@@ -203,8 +207,10 @@ struct TensorExpression{
     void traceAssign();
 
     void determinantAssign();
+    void frobeniusAssign();
     void macaulayAssign();
     void signumAssign();
+    void sqrtAssign();
 
     void sectionAssign();
 
@@ -307,9 +313,10 @@ struct IndexNotatedTensorExpression{
     void traceAssign();
 
     void determinantAssign();
-
+    void frobeniusAssign();
     void macaulayAssign();
     void signumAssign();
+    void sqrtAssign();
 
     // void reEvaluateIndices();
 

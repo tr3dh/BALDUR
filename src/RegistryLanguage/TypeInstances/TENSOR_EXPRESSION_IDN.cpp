@@ -1044,6 +1044,29 @@ void IndexNotatedTensorExpression::determinantAssign(){
     // reEvaluateIndices();
 }
 
+void IndexNotatedTensorExpression::frobeniusAssign(){
+
+    //
+    // RETURNING_ASSERT(tensorOrder > 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    if(Relation == TkType::Argument){ fillIndices(); }
+
+    // Container benötigt ??
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Frobenius;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
 void IndexNotatedTensorExpression::macaulayAssign(){
 
     //
@@ -1080,6 +1103,23 @@ void IndexNotatedTensorExpression::signumAssign(){
     // reEvaluateIndices();
 }
 
+void IndexNotatedTensorExpression::sqrtAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Sqrt;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
 
 void IndexNotatedTensorExpression::evaluateIndexDimensions(std::map<int, int>& indexDimensions) const{
 
@@ -1246,6 +1286,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
 
             // Node Substituieren
             case IndexNotationOperator::Determinant:
+            case IndexNotationOperator::Frobenius:
             case IndexNotationOperator::Inversion:{
 
                 break;
@@ -1364,6 +1405,8 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             case IndexNotationOperator::Macaulay:
             case IndexNotationOperator::Signum:
             case IndexNotationOperator::Determinant:
+            case IndexNotationOperator::Frobenius:
+            case IndexNotationOperator::Sqrt:
             case IndexNotationOperator::Inversion:{
 
                 //
@@ -1372,6 +1415,8 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                 if(Operator == IndexNotationOperator::Macaulay){ jlFuncLabel = "macaulay"; }
                 else if(Operator == IndexNotationOperator::Signum){ jlFuncLabel = "signum"; }
                 else if(Operator == IndexNotationOperator::Determinant){ jlFuncLabel = "det"; }
+                else if(Operator == IndexNotationOperator::Frobenius){ jlFuncLabel = "frobenius"; }
+                else if(Operator == IndexNotationOperator::Sqrt){ jlFuncLabel = "sqrt"; }
                 else{ jlFuncLabel = "inv"; }
 
                 //
@@ -1587,6 +1632,16 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "function signum(x)\n";
     res += "    val = x isa AbstractArray ? x[] : x\n";
     res += "    return sign(val)\n";
+    res += "end\n\n";
+
+    res += "function frobenius(A)\n";
+    res += "    result = 0.0\n";
+    res += "    for i in axes(A, 1)\n";
+    res += "        for j in axes(A, 2)\n";
+    res += "            result += A[i,j]^2\n";
+    res += "        end\n";
+    res += "    end\n";
+    res += "    return sqrt(result)\n";
     res += "end\n\n";
 
     //
@@ -2036,6 +2091,10 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
 
                 res.determinantAssign();
             }
+            else if(expr.Operator == TensorExpressionOperator::Frobenius){
+
+                res.frobeniusAssign();
+            }
             else if(expr.Operator == TensorExpressionOperator::Macaulay){
 
                 res.macaulayAssign();
@@ -2043,6 +2102,10 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
             else if(expr.Operator == TensorExpressionOperator::Signum){
 
                 res.signumAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Sqrt){
+
+                res.sqrtAssign();
             }
             else if(expr.Operator == TensorExpressionOperator::Section){
 

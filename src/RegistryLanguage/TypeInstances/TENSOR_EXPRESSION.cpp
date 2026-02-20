@@ -19,11 +19,6 @@ std::map<TensorExpressionOperator, std::string> TensorExpressionOperatorStrings 
     {TensorExpressionOperator::DyadicProduct, "(x)"},
     {TensorExpressionOperator::CrossingDoubleContraction, ":"},
     {TensorExpressionOperator::MirroringDoubleContraction, ".."},
-    
-    {TensorExpressionOperator::Inversion, "^-1"},
-    {TensorExpressionOperator::Transposition, "^t"},
-    {TensorExpressionOperator::Trace, "^//"},
-    {TensorExpressionOperator::Determinant, "^det"},
 };
 
 std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpression&)> operatorMemberFunctions = {
@@ -47,11 +42,13 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
     {TensorExpressionOperator::Transposition, &TensorExpression::transposeAssign},
     {TensorExpressionOperator::Section, &TensorExpression::sectionAssign},
     {TensorExpressionOperator::Determinant, &TensorExpression::determinantAssign},
+    {TensorExpressionOperator::Frobenius, &TensorExpression::frobeniusAssign},
     {TensorExpressionOperator::Zeros, &TensorExpression::zerosAssign},
     {TensorExpressionOperator::Ones, &TensorExpression::onesAssign},
     {TensorExpressionOperator::Identity, &TensorExpression::identityAssign},
     {TensorExpressionOperator::Macaulay, &TensorExpression::macaulayAssign},
     {TensorExpressionOperator::Signum, &TensorExpression::signumAssign},
+    {TensorExpressionOperator::Sqrt, &TensorExpression::sqrtAssign},
 };
 
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
@@ -992,7 +989,8 @@ void TensorExpression::dotProductAssign(const TensorExpression& other){
     static TensorExpressionOperator operation = TensorExpressionOperator::DotProduct;
 
     // ASSERTS
-    RETURNING_ASSERT((tensorOrder > 0 && other.tensorOrder > 0) || tensorOrder == -1 || other.tensorOrder == -1, "Tensoren mit Stufe kleiner 1 and Skalarprodukt beteiligt",);
+    RETURNING_ASSERT((tensorOrder > 0 && other.tensorOrder > 0) || tensorOrder == -1 || other.tensorOrder == -1,
+    "Tensoren mit Stufe kleiner 1 and Skalarprodukt beteiligt " + toString() + " | " + other.toString(),);
 
     //
     bool copySelf = false;
@@ -1438,6 +1436,22 @@ void TensorExpression::determinantAssign(){
     // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
 }
 
+void TensorExpression::frobeniusAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Frobenius;
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
 void TensorExpression::macaulayAssign(){
 
     //
@@ -1461,6 +1475,25 @@ void TensorExpression::signumAssign(){
 
     //
     static TensorExpressionOperator operation = TensorExpressionOperator::Signum;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::sqrtAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Sqrt;
 
     //
     RETURNING_ASSERT(tensorOrder < 1, "...",);
@@ -2227,16 +2260,16 @@ std::string TensorExpression::toString(size_t depth) const{
     // Auskommentieren für Logging ohne Dimensions und Stufen angabe
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    // res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
+    res += depth > 0 ? "[" + std::to_string(tensorOrder) + "]" : "";
 
-    // if(depth > 0 && containsDimensions()){
+    if(depth > 0 && containsDimensions()){
 
-    //     res += "(";
-    //     for(const auto& dim : dimensions){
-    //         res += std::to_string(dim) + ",";
-    //     }
-    //     res += ")";
-    // }
+        res += "(";
+        for(const auto& dim : dimensions){
+            res += std::to_string(dim) + ",";
+        }
+        res += ")";
+    }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3123,6 +3156,23 @@ namespace types{
         {TENSOR_EXPRESSION::typeIndex});
 
         //
+        registerFunction("frobenius", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "frobenius", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().frobeniusAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
         registerFunction("macaulay", {TENSOR_EXPRESSION::typeIndex},
             [__functionLabel__ = "macaulay", __numArgs__ = 1](FREG_ARGS){
 
@@ -3153,6 +3203,23 @@ namespace types{
 
                 GET_RETURN(TENSOR_EXPRESSION, 0);
                 ret0->getMember().signumAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("sqrt", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "sqrt", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().sqrtAssign();
         },
         {TENSOR_EXPRESSION::typeIndex});
 
@@ -3820,6 +3887,25 @@ namespace types{
 
                 // schreiben in returns
                 ret0->getMember() = TensorExpression(arg0->getMember(), -1);
+                ret0->getMember().convertToArgTemplate();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Konstruktoren
+        registerFunction("tExprArgTmpl", {STRING::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "tExprArgTmpl", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                GET_ARG(STRING, 0); GET_ARG(INT, 1);
+
+                // schreiben in returns
+                ret0->getMember() = TensorExpression(arg0->getMember(), arg1->getMember());
                 ret0->getMember().convertToArgTemplate();
         },
         {TENSOR_EXPRESSION::typeIndex});

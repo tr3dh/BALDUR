@@ -107,7 +107,8 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
     return { if(returnTangents){ return [res, tangents] }; else{ return [res] } }
 }
 
-int g_unwrapComplexityThreshold = 400000
+//
+int g_unwrapComplexityThreshold = 5000000
 
 //
 decl wrpSimplify(tExpr ref expr){
