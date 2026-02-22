@@ -157,6 +157,10 @@ double MU_0                = 1.25663706212*10.0^(-6.0)          // magnetische F
 double FINE_STRUCTURE      = 7.2973525693*10.0^(-3.0)           // Feinstrukturkonstante α (dimensionlos)
 double GRAVITY_EARTH       = 9.80665                            // Normale Erdbeschleunigung g [m/s²]
 
+// Arg handling
+decl sum(args prms){ return [prms->chainByOperator("+=")] }
+decl product(args prms){ return [prms->chainByOperator("*=")] }
+
 // Printformatierung
 int separatorWidth = 90
 string [space, separatorSequence] = " ", "="
@@ -165,25 +169,6 @@ string separator = separatorWidth * separatorSequence
 //
 decl logSpace(){ log(space) }
 decl logSeparator(){ log(separator) }
-
-// Arg handling
-decl sum(args prms){ return [prms->chainByOperator("+=")] }
-decl product(args prms){ return [prms->chainByOperator("*=")] }
-
-//
-decl cofactor(tExpr ref lhs){
-
-    return [det(lhs) * transpose(inverse(lhs))]
-}
-
-// Beide Notationen sind korrekt
-// decl frobenius(tExpr ref lhs){ return [sqrt(lhs .n lhs)] }
-decl frobenius(tExpr ref lhs){
-
-    if(lhs->getOrder() == 0){ return lhs }
-    else if(lhs->getOrder() == 1){ return [lhs . lhs]}
-    return [trace(transpose(lhs) . lhs)]
-}
 
 // Standardmatritzen für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
@@ -195,35 +180,88 @@ decl tIdnOnes(int order){ return [tIDN("ones", order)] }
 decl tExprEps(int order){ return [tExpr("eps", order)] }
 decl tIdnEps(int order){ return [tIDN("eps", order)] }
 
-// Templates für beliebig stufige Tensoren
-tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
+//
+decl cofactor(tExpr ref lhs){ return [det(lhs) * transpose(inverse(lhs))] }
 
-// Templates für Tensoren spezifischer Stufe
+// Beide Notationen sind korrekt die Notation mit .n verursacht teilweise nur bei der
+// Produktregel Probleme, da .n keine Stufe ermittelt und für später setzt sonder
+// immer die maximal mögliche Anzahl an Indizes kontrahiert
+
+//
+// decl frobenius(tExpr ref lhs){ return [sqrt(lhs .n lhs)] }
+
+// !! Funktionsdeklaration überschreibt vom Interpreter standardmäßig definierte Funktion 'frobenius',
+//    die einfache Containerbildung betreibt und die konkrete Ermittlung der Frobenius Norm einer gewissen
+//    an das Julia Skript auslagern 
+decl frobenius(tExpr ref lhs){
+
+    if(lhs->getOrder() == 0){ return lhs }
+    else if(lhs->getOrder() == 1){ return [sqrt(lhs . lhs)]}
+    return [sqrt(trace(transpose(lhs) . lhs))]
+}
+
+// Template Deklarationen für Ableitungs und Vereinfachungs Templates
+
+// Konstantentemplates
 tExpr [CnstTmpl]                                = tExprCnstTmpl()
 tExpr [CnstTmplA, CnstTmplB]                    = tExprCnstTmpl("CnstTmplA"), tExprCnstTmpl("CnstTmplB")
+
+// Argtemplates
 tExpr [ScalarArgTmplA, ScalarArgTmplB]          = tExprArgTmpl("ScalarArgTmplA", 0), tExprArgTmpl("ScalarArgTmplB", 0)
 tExpr [ArgTmplA, ArgTmplB]                      = tExprArgTmpl("ArgTmplA"), tExprArgTmpl("ArgTmplB")
-tExpr [tmplScalar]                              = tExprTmpl("tmplSc", 0)
-tExpr [tmplScalarA, tmplScalarB]                = tExprTmpl("tmplScA", 0), tExprTmpl("tmplScB", 0)
+
+// Instanztemplates
 tExpr [zerosInstanceTemplate]                   = tExprInstcTmpl("zeros")
 tExpr [onesInstanceTemplate]                    = tExprInstcTmpl("ones")
 tExpr [identityInstanceTemplate]                = tExprInstcTmpl("Identity")
-tExpr [epsInstanceTemplate]                     = tExprInstcTmpl("eps")             // Levi-Civita-Tensor Instance Template
+tExpr [epsInstanceTemplate]                     = tExprInstcTmpl("eps")
+
+// std Templates für Tensoren konkreter Stufe
+tExpr [tmplScalar]                              = tExprTmpl("tmplSc", 0)
 tExpr [tmplVector]                              = tExprTmpl("tmplVec", 1)
 tExpr [tmplMatrix]                              = tExprTmpl("tmplMat", 2)
 tExpr [tmplTensor]                              = tExprTmpl("tmplTensor", -1)
 
+// std Templates für beliebig stufige Tensoren
+tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
+
 // Simplifizierungen
 
-// ZEROS Vereinfachungen
+// Vereinfachungen von Skalaren Standardmatritzen zu Konstanten
+setEqual(zeros(tmplScalar), tExpr(0))
+setEqual(identity(tmplScalar), tExpr(1))
+setEqual(ones(tmplScalar), tExpr(1))
+setEqual(tExpr("eps", 0), tExpr(1))
+
+// Operationesvereinfachung für Konstanten
+setEqual(tmplA * 1, tmplA)
+setEqual(1 * tmplA, tmplA)
+setEqual(tmplA * 0, zeros(tmplA))
+setEqual(0 * tmplA, zeros(tmplA))
+setEqual(tmplScalar + 0, tmplScalar)
+setEqual(0 + tmplScalar, tmplScalar)
+setEqual(tmplScalar - 0, tmplScalar)
+setEqual(0 - tmplScalar, (-1) * tmplScalar)
+
+// Vereinfachung von Standard Operationen
+
+// // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
+// setEqual(tmplA + tmplA, 2 * tmplA)
+
+setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
+setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
+setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
+setEqual(tmplA - tmplA, zeros(tmplA))
+setEqual(tmplA - CnstTmplA * tmplA, (CnstTmplA - 1) * tmplA)
+setEqual(CnstTmplA * tmplA - CnstTmplB * tmplA, (CnstTmplA - CnstTmplB) * tmplA)
+
+// Nullmatrix Vereinfachungen
 setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
 setEqual(tmplA + zerosInstanceTemplate, tmplA)                                          // (trivial)
 setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
 setEqual(tmplA - zerosInstanceTemplate, tmplA)
-
 setEqual(zerosInstanceTemplate * tmplScalar, zeros(zerosInstanceTemplate * tmplScalar)) // *
 setEqual(tmplScalar * zerosInstanceTemplate, zeros(tmplScalar * zerosInstanceTemplate)) // (trivial)
-
 setEqual(zerosInstanceTemplate * CnstTmpl, zerosInstanceTemplate)                       // *
 setEqual(CnstTmpl * zerosInstanceTemplate, zerosInstanceTemplate)
 setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
@@ -239,32 +277,7 @@ setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
 setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplate))
 
-//
-setEqual(zeros(tmplScalar), tExpr(0))
-setEqual(identity(tmplScalar), tExpr(1))
-setEqual(ones(tmplScalar), tExpr(1))
-setEqual(tExpr("eps", 0), tExpr(1))
-
-//
-setEqual(tmplA * 1, tmplA)
-setEqual(1 * tmplA, tmplA)
-setEqual(tmplA * 0, zeros(tmplA))
-setEqual(0 * tmplA, zeros(tmplA))
-setEqual(tmplScalar + 0, tmplScalar)
-setEqual(0 + tmplScalar, tmplScalar)
-setEqual(tmplScalar - 0, tmplScalar)
-setEqual(0 - tmplScalar, (-1) * tmplScalar)
-
-//
-setEqual(tmplA . inverse(tmplA), identity(tmplA))
-setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
-setEqual(inverse(inverse(tmplA)), tmplA)
-setEqual(transpose(transpose(tmplA)), tmplA)
-
-// // Optionale Template Optionen
-
-// // Algemeine Vereinfachungen für Identity
-// // setEqual(identityInstanceTemplate . identityInstanceTemplate, identityInstanceTemplate)
+// Einheitsmatrix Vereinfachungen
 
 // Diese Ausdrücke erfordert teilweise zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
 // Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
@@ -275,19 +288,14 @@ setEqual(tmplA . identity(tmplA), tmplA)
 setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
 setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityInstanceTemplate \(x) identityInstanceTemplate))     // \(x)
 
-// // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
-// setEqual(tmplA + tmplA, 2 * tmplA)
+// Vereinfachungen für Container
+setEqual(tmplA . inverse(tmplA), identity(tmplA))
+setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+setEqual(inverse(inverse(tmplA)), tmplA)
+setEqual(transpose(transpose(tmplA)), tmplA)
+setEqual(sqrt(tmplScalar) * sqrt(tmplScalar), tmplScalar)
 
-setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
-setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
-setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
-setEqual(tmplA - tmplA, zeros(tmplA))
-setEqual(tmplA - CnstTmplA * tmplA, (CnstTmplA - 1) * tmplA)
-setEqual(CnstTmplA * tmplA - CnstTmplB * tmplA, (CnstTmplA - CnstTmplB) * tmplA)
-
-// template Instanzierungen für Ersetzung durch template Schema
-// Hier muss nich auf Reihenfolge geachtet werden
-// DiffTemplate Logik überlädt eigenständig nach Tensorinstanz, Tensorstufe, Struktur und Spezifizierung (bzw. Komplexität) 
+// Aufsetzen des Default Verhaltens bei der Ableitung von Tensorausdrücken
 
 //
 bool diffTemplateDefaultsEnabled = false
@@ -326,13 +334,20 @@ decl setDiffTemplateDefaults(bool val){
 //
 enableDiffTemplateDefaults()
 
-// Einfache Operationen
+// Konkretisierte Ableitungsregeln
+
+// // Ableitungen von standard Instanzen
+// setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) tmplA))
+// setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
+// setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
+// setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
+// setDiffTemplate(CnstTmpl, tmplA, zeros(tmplA))
 
 // Skalar Multiplikation mit Konstante
 setDiffTemplate(CnstTmpl * tmplA, tmplB, CnstTmpl * diff(tmplA, tmplB))
 setDiffTemplate(tmplA * CnstTmpl, tmplB, CnstTmpl * diff(tmplA, tmplB))
 
-// Für Operationen
+// Ableitung von Containern
 setDiffTemplate(inverse(tmplScalar), tmplB, (-1) * inverse(tmplScalar * tmplScalar) * diff(tmplScalar, tmplB))
 setDiffTemplate(inverse(tmplA), tmplB, ((-1) * inverse(tmplA)) . diff(tmplA, tmplB) . inverse(tmplA))
 setDiffTemplate(transpose(tmplA), tmplB, transpose(diff(tmplA, tmplB)))
@@ -340,16 +355,8 @@ setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmpl
 setDiffTemplate(trace(tmplA), tmplB, identity(tmplA) : (diff(tmplA, tmplB)))
 setDiffTemplate(macaulay(tmplScalar), tmplB, (signum(tmplScalar) + 1) * 0.5 * diff(tmplScalar, tmplB))
 setDiffTemplate(signum(tmplA), tmplB, zeros(tmplA \(x) tmplB))
-
-//
 setDiffTemplate(sqrt(tmplScalar), tmplB, 0.5 * inverse(sqrt(tmplScalar)) * diff(tmplScalar, tmplB))
-setEqual(sqrt(tmplScalar) * sqrt(tmplScalar), tmplScalar)
-setDiffTemplate(frobenius(tmplVector), tmplB, (tmplVector * inverse(frobenius(tmplVector))) . diff(tmplVector, tmplB))
-setDiffTemplate(frobenius(tmplA), tmplB, (tmplA * inverse(frobenius(tmplA))) . diff(tmplA, tmplB))
 
-// Für standard Instanzen
-setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) tmplA))
-setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
-setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
-setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
-setDiffTemplate(CnstTmpl, tmplA, zeros(tmplA))
+// setDiffTemplate(frobenius(tmplScalar), tmplB, (tmplScalar * inverse(frobenius(tmplScalar))) * diff(tmplScalar, tmplB))
+setDiffTemplate(frobenius(tmplVector), tmplB, (tmplVector * inverse(frobenius(tmplVector))) . diff(tmplVector, tmplB))
+setDiffTemplate(frobenius(tmplMatrix), tmplB, (tmplMatrix * inverse(frobenius(tmplMatrix))) .. diff(tmplMatrix, tmplB))

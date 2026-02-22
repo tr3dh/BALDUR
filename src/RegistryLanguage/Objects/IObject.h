@@ -45,6 +45,10 @@ public:
     virtual bool isTrivial(){ return true; }
 
     virtual void clear(){};
+
+    virtual void cloneMember(std::unique_ptr<IObject>& other){ RETURNING_ASSERT(TRIGGER_ASSERT, "clone Member nicht implementiert",); };
+    virtual void moveMember(std::unique_ptr<IObject>& other){ RETURNING_ASSERT(TRIGGER_ASSERT, "mov Member nicht implementiert",); };
+    virtual void swapMembers(std::unique_ptr<IObject>& other){ RETURNING_ASSERT(TRIGGER_ASSERT, "swap Members nicht implementiert",); };
 };
 
 std::ostream& operator<<(std::ostream& os, IObject* obj);

@@ -20,18 +20,6 @@ if(calledAs(__MainProc__)){
 
     // ...
 
-    tExpr [A, b] = tExpr("A", 2, args(3,3)), tExpr("b", 0)
-    tExpr [a, B] = tExpr("a", 1, args(3)), tExpr("B", 2, args(3,3))
-
-    res = frobenius(a) * b
-
-    slog(diff(res, B))
-
-    //
-    string tResultLabel = "testEnv"
-    tIdn tIDNResult = toIDN(res)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + tResultLabel + ".jl")
-
     //
     slog("------------------------")
     slog("Test Umgebung wird geschlossen ...")

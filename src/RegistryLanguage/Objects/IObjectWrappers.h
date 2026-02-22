@@ -149,4 +149,55 @@ public:
             RETURNING_ASSERT(TRIGGER_ASSERT, "Clone Funktion muss für diesen Typ manuell implementiert werden", nullptr);
         }
     }
+
+    //
+    virtual void cloneMember(std::unique_ptr<IObject>& other){
+
+        // Check gegen Illegale Konvertierung
+        RETURNING_ASSERT(this->getTypeIndex() == other->getTypeIndex(), "Narrowing Conversion",);
+
+        // convert von other in Childclassmember
+        INativeObject<Tag, T>* nativeRhs = static_cast<INativeObject<Tag, T>*>(other.get());
+
+        // nun zugriff auf die Member
+        // this->getMember() | nativeRhs->getMember()
+
+        // Aufruf der Clone Funktion nötigt, da der memory safe clone evtl erst in der hier noch unbekannten Childklasse (siehe Args.h)
+        // des INativeObjects definiert wird, damit wird die polymorphe Funktion beibehalten
+        // Funktioniert nicht mit direktem 'member = othermember', da für Member klasse unter Umständen kein copy oder =operator mehr definiert ist
+        std::unique_ptr<IObject> uniqueNativeCopy = other->clone();
+        INativeObject<Tag, T>* nativeCopy = static_cast<INativeObject<Tag, T>*>(uniqueNativeCopy.release());
+
+        //
+        this->getMember() = std::move(nativeCopy->getMember());
+
+        //
+        delete nativeCopy;
+    };
+
+    virtual void moveMember(std::unique_ptr<IObject>& other){
+
+        // Check gegen Illegale Konvertierung
+        RETURNING_ASSERT(this->getTypeIndex() == other->getTypeIndex(), "Narrowing Conversion",);
+
+        // convert von other in Childclassmember
+        INativeObject<Tag, T>* nativeRhs = static_cast<INativeObject<Tag, T>*>(other.get());
+
+        // nun zugriff auf die Member
+        // this->getMember() | nativeRhs->getMember()
+        this->getMember() = std::move(nativeRhs->getMember());
+    };
+
+    virtual void swapMembers(std::unique_ptr<IObject>& other){
+        
+        // Check gegen Illegale Konvertierung
+        RETURNING_ASSERT(this->getTypeIndex() == other->getTypeIndex(), "Narrowing Conversion",);
+
+        // convert von other in Childclassmember
+        INativeObject<Tag, T>* nativeRhs = static_cast<INativeObject<Tag, T>*>(other.get());
+
+        // nun zugriff auf die Member
+        // this->getMember() | nativeRhs->getMember()
+        std::swap(this->getMember(), nativeRhs->getMember());
+    };
 };

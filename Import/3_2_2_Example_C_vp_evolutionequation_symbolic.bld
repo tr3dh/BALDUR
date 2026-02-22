@@ -63,9 +63,9 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [sigmaY0, sigmaYTild] = tExpr("sigmaY", 0), tExpr("sigmaYTild", 0)
     tExpr [sigmaY] = sigmaY0 + sigmaYTild
 
-    // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
-    removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
-    setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
+    // // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
+    // removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
+    // setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
 
     //
     tExpr devSigma = tExpr("devSigma", 1, args(nVoigtComps))

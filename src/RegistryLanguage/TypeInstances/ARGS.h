@@ -150,6 +150,7 @@ namespace types{
             }
         }
 
+        //
         void clear() override{
 
             getMember().clear();

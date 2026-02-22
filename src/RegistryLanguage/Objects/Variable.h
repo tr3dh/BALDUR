@@ -19,20 +19,51 @@ struct Variable{
         ownedObject = std::move(uniqueObjectPtr);
     }
 
+    void clone(Variable& other){
+
+        RETURNING_ASSERT(other.isValid(), "MM Semantik für Invalide Variable aufgerufen",);
+
+        std::unique_ptr<IObject>& lhs = *getUniqueData();
+        std::unique_ptr<IObject>& rhs = *other.getUniqueData();
+
+        if(lhs != nullptr && lhs->isUniform()){
+
+            lhs->cloneMember(rhs);
+        }
+        else{
+
+            lhs = rhs->clone();
+        }
+    }
+
     void move(Variable& other){
         
-        *getUniqueData() = std::move(*other.getUniqueData());
+        std::unique_ptr<IObject>& lhs = *getUniqueData();
+        std::unique_ptr<IObject>& rhs = *other.getUniqueData();
+
+        if((lhs != nullptr && lhs->isUniform()) || (rhs != nullptr && rhs->isUniform())){
+
+            lhs->moveMember(rhs);
+        }
+        else{
+
+            lhs = std::move(rhs);
+        }
     }
 
     void swap(Variable& other){
 
-        std::swap(*getUniqueData(), *other.getUniqueData());
-    }
+        std::unique_ptr<IObject>& lhs = *getUniqueData();
+        std::unique_ptr<IObject>& rhs = *other.getUniqueData();
 
-    void clone(Variable& other){
+        if((lhs != nullptr && lhs->isUniform()) || (rhs != nullptr && rhs->isUniform())){
 
-        RETURNING_ASSERT(other.isValid(), "MM Semantik für Invalide Variable aufgerufen",);
-        *getUniqueData() = other.getData()->clone();
+            lhs->swapMembers(rhs);
+        }
+        else{
+
+            std::swap(lhs, rhs);
+        }
     }
 
     void reference(Variable& other){
