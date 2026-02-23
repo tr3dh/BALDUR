@@ -57,7 +57,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 2, 2
 
 //
 // setUnwrapOperands(false)

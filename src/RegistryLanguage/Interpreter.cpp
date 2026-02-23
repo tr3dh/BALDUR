@@ -153,6 +153,9 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     }
 
     //
+    CheckAllOperatorsRegistered();
+
+    //
     g_terminateAfterAssertionFailed = true;
 
     // Abhier wird als Context in den Asserts der entsprechende Code Ausschnitt aufgeführt
@@ -348,8 +351,59 @@ ProcessingResult executeScript(const std::string& scriptPath, Scope* nullScope, 
     return prc;
 }
 
+bool CheckAllOperatorsRegistered()
+{
+    bool allFound = true;
+
+    auto check = [&](const std::map<std::string, std::string>& ops, const std::string& mapName)
+    {
+        for (const auto& [op, _] : ops)
+        {
+            if (std::find(g_UsedOperators.begin(), g_UsedOperators.end(), op) == g_UsedOperators.end())
+            {
+                RETURNING_ASSERT(TRIGGER_ASSERT, "Operator '" + op + "' kommt in PREFIX, INFIX oder FOLD vor wird im LEXICON aber nicht angegeben",);
+                allFound = false;
+            }
+        }
+    };
+
+    check(g_OneArgOperations,   "g_OneArgOperations");
+    check(g_TwoArgOperations,   "g_TwoArgOperations");
+    check(g_ArgChainOperations, "g_ArgChainOperations");
+
+    return allFound;
+}
+
 void defaultSetupLexicalInstances(){
     
+    g_UsedOperators = {
+    
+        COLON,
+
+        // Zuwisungen und Memory Management
+        "=", "<<", "<>", "<-", "<+",                            // Memory Management Semantik
+        "+=", "-=", "*=", "/=", "^=",                           // Ops für 2 Arg Operationen
+        ".=", ".n=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
+        "\\diff=",
+        "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen
+
+        // Walrus Operator
+        "=>",
+
+        // Inline Operatoren
+        "&&", "!&", "||", "!|", "x|", "!x|",            // ...
+        "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
+        "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
+        ".", ".n", "..", ":", "\\x", "\\(x)", "°=",     // für verkettung über Matrix ops
+        "\\diff",
+        "++", "--", "!",                                // Single Argument Ops
+        KOMMA,                                          //
+        "~", "'", "°", "$",                             // Ops für Index Notation
+        "^~", "^'", "^°",                               // Ops für Index Notation
+        "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
+        "dref", "invl"              
+    };
+
     //
     g_OneArgOperations = {
 
@@ -368,6 +422,7 @@ void defaultSetupLexicalInstances(){
         {"^°", "__traceInplaceAssign__"},
         {"$", "__sectionAssign__"},
         {"dref", "__dereference__"},
+        {"invl", "__invalidate__"},
     };
 
     // Map der Form Operator | Funktionslabel
@@ -438,13 +493,13 @@ void defaultSetupLexicalInstances(){
         {"!|", "__norAssign__"},
         {"!x|", "__nxorAssign__"},
         
-        // Bools
-        {"and", "__andAssign__"},
-        {"or", "__orAssign__"},
-        {"xor", "__xorAssign__"},
-        {"nand", "__nandAssign__"},
-        {"nor", "__norAssign__"},
-        {"nxor", "__nxorAssign__"},
+        // // Bools
+        // {"and", "__andAssign__"},
+        // {"or", "__orAssign__"},
+        // {"xor", "__xorAssign__"},
+        // {"nand", "__nandAssign__"},
+        // {"nor", "__norAssign__"},
+        // {"nxor", "__nxorAssign__"},
 
         {".", "__dotProductAssign__"},
         {".n", "__contractingDotProductAssign__"},

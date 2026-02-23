@@ -773,5 +773,120 @@ bool emplaceStdOperations(){
     },
     {});
 
+    //
+    registerFunction("__invalidate__", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__invalidate__", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            if(inputs[0]->getVariableRef().isReference()){
+
+                inputs[0]->getVariableRef().getUniqueData()->reset(nullptr);
+            }
+            else{
+                
+                inputs[0]->getVariableRef().inValidate();
+            }
+    },
+    {});
+
+    //
+    registerFunction("isInstance", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isInstance", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = !inputs[0]->getVariableRef().isReference();
+    },
+    {types::BOOL::typeIndex});
+
+    //
+    registerFunction("isReference", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isReference", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = inputs[0]->getVariableRef().isReference();
+    },
+    {types::BOOL::typeIndex});
+
+    //
+    registerFunction("isRValue", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isRValue", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = inputs[0]->isRValue();
+    },
+    {types::BOOL::typeIndex});
+
+    //
+    registerFunction("isLValue", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isLValue", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = inputs[0]->isLValue();
+    },
+    {types::BOOL::typeIndex});
+
+    //
+    registerFunction("isValid", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isValid", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = inputs[0]->isValid();
+    },
+    {types::BOOL::typeIndex});
+
+    //
+    registerFunction("isInValid", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isInValid", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = !inputs[0]->isValid();
+    },
+    {types::BOOL::typeIndex});
+
     return true;
 }

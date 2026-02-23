@@ -27,12 +27,6 @@ if(calledAs(__MainProc__)){
     // ...
 
     //
-    assert(false, "...")
-
-    //
-    assert(false, "...")
-
-    //
     slog("------------------------")
     slog("Test Umgebung wird geschlossen ...")
 }

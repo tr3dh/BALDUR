@@ -19,7 +19,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2_symbolic", "Modelling of the evolution equation of elasto-viscoplasticity"
-int [orderTSM, dimension] = 2, 2
+int [orderTSM, dimension] = 2, 3
 bool seperateFluctuations = true
 
 //
@@ -106,6 +106,84 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     wrpSimplify(s_epsilonvp_TSM)
+
+    //
+    tExpr sigma_TSM <+ sigma
+    sigma_TSM->replace(epsilonvp, s_epsilonvp_TSM)
+
+    logSeparator()
+    slog("Tangente sigma_0")
+
+    // Tangente i mal ableiten und D mit null substituieren
+    tangent = sigma_TSM
+    tangent->replace(D, zeros(D))
+    tangent->replace(sigmaYTild, zeros(sigmaYTild))
+    wrpSimplify(tangent)
+
+    //
+    slog(tangent)
+
+    // Tangente in Julia Skript schreiben
+    result << tangent
+    tResultLabel = "sigma_0"
+    log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+    //
+    tIDNResult = toWrappedIDN(result)
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+    // Ermitteln der Tangenten
+    for(int order = 1, order < orderTSM + 1, order++){
+
+        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
+
+        // Tangente i mal ableiten und D mit null substituieren
+        tangentE = diff(sigma_TSM, D, order)
+        tangentE->replace(D, zeros(D))
+        tangentE->replace(sigmaYTild, zeros(sigmaYTild))
+        wrpSimplify(tangentE)
+
+        logSeparator()
+        slog("Tangente sigma_E_" + string(order))
+        slog(tangentE)
+
+        // Tangente i mal ableiten und sigmaYTild mit null substituieren
+        tangentY = diff(sigma_TSM, sigmaYTild, order)
+        tangentY->replace(D, zeros(D))
+        tangentY->replace(sigmaYTild, zeros(sigmaYTild))
+        wrpSimplify(tangentY)
+
+        logSeparator()
+        slog("Tangente sigma_Y_" + string(order))
+        slog(tangentY)
+        
+        //
+        logSeparator()
+
+        // Tangente in Julia Skript schreiben
+        result << tangentE
+        tResultLabel = "sigma_E_" + string(order)
+        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // Tangente in Julia Skript schreiben
+        result << tangentY
+        tResultLabel = "sigma_Y_" + string(order)
+        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // DREF vor Schleifenabbruch
+        if(order == orderTSM){ dref result }
+    }
 
     //
     devSigma->replace(epsilonvp, s_epsilonvp_TSM)
