@@ -19,7 +19,7 @@ extern std::unordered_map<char, char> matchingBrackets;
 extern std::unordered_set<char> openingBrackets, closingBrackets;
 
 //
-void SetUpLexer(const std::vector<std::string>& operators = {COLON, "=", "()=", "-", KOMMA, "*", "+", "^", "++", ">>", "."});
+void SetUpLexer(const std::vector<std::string>& operators);
 
 enum class TkType : uint8_t{
 

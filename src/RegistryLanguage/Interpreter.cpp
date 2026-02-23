@@ -21,59 +21,6 @@ int countOccurrences(const std::string& str, const std::string& sub) {
     return count;
 }
 
-// std::string getErrorContext(){
-
-//     std::string res;
-
-//     if(g_currentlyEvaluatedScript != nullptr && g_currentlyEvaluatedNode != nullptr){
-
-//         std::ostringstream oss;
-
-//         // Bereich in tokenfolge : g_currentlyEvaluatedNode->begin - g_currentlyEvaluatedNode->end
-//         const Token& firstToken = g_currentlyEvaluatedScript->tokens[g_currentlyEvaluatedNode->begin];
-//         const Token& lastToken = g_currentlyEvaluatedScript->tokens[g_currentlyEvaluatedNode->end - 1];
-
-//         size_t position = 0, len = 0, linePos = 0, lineSpan = 0;
-
-//         for(size_t i = 0; i < g_currentlyEvaluatedScript->lineBreaks.size() - 2; i++){
-
-//             if(g_currentlyEvaluatedScript->lineBreaks[i] <= firstToken.position &&
-//                 g_currentlyEvaluatedScript->lineBreaks[i + 1] > firstToken.position + firstToken.length){
-
-//                 //
-//                 position = g_currentlyEvaluatedScript->lineBreaks[i];
-//                 linePos = i;
-//             }
-
-//             if(g_currentlyEvaluatedScript->lineBreaks[i] <= lastToken.position &&
-//                 g_currentlyEvaluatedScript->lineBreaks[i + 1] > lastToken.position + lastToken.length){
-
-//                 //
-//                 len = g_currentlyEvaluatedScript->lineBreaks[i + 1] - position;
-//                 lineSpan = i - linePos;
-//             }
-//         }
-
-//         LOG << g_currentlyEvaluatedScript->lineBreaks << endl;
-
-//         res += g_currentlyEvaluatedScript->scriptPath + ":" + std::to_string(linePos) + "\n";
-
-//         res += std::to_string(position) + " " + std::to_string(len) + "\n";
-//         res += std::to_string(linePos) + " " + std::to_string(lineSpan) + "\n";
-//         res += std::to_string(g_currentlyEvaluatedScript->lineBreaks[linePos]) + "\n";
-
-//         for(size_t i = linePos; i < linePos + lineSpan + 1; i++){
-
-//             res += std::to_string(i) + "   | " + g_currentlyEvaluatedScript->scriptContent.substr(g_currentlyEvaluatedScript->lineBreaks[i] + 1, g_currentlyEvaluatedScript->lineBreaks[i + 1] - g_currentlyEvaluatedScript->lineBreaks[i]);
-//         }
-
-//         size_t offset = std::to_string(linePos).length() + 5 + firstToken.position - position - 1;
-//         res += std::string(offset, ' ') + "^"; // + std::string(len - 1, '~') + "\n";
-//     }
-
-//     return res;
-// }
-
 std::string getErrorContext(){
 
     std::string res;
@@ -106,7 +53,7 @@ std::string getErrorContext(){
                 lineSpan = i - linePos;
             }
         }
-
+        
         //
         res += "\n>> Context : ";
 
@@ -182,6 +129,33 @@ std::string getErrorContext(){
 std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPath, Scope* parent){
 
     //
+    if(fs::exists(fs::path(scriptPath).parent_path().string() + "/LPECONFIG.JSON")){
+
+        //
+        LOG << "[" + getTimestamp() + "] LPEConfig gefunden, Umgebung wird aufgesetzt" << endl;
+
+        //
+        nlohmann::json lpeConfig = nlohmann::json::parse(std::ifstream(fs::path(scriptPath).parent_path() / "LPECONFIG.JSON"), nullptr, true, true);
+
+        //
+        g_UsedOperators = lpeConfig.at("LEXICON").get<std::vector<std::string>>();
+        g_OneArgOperations = lpeConfig.at("PREFIX").get<std::map<std::string, std::string>>();
+        g_TwoArgOperations = lpeConfig.at("INFIX").get<std::map<std::string, std::string>>();
+        g_ArgChainOperations = lpeConfig.at("FOLD").get<std::map<std::string, std::string>>();
+    }
+    else{
+
+        //
+        LOG << "[" + getTimestamp() + "] keine LPEConfig gefunden, Umgebung wird mit default Config aufgesetzt" << endl;
+
+        //
+        defaultSetupLexicalInstances();
+    }
+
+    //
+    g_terminateAfterAssertionFailed = true;
+
+    // Abhier wird als Context in den Asserts der entsprechende Code Ausschnitt aufgeführt
     g_getErrorContext = &getErrorContext;
 
     // Aufsetzen der mitgelieferten Standard Typen
@@ -372,4 +346,113 @@ ProcessingResult executeScript(const std::string& scriptPath, Scope* nullScope, 
 
     //
     return prc;
+}
+
+void defaultSetupLexicalInstances(){
+    
+    //
+    g_OneArgOperations = {
+
+        {"!", "__negate__"},
+        {"-", "__negate__"},
+        {"++", "__increment__"},
+        {"--", "__decrement__"},
+        {"<-", "__move__"},
+        {"<<", "__reference__"},
+        {"<+", "__copy__"},
+        {"~", "__inverseAssign__"},
+        {"'", "__transposeAssign__"},
+        {"°", "__traceAssign__"},
+        {"^~", "__inverseInplaceAssign__"},
+        {"^'", "__transposeInplaceAssign__"},
+        {"^°", "__traceInplaceAssign__"},
+        {"$", "__sectionAssign__"},
+        {"dref", "__dereference__"},
+    };
+
+    // Map der Form Operator | Funktionslabel
+    g_TwoArgOperations = {
+
+        // Inhalte später mit Operatoren liste aus einer json Datei laden, die das Project Env darstellt
+        
+        {"=", "__assign__"},
+        {"<<", "__reference__"},
+        {"<>", "__swap__"},
+        {"<-", "__move__"},
+        {"<+", "__copy__"},
+
+        {"+=", "__addAssign__"},
+        {"-=", "__subAssign__"},
+        {"*=", "__mulAssign__"},
+        {"/=", "__divAssign__"},
+        {"^=", "__expAssign__"},
+
+        {"=>", "__walrusAssign__"},
+
+        {"==", "__equal__"},
+        {"!=", "__notEqual__"},
+        {">",  "__bigger__"},
+        {"<",  "__smaller__"},
+        {">=", "__biggerEqual__"},
+        {"<=",  "__smallerEqual__"},
+
+        {"&=", "__andAssign__"},
+        {"|=", "__orAssign__"},
+        {"x|=", "__xorAssign__"},
+        {"!&=", "__nandAssign__"},
+        {"!|=", "__norAssign__"},
+        {"!x|=", "__nxorAssign__"},
+
+        {"%", "__modulo__"},
+        {".=", "__dotProductAssign__"},
+        {".n=", "__contractingDotProductAssign__"},
+        {"..=", "__mirroringDoubleContractionAssign__"},
+        {":=", "__crossingDoubleContractionAssign__"},
+        {"\\x=", "__crossProductAssign__"},
+        {"\\(x)=", "__dyadProductAssign__"},
+        {"°=", "__traceAssign__"},
+        {"\\diff=", "__diffAssign__"},
+    };
+
+    // Map der Form Operator | (Funktionslabel, verknüpfende Operation)
+    // zb. '+' | (sum),
+    // dabei startet sum eine forschleife, diese erstellt ein temp result mit einem deepcopy des ersten wertes
+    // und verknüpft alle weiteren member über addUp
+    // addUp ist dann für zwei argumente deklariert und bearbeitet das erste direkt
+    // andere Option :
+    // direkt verkettende Funktion hinterlegen
+    // und schleife, die diese Aufruft in default Logik einbetten
+    g_ArgChainOperations = {
+
+        {"+", "__addAssign__"},
+        {"-", "__subAssign__"},
+        {"*", "__mulAssign__"},
+        {"/", "__divAssign__"},
+        {"^", "__expAssign__"},
+        
+        // Bools
+        {"&&", "__andAssign__"},
+        {"||", "__orAssign__"},
+        {"x|", "__xorAssign__"},
+        {"!&", "__nandAssign__"},
+        {"!|", "__norAssign__"},
+        {"!x|", "__nxorAssign__"},
+        
+        // Bools
+        {"and", "__andAssign__"},
+        {"or", "__orAssign__"},
+        {"xor", "__xorAssign__"},
+        {"nand", "__nandAssign__"},
+        {"nor", "__norAssign__"},
+        {"nxor", "__nxorAssign__"},
+
+        {".", "__dotProductAssign__"},
+        {".n", "__contractingDotProductAssign__"},
+        {"..", "__mirroringDoubleContractionAssign__"},
+        {":", "__crossingDoubleContractionAssign__"},
+        {"\\x", "__crossProductAssign__"},
+        {"\\(x)", "__dyadProductAssign__"},
+        {"°", "__traceAssign__"},
+        {"\\diff", "__diffAssign__"},
+    };
 }

@@ -12,13 +12,25 @@
 fetch backend ["tensor"]
 fetch script ["pckg/preDecls", "pckg/functions"]
 
+decl get(void member){
+
+    slog(member)
+}
+
 if(calledAs(__MainProc__)){
 
     //
     slog("Test Umgebung aufgesetzt")
     slog("------------------------")
 
+    //
     // ...
+
+    //
+    assert(false, "...")
+
+    //
+    assert(false, "...")
 
     //
     slog("------------------------")

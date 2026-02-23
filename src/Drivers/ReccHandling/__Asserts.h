@@ -33,6 +33,7 @@
 
 extern std::string (*g_getErrorContext)();
 extern bool g_suppressAssertionWarnings, g_storedSuppressionFlag;
+extern bool g_terminateAfterAssertionFailed;
 
 //
 void DISABLE_ASSERTION_LOGGING();
@@ -50,6 +51,9 @@ void RESET_ASSERTION_LOGGING();
                 oss << g_getErrorContext(); \
             } \
             _ERROR << oss.str() << ENDL;\
+            if(!(condition) && g_terminateAfterAssertionFailed){ \
+                std::terminate();\
+            } \
         }}\
     while(0);
 
@@ -57,9 +61,6 @@ void RESET_ASSERTION_LOGGING();
     do{\
         RESOLVE_CONDITION(condition);\
         ASSERT(resolvedCondition, message);\
-        if (!(resolvedCondition)) {\
-            std::terminate();\
-        }\
     }\
     while(0);
 
@@ -69,7 +70,6 @@ void RESET_ASSERTION_LOGGING();
         RESOLVE_CONDITION(condition);\
         ASSERT(resolvedCondition, message);\
         if (!(resolvedCondition)) {\
-            std::terminate();\
             return returnVal;\
         }\
     }\

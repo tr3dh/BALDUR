@@ -1,97 +1,13 @@
 #include "Operations.h"
 
 //
-std::vector<std::string> g_UsedOperators = {
-    
-    COLON,
-
-    // Zuwisungen und Memory Management
-    "=", "<<", "<>", "<-", "<+",                            // Memory Management Semantik
-    "+=", "-=", "*=", "/=", "^=",                           // Ops für 2 Arg Operationen
-    ".=", ".n=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
-    "\\diff=",
-    "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen
-
-    // Walrus Operator
-    "=>",
-
-    // Inline Operatoren
-    "&&", "!&", "||", "!|", "x|", "!x|",            // ...
-    "==", "!=", ">=", "<=", ">", "<", "%",          // Ops für 2 Arg Vergleichs Operationen
-    "+", "-", "*", "/", "^",                        // Ops für Verkettung mult Arg Operations per 2 Arg Operationen
-    ".", ".n", "..", ":", "\\x", "\\(x)", "°=",     // für verkettung über Matrix ops
-    "\\diff",
-    "++", "--", "!",                                // Single Argument Ops
-    KOMMA,                                          //
-    "~", "'", "°", "$",                             // Ops für Index Notation
-    "^~", "^'", "^°",                               // Ops für Index Notation
-    "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
-    "dref",              
-};
+std::vector<std::string> g_UsedOperators = {};
 
 //
-std::map<std::string, std::string> g_OneArgOperations{
-
-    {"!", "__negate__"},
-    {"-", "__negate__"},
-    {"++", "__increment__"},
-    {"--", "__decrement__"},
-    {"<-", "__move__"},
-    {"<<", "__reference__"},
-    {"<+", "__copy__"},
-    {"~", "__inverseAssign__"},
-    {"'", "__transposeAssign__"},
-    {"°", "__traceAssign__"},
-    {"^~", "__inverseInplaceAssign__"},
-    {"^'", "__transposeInplaceAssign__"},
-    {"^°", "__traceInplaceAssign__"},
-    {"$", "__sectionAssign__"},
-    {"dref", "__dereference__"},
-};
+std::map<std::string, std::string> g_OneArgOperations{};
 
 // Map der Form Operator | Funktionslabel
-std::map<std::string, std::string> g_TwoArgOperations = {
-
-    // Inhalte später mit Operatoren liste aus einer json Datei laden, die das Project Env darstellt
-    
-    {"=", "__assign__"},
-    {"<<", "__reference__"},
-    {"<>", "__swap__"},
-    {"<-", "__move__"},
-    {"<+", "__copy__"},
-
-    {"+=", "__addAssign__"},
-    {"-=", "__subAssign__"},
-    {"*=", "__mulAssign__"},
-    {"/=", "__divAssign__"},
-    {"^=", "__expAssign__"},
-
-    {"=>", "__walrusAssign__"},
-
-    {"==", "__equal__"},
-    {"!=", "__notEqual__"},
-    {">",  "__bigger__"},
-    {"<",  "__smaller__"},
-    {">=", "__biggerEqual__"},
-    {"<=",  "__smallerEqual__"},
-
-    {"&=", "__andAssign__"},
-    {"|=", "__orAssign__"},
-    {"x|=", "__xorAssign__"},
-    {"!&=", "__nandAssign__"},
-    {"!|=", "__norAssign__"},
-    {"!x|=", "__nxorAssign__"},
-
-    {"%", "__modulo__"},
-    {".=", "__dotProductAssign__"},
-    {".n=", "__contractingDotProductAssign__"},
-    {"..=", "__mirroringDoubleContractionAssign__"},
-    {":=", "__crossingDoubleContractionAssign__"},
-    {"\\x=", "__crossProductAssign__"},
-    {"\\(x)=", "__dyadProductAssign__"},
-    {"°=", "__traceAssign__"},
-    {"\\diff=", "__diffAssign__"},
-};
+std::map<std::string, std::string> g_TwoArgOperations = {};
 
 // Map der Form Operator | (Funktionslabel, verknüpfende Operation)
 // zb. '+' | (sum),
@@ -101,39 +17,7 @@ std::map<std::string, std::string> g_TwoArgOperations = {
 // andere Option :
 // direkt verkettende Funktion hinterlegen
 // und schleife, die diese Aufruft in default Logik einbetten
-std::map<std::string, std::string> g_ArgChainOperations = {
-
-    {"+", "__addAssign__"},
-    {"-", "__subAssign__"},
-    {"*", "__mulAssign__"},
-    {"/", "__divAssign__"},
-    {"^", "__expAssign__"},
-    
-    // Bools
-    {"&&", "__andAssign__"},
-    {"||", "__orAssign__"},
-    {"x|", "__xorAssign__"},
-    {"!&", "__nandAssign__"},
-    {"!|", "__norAssign__"},
-    {"!x|", "__nxorAssign__"},
-    
-    // Bools
-    {"and", "__andAssign__"},
-    {"or", "__orAssign__"},
-    {"xor", "__xorAssign__"},
-    {"nand", "__nandAssign__"},
-    {"nor", "__norAssign__"},
-    {"nxor", "__nxorAssign__"},
-
-    {".", "__dotProductAssign__"},
-    {".n", "__contractingDotProductAssign__"},
-    {"..", "__mirroringDoubleContractionAssign__"},
-    {":", "__crossingDoubleContractionAssign__"},
-    {"\\x", "__crossProductAssign__"},
-    {"\\(x)", "__dyadProductAssign__"},
-    {"°", "__traceAssign__"},
-    {"\\diff", "__diffAssign__"},
-};
+std::map<std::string, std::string> g_ArgChainOperations = {};
 
 //
 std::vector<EvalResult*> convertEvalResultsVecToPtrVec(std::vector<EvalResult>& resVec){
@@ -705,7 +589,7 @@ bool emplaceStdOperations(){
 
             // Returns
             if(!arg0->getMember()){
-                _ERROR << arg1->getMember() << endl;
+                RETURNING_ASSERT(TRIGGER_ASSERT, arg1->getMember(),);
             }
     },
     {});

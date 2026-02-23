@@ -62,6 +62,8 @@ enum class STDUniformType : int{
 
 };
 
+void defaultSetupLexicalInstances();
+
 struct ProcessingResult;
 ProcessingResult executeScript(const std::string& scriptPath, Scope* nullScope, ExecuteScriptAs execAs);
 

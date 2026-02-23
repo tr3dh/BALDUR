@@ -3,6 +3,7 @@
 std::string (*g_getErrorContext)() = nullptr;
 bool g_suppressAssertionWarnings = false;
 bool g_storedSuppressionFlag = false;
+bool g_terminateAfterAssertionFailed = false;
 
 //
 void DISABLE_ASSERTION_LOGGING(){
