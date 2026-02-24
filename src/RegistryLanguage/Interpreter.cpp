@@ -156,7 +156,7 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     CheckAllOperatorsRegistered();
 
     //
-    g_terminateAfterAssertionFailed = true;
+    // g_terminateAfterAssertionFailed = true;
 
     // Abhier wird als Context in den Asserts der entsprechende Code Ausschnitt aufgeführt
     g_getErrorContext = &getErrorContext;

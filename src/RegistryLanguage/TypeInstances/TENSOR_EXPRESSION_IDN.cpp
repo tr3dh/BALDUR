@@ -1584,10 +1584,12 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "    end\n";
     res += "    n = dims[1]\n";
     res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Identity\"\n";
+    res += "    @assert length(dims) % 2 == 0 \"Number of dimensions must be even\"\n";
     res += "    tensor = zeros(Float64, dims...)\n";
-    res += "    for i in 1:n\n";
-    res += "        indices = ntuple(x -> i, length(dims))\n";
-    res += "        tensor[indices...] = 1.0\n";
+    res += "    half = length(dims) ÷ 2\n";
+    res += "    for idxs in Iterators.product(ntuple(x -> 1:n, half)...)\n";
+    res += "        full_indices = (idxs..., idxs...)\n";
+    res += "        tensor[full_indices...] = 1.0\n";
     res += "    end\n";
     res += "    return tensor\n";
     res += "end\n\n";

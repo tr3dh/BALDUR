@@ -357,6 +357,6 @@ setDiffTemplate(macaulay(tmplScalar), tmplB, (signum(tmplScalar) + 1) * 0.5 * di
 setDiffTemplate(signum(tmplA), tmplB, zeros(tmplA \(x) tmplB))
 setDiffTemplate(sqrt(tmplScalar), tmplB, 0.5 * inverse(sqrt(tmplScalar)) * diff(tmplScalar, tmplB))
 
-// setDiffTemplate(frobenius(tmplScalar), tmplB, (tmplScalar * inverse(frobenius(tmplScalar))) * diff(tmplScalar, tmplB))
-setDiffTemplate(frobenius(tmplVector), tmplB, (tmplVector * inverse(frobenius(tmplVector))) . diff(tmplVector, tmplB))
-setDiffTemplate(frobenius(tmplMatrix), tmplB, (tmplMatrix * inverse(frobenius(tmplMatrix))) .. diff(tmplMatrix, tmplB))
+// // redundant wenn frobenius norm über bekannte Operationen definiert wird wie sqrt(trace(transpose(...) . ...))
+// setDiffTemplate(frobenius(tmplVector), tmplB, (tmplVector * inverse(frobenius(tmplVector))) . diff(tmplVector, tmplB))
+// setDiffTemplate(frobenius(tmplMatrix), tmplB, (tmplMatrix * inverse(frobenius(tmplMatrix))) .. diff(tmplMatrix, tmplB))
