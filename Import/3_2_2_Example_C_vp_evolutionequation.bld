@@ -114,8 +114,8 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr sigma_TSM <+ sigma
     sigma_TSM->replace(epsilonvp, s_epsilonvp_TSM)
 
-    logSeparator()
     slog("Tangente sigma_0")
+    logSeparator()
 
     // Tangente i mal ableiten und D mit null substituieren
     tangent = sigma_TSM
@@ -124,7 +124,7 @@ decl evaluateExample(int orderTSM, int dimension){
     wrpSimplify(tangent)
 
     //
-    slog(tangent)
+    // slog(tangent)
 
     // Tangente in Julia Skript schreiben
     result << tangent
@@ -149,7 +149,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         logSeparator()
         slog("Tangente sigma_E_" + string(order))
-        slog(tangentE)
+        // slog(tangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
         tangentY = diff(sigma_TSM, sigmaYTild, order)
@@ -159,7 +159,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         logSeparator()
         slog("Tangente sigma_Y_" + string(order))
-        slog(tangentY)
+        // slog(tangentY)
         
         //
         logSeparator()
@@ -229,7 +229,7 @@ decl evaluateExample(int orderTSM, int dimension){
     wrpSimplify(tangent)
 
     //
-    slog(tangent)
+    // slog(tangent)
     logSeparator()
 
     // Tangente in Julia Skript schreiben
@@ -255,7 +255,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         logSeparator()
         slog("Tangente epsilonvp_E_" + string(order))
-        slog(tangentE)
+        // slog(tangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
         tangentY = diff(epsilonvp_dot_TSM, sigmaYTild, order)
@@ -265,7 +265,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         logSeparator()
         slog("Tangente epsilonvp_Y_" + string(order))
-        slog(tangentY)
+        // slog(tangentY)
         
         //
         outputs->emplace(<+tangentE, <+tangentY)

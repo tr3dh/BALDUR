@@ -129,13 +129,13 @@ std::string getErrorContext(){
 std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPath, Scope* parent){
 
     //
-    if(fs::exists(fs::path(scriptPath).parent_path().string() + "/LPECONFIG.JSON")){
+    if(fs::exists(fs::path(scriptPath).parent_path().string() + "/__LPECONFIG.JSON")){
 
         //
         LOG << "[" + getTimestamp() + "] LPEConfig gefunden, Umgebung wird aufgesetzt" << endl;
 
         //
-        nlohmann::json lpeConfig = nlohmann::json::parse(std::ifstream(fs::path(scriptPath).parent_path() / "LPECONFIG.JSON"), nullptr, true, true);
+        nlohmann::json lpeConfig = nlohmann::json::parse(std::ifstream(fs::path(scriptPath).parent_path() / "__LPECONFIG.JSON"), nullptr, true, true);
 
         //
         g_UsedOperators = lpeConfig.at("LEXICON").get<std::vector<std::string>>();
@@ -147,9 +147,22 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
 
         //
         LOG << "[" + getTimestamp() + "] keine LPEConfig gefunden, Umgebung wird mit default Config aufgesetzt" << endl;
-
+        
         //
         defaultSetupLexicalInstances();
+
+        //
+        LOG << "[" + getTimestamp() + "] Default LPEConfig wird exportiert ..." << endl;
+
+        //
+        nlohmann::ordered_json lpeConfig;
+        lpeConfig["LEXICON"]  = g_UsedOperators;
+        lpeConfig["PREFIX"]   = g_OneArgOperations;
+        lpeConfig["INFIX"]    = g_TwoArgOperations;
+        lpeConfig["FOLD"]     = g_ArgChainOperations;
+
+        //
+        std::ofstream(fs::path(scriptPath).parent_path() / "__LPECONFIG.JSON") << lpeConfig.dump(4);
     }
 
     //
