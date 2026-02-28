@@ -148,6 +148,8 @@ public:
             // Container muss manuell überschrieben werden
             RETURNING_ASSERT(TRIGGER_ASSERT, "Clone Funktion muss für diesen Typ manuell implementiert werden", nullptr);
         }
+
+        return nullptr;
     }
 
     //

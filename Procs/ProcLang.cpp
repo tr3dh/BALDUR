@@ -26,13 +26,16 @@ std::string getExecutableDir() {
 
 int main(int argc, char* argv[]){
 
+    // Windows wird so lange nicht in den Standby versetzt bis flag resettet ist
+    SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED);
+
     // argc ist anzahl übergebener Argumente + 1
     // argv dann das array der größe argc die die übergebene Argumente aus char Ptrs enthält
     // um auf n-tes übergebenes argument zu kommen argv[n] abfragen -> Indizierung ab 1 nicht ab Null
 
     mkdir("../bin");
 
-    openLogFile();
+    // openLogFile();
 
     // Programm ohne args gestartet
     if(argc < 2){
@@ -138,7 +141,10 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    closeLogFile();
+    // closeLogFile();
+
+    // Reset der Flag
+    SetThreadExecutionState(ES_CONTINUOUS);
 
     return 0;
 }

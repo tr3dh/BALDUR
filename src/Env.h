@@ -183,27 +183,8 @@ extern "C" {
 // Für Logging relevante Treiber
 #include "Drivers/ReccHandling/__timeStamp.h"
 
-#ifdef NDEBUG
-
-// Release build
-
+//
 extern std::ofstream g_logFile;
-
-#define LOG_RED     ""
-#define LOG_GREEN   ""
-#define LOG_YELLOW  ""
-#define LOG_BLUE    ""
-#define LOG_ORANGE  ""
-#define LOG_RESET   ""
-
-#define LOG std::cout << "[" << getTimestamp() << "] : "
-#define _ERROR std::cerr << "[" << getTimestamp() << "] : " << "!! <ERROR> !! -> "
-
-#define ENDL LOG_RESET << "\n" << std::flush;
-
-#else
-
-// Debug build und alles andere
 
 #define LOG_RED     "\033[31m"
 #define LOG_GREEN   "\033[32m"
@@ -217,7 +198,7 @@ extern std::ofstream g_logFile;
 
 #define ENDL "\n" << LOG_RESET << std::flush;
 
-#endif
+// #endif
 
 // Debugging über message ausgabe und instance debugging, dass direkt überladung für string stream mit << aufruft
 #define mbug(message) LOG << LOG_YELLOW << "___Passed : " << #message << ENDL;

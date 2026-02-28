@@ -739,22 +739,24 @@ bool emplaceStdOperations(){
             };
             
             // Thread Funktion
-            auto threadFunc = [](void* arg) -> void* {
+            auto threadFunc = [](void* arg) -> DWORD {
                 ThreadData* d = static_cast<ThreadData*>(arg);
                 callFunction(d->functionName, *(d->returns), d->args, *(d->returnToScope));
-                return nullptr;
+                return 0;
             };
-            
-            // pthread mit extended stack
-            pthread_attr_t attr;
-            pthread_attr_init(&attr);
-            pthread_attr_setstacksize(&attr, stackSize);
-            
-            pthread_t thread;
-            pthread_create(&thread, &attr, threadFunc, &data);
-            pthread_join(thread, nullptr);
-            
-            pthread_attr_destroy(&attr);
+
+            // Windows Thread mit erweitertem Stack
+            HANDLE thread = CreateThread(
+                NULL,
+                stackSize,
+                threadFunc,
+                &data,
+                STACK_SIZE_PARAM_IS_A_RESERVATION,
+                NULL
+            );
+
+            WaitForSingleObject(thread, INFINITE);
+            CloseHandle(thread);
     },
     {});
 

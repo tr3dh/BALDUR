@@ -245,23 +245,34 @@ setEqual(0 - tmplScalar, (-1) * tmplScalar)
 
 // Vereinfachung von Standard Operationen
 
-// // Emplace kostet viel Evaluierzeit, nur nutzen wenn radikale Vereinfachung notwenig ist
+// // Nur für kleinere Ausdrücke setzen, Vereinfachungen können massiven overhead und SMPLF3 verursachen
+// // Das liegt daran, dass der Konsistenz Check teilweise sehr teuer wird
+// // zb. wenn die Konsistenz von 'setEqual(tmplA - tmplA, zeros(tmplA))' geprüft werden soll muss für jede Minus Operation
+// // im gepackten Ausdrucksbaum (wrpSimplify) überprüft werden, ob der zweite Operand mit derm ersten übereinstimmt
+// // das sind teilweise Abgleiche von Nodes mit jeweils mehreren Millionen Nodes
+// // >> algemeinere Formulierung wählen
 // setEqual(tmplA + tmplA, 2 * tmplA)
+// setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
+// setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
+// setEqual(tmplA - tmplA, zeros(tmplA))
+// setEqual(tmplA - CnstTmplA * tmplA, (CnstTmplA - 1) * tmplA)
+// setEqual(CnstTmplA * tmplA - CnstTmplB * tmplA, (CnstTmplA - CnstTmplB) * tmplA)
 
+// Spezifizierte Varianten (ArgTemplate statt StdTemplate)
 setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
-setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
-setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
-setEqual(tmplA - tmplA, zeros(tmplA))
-setEqual(tmplA - CnstTmplA * tmplA, (CnstTmplA - 1) * tmplA)
-setEqual(CnstTmplA * tmplA - CnstTmplB * tmplA, (CnstTmplA - CnstTmplB) * tmplA)
+setEqual(ArgTmplA + CnstTmplA * ArgTmplA, (CnstTmplA + 1) * ArgTmplA)
+setEqual(CnstTmplA * ArgTmplA + CnstTmplB * ArgTmplA, (CnstTmplA + CnstTmplB) * ArgTmplA)
+setEqual(ArgTmplA - ArgTmplA, zeros(ArgTmplA))
+setEqual(ArgTmplA - CnstTmplA * ArgTmplA, (CnstTmplA - 1) * ArgTmplA)
+setEqual(CnstTmplA * ArgTmplA - CnstTmplB * ArgTmplA, (CnstTmplA - CnstTmplB) * ArgTmplA)
 
 // Nullmatrix Vereinfachungen
 setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
 setEqual(tmplA + zerosInstanceTemplate, tmplA)                                          // (trivial)
 setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
 setEqual(tmplA - zerosInstanceTemplate, tmplA)
-setEqual(zerosInstanceTemplate * tmplScalar, zeros(zerosInstanceTemplate * tmplScalar)) // *
-setEqual(tmplScalar * zerosInstanceTemplate, zeros(tmplScalar * zerosInstanceTemplate)) // (trivial)
+setEqual(zerosInstanceTemplate * tmplScalar, zeros(zerosInstanceTemplate))               // *
+setEqual(tmplScalar * zerosInstanceTemplate, zeros(zerosInstanceTemplate))               // (trivial)
 setEqual(zerosInstanceTemplate * CnstTmpl, zerosInstanceTemplate)                       // *
 setEqual(CnstTmpl * zerosInstanceTemplate, zerosInstanceTemplate)
 setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
@@ -336,12 +347,12 @@ enableDiffTemplateDefaults()
 
 // Konkretisierte Ableitungsregeln
 
-// // Ableitungen von standard Instanzen
-// setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) tmplA))
-// setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
-// setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
-// setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
-// setDiffTemplate(CnstTmpl, tmplA, zeros(tmplA))
+// Ableitungen von standard Instanzen (trivial aber kann beschleunigung verursachen)
+setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) tmplA))
+setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
+setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
+setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
+setDiffTemplate(CnstTmpl, tmplA, zeros(tmplA))
 
 // Skalar Multiplikation mit Konstante
 setDiffTemplate(CnstTmpl * tmplA, tmplB, CnstTmpl * diff(tmplA, tmplB))

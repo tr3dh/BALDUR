@@ -115,14 +115,14 @@ struct TensorExpression{
     TkType Relation = TkType::None;
     TensorExpressionOperator Operator = TensorExpressionOperator::None;
 
-    std::string label = NULLSTR;
-    int tensorOrder = -1;
+    bool isConstant = false;
+    bool isArgTmpl = false;
 
     int contractNIndices = 0;
+    int tensorOrder = -1;
     float value = 0.0f;
-    bool isConstant = false;
 
-    bool isArgTmpl = false;
+    std::string label = NULLSTR;
 
     std::vector<TensorExpression> children = {};
     std::vector<int> dimensions = {};

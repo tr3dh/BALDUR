@@ -7,26 +7,27 @@
 // Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
 //
 // Für Release
-// - $ make exec BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation.bld
-// - $ make launch BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
 
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
-// $ ./build/ProcLang_d execute Import/3_2_2_Example_C_vp_evolutionequation.bld
+// $ ./build/ProcLang_d execute Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
 
-// Bechmarking Release
-// minimale Vereinfachung ~600s     | 10 min
-// maximale Vereinfachung ~35 000s  | 10 h
-
+// Bechmarking Release mit anschließender Vereinfachung von nichtoptimierter Version
+// nopt Version minimale Vereinfachung ~600s     | 10 min
+// nopt Version maximale Vereinfachung ~35 000s  | 10 h
+// opt  Version maximale Vereinfachung ~         |
+ 
 // Includes
 fetch backend []
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
-string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
+string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2_optimized", "Modelling of the evolution equation of elasto-viscoplasticity"
 int [orderTSM, dimension] = 4, 3
 bool seperateFluctuations = true
 
@@ -43,6 +44,10 @@ decl evaluateExample(int orderTSM, int dimension){
     // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
     // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
     // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten
+
+    //
+    // wrap vor emplace ??
+
     // tExpr expDiff
     // for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
     // setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
@@ -97,12 +102,12 @@ decl evaluateExample(int orderTSM, int dimension){
     for(int order = 1, order < orderTSM + 1, order++){
         
         //
-        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
+        static{ tExpr [tmpE, tangentE, tmpY, tangentY] }
 
         //
         tangentE = diff(epsilonvp, D, order)->asExternalNode("epsilonvp_E_" + string(order))
         tangentY = diff(epsilonvp, sigmaYTild, order)->asExternalNode("epsilonvp_Y_" + string(order))
-        // s_tangents->emplace(<+tangentE, <+tangetY)
+        // s_tangents->emplace(<+tangentE, <+tangentY)
 
         //
         for((tmpE = (1.0/factorial(order)) * tangentE, int i = 0), i < order, i++){ tmpE := D }
@@ -147,27 +152,41 @@ decl evaluateExample(int orderTSM, int dimension){
     // Ermitteln der Tangenten
     for(int order = 1, order < orderTSM + 1, order++){
 
-        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
+        static{
+
+            tExpr [tmpTangentE, tmpTangentY]
+            tExpr [tangentE, tangentY] <+ sigma_TSM, sigma_TSM
+        }
 
         // Tangente i mal ableiten und D mit null substituieren
-        tangentE = diff(sigma_TSM, D, order)
-        tangentE->replace(D, zeros(D))
-        tangentE->replace(sigmaYTild, tExpr(0))
+        __diffAssign__(tangentE, D)
         wrpSimplify(tangentE)
 
+        tmpTangentE <+ tangentE
+        tmpTangentE->replace(D, zeros(D))
+        tmpTangentE->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentE)
+
         logSeparator()
-        slog("Tangente sigma_E_" + string(order))
+        slog("Tangente epsilonvp_E_" + string(order))
         // slog(tangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
-        tangentY = diff(sigma_TSM, sigmaYTild, order)
-        tangentY->replace(D, zeros(D))
-        tangentY->replace(sigmaYTild, tExpr(0))
+        __diffAssign__(tangentY, sigmaYTild)
         wrpSimplify(tangentY)
+
+        tmpTangentY <+ tangentY
+        tmpTangentY->replace(D, zeros(D))
+        tmpTangentY->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentY)
+
+        logSeparator()
+        slog("Tangente epsilonvp_Y_" + string(order))
+        // slog(tangentY)
 
         logSeparator()
         slog("Tangente sigma_Y_" + string(order))
-        // slog(tangentY)
+        slog(tangentY)
         
         //
         logSeparator()
@@ -250,23 +269,33 @@ decl evaluateExample(int orderTSM, int dimension){
     // Ermitteln der Tangenten
     for(int order = 1, order < orderTSM + 1, order++){
 
-        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
+        static{
+
+            tExpr [tmpTangentE, tmpTangentY]
+            tExpr [tangentE, tangentY] <+ epsilonvp_dot_TSM, epsilonvp_dot_TSM
+        }
 
         // Tangente i mal ableiten und D mit null substituieren
-        tangentE = diff(epsilonvp_dot_TSM, D, order)
-        tangentE->replace(D, zeros(D))
-        tangentE->replace(sigmaYTild, tExpr(0))
+        __diffAssign__(tangentE, D)
         wrpSimplify(tangentE)
+
+        tmpTangentE <+ tangentE
+        tmpTangentE->replace(D, zeros(D))
+        tmpTangentE->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentE)
 
         logSeparator()
         slog("Tangente epsilonvp_E_" + string(order))
         // slog(tangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
-        tangentY = diff(epsilonvp_dot_TSM, sigmaYTild, order)
-        tangentY->replace(D, zeros(D))
-        tangentY->replace(sigmaYTild, tExpr(0))
+        __diffAssign__(tangentY, sigmaYTild)
         wrpSimplify(tangentY)
+
+        tmpTangentY <+ tangentY
+        tmpTangentY->replace(D, zeros(D))
+        tmpTangentY->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentY)
 
         logSeparator()
         slog("Tangente epsilonvp_Y_" + string(order))
@@ -276,7 +305,7 @@ decl evaluateExample(int orderTSM, int dimension){
         logSeparator()
 
         // Tangente in Julia Skript schreiben
-        result << tangentE
+        result << tmpTangentE
         tResultLabel = "epsilonvp_E_" + string(order)
         log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 
@@ -286,7 +315,7 @@ decl evaluateExample(int orderTSM, int dimension){
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
-        result << tangentY
+        result << tmpTangentY
         tResultLabel = "epsilonvp_Y_" + string(order)
         log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 

@@ -108,7 +108,7 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
 }
 
 //
-int g_unwrapComplexityThreshold = 5000000
+int g_unwrapComplexityThreshold = 15000000
 
 //
 decl wrpSimplify(tExpr ref expr){
@@ -134,6 +134,7 @@ decl wrpSimplify(tExpr ref expr){
     // Flag muss geändert werden damit rebuild beim simplify nicht wieder alles entpackt
     setUnwrapOperands(false)
 
+    //
     expr = wrap(expr)
     simplify(expr)
 
@@ -307,4 +308,17 @@ decl exp(tExpr ref x, int ref order, bool simplifyResult){
 
     if(simplifyResult){ wrpSimplify(res) }
     return res
+}
+
+decl smplfDiff(tExpr ref expr, tExpr ref dExpr, int amount){
+
+    tExpr tmp <+ expr
+
+    for(int i = 0, i < amount + 1, i++){
+
+        __diffAssign__(tmp, dExpr)
+        wrpSimplify(tmp)
+    }
+
+    return tmp
 }

@@ -649,6 +649,10 @@ void TensorExpression::simplify(){
     int spinnerIdx = 0;
     int step = 0;
 
+    LOG << "\r" << spinner[spinnerIdx % 4] << " - smplf step " << step << std::flush;
+    spinnerIdx++;
+    step++;
+
     while(simplifyOnce()){
 
         LOG << "\r" << spinner[spinnerIdx % 4] << " - smplf step " << step << std::flush;

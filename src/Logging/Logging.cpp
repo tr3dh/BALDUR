@@ -2,20 +2,20 @@
 
 void openLogFile(){
 
-    #ifdef NDEBUG
+    FreeConsole();
 
     g_logFile = std::ofstream("../bin/.LOG");
     std::cout.rdbuf(g_logFile.rdbuf());
 
-    #endif
+    #undef LOG
+    #define LOG std::cout << "[" << getTimestamp() << "] : "
+
+    #undef _ERROR
+    #define _ERROR std::cerr << "[" << getTimestamp() << "] : " << "!! <ERROR> !! -> "
 }
 
 void closeLogFile(){
 
-    #ifdef NDEBUG
-
     // Release build
     g_logFile.close();
-
-    #endif
 }
