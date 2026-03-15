@@ -79,7 +79,7 @@
 // |                              | bei order = -1 werden beliebig stufige Ausdrücke              |                                           |
 // |                              | repräsentiert bei order > -1 Ausdrücke der konkreten Stufe    |                                           |
 // |------------------------------|---------------------------------------------------------------|-------------------------------------------|
-// | Tensor Instance Tempates     | alle beliebig stufigen Tensorausdrucksargumente mit dem       | tExprInstcTmpl("label")                   |
+// | Tensor Instance Tempates     | alle beliebig stufigen Tensorausdrucksargumente mit dem       | tExprInstTmpl("label")                   |
 // |                              | gleichen label der template Instanz                           |                                           |
 // |------------------------------|---------------------------------------------------------------|-------------------------------------------|
 // | Tensor Constant Templates    | repräsentieren beliebige Konstanten                           | tExprCnstTmpl("label") || tExprCnstTmpl() |
@@ -211,10 +211,10 @@ tExpr [ScalarArgTmplA, ScalarArgTmplB]          = tExprArgTmpl("ScalarArgTmplA",
 tExpr [ArgTmplA, ArgTmplB]                      = tExprArgTmpl("ArgTmplA"), tExprArgTmpl("ArgTmplB")
 
 // Instanztemplates
-tExpr [zerosInstanceTemplate]                   = tExprInstcTmpl("zeros")
-tExpr [onesInstanceTemplate]                    = tExprInstcTmpl("ones")
-tExpr [identityInstanceTemplate]                = tExprInstcTmpl("Identity")
-tExpr [epsInstanceTemplate]                     = tExprInstcTmpl("eps")
+tExpr [zerosInstanceTemplate]                   = tExprInstTmpl("zeros")
+tExpr [onesInstanceTemplate]                    = tExprInstTmpl("ones")
+tExpr [identityInstanceTemplate]                = tExprInstTmpl("Identity")
+tExpr [epsInstanceTemplate]                     = tExprInstTmpl("eps")
 
 // std Templates für Tensoren konkreter Stufe
 tExpr [tmplScalar]                              = tExprTmpl("tmplSc", 0)

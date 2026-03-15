@@ -66,7 +66,8 @@
         "->",
         ">>",
         "dref",
-        "invl"
+        "invl",
+        "delete"
     ],
     "PREFIX": {
         "!": "__negate__",
@@ -81,6 +82,7 @@
         "^'": "__transposeInplaceAssign__",
         "^~": "__inverseInplaceAssign__",
         "^°": "__traceInplaceAssign__",
+        "delete": "__delete__",
         "dref": "__dereference__",
         "invl": "__invalidate__",
         "~": "__inverseAssign__",

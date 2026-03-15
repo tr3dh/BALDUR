@@ -375,7 +375,7 @@ bool emplaceStdOperations(){
             ret0->getMember() = getTimestamp();
     },
     {types::STRING::typeIndex});
-
+    
     //
     registerFunction("log", {IObject::ARGS_TYPE},
         [__functionLabel__ = "typename", __numArgs__ = 0](FREG_ARGS){
@@ -776,6 +776,34 @@ bool emplaceStdOperations(){
     {});
 
     //
+    registerFunction("__delete__", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "__delete__", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            RETURNING_ASSERT(inputs[0]->isLValue(), "...",);
+
+            RETURNING_ASSERT(returnToScope.eraseVariable(&inputs[0]->getVariableRef()), "...",);
+    },
+    {});
+
+    //
+    registerFunction("__delete__", {types::STRING::typeIndex},
+        [__functionLabel__ = "__delete__", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+
+            GET_ARG(types::STRING, 0);
+
+            RETURNING_ASSERT(returnToScope.eraseVariable(arg0->getMember()), "...",);
+    },
+    {});
+
+    //
     registerFunction("__invalidate__", {IObject::ARBITATRY_TYPE},
         [__functionLabel__ = "__invalidate__", __numArgs__ = 1](FREG_ARGS){
 
@@ -823,6 +851,22 @@ bool emplaceStdOperations(){
             GET_RETURN(types::BOOL, 0);
 
             ret0->getMember() = inputs[0]->getVariableRef().isReference();
+    },
+    {types::BOOL::typeIndex});
+
+    //
+    registerFunction("isUniform", {IObject::ARBITATRY_TYPE},
+        [__functionLabel__ = "isUniform", __numArgs__ = 1](FREG_ARGS){
+
+            // Asserts
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            //
+            GET_RETURN(types::BOOL, 0);
+
+            ret0->getMember() = inputs[0]->getVariableRef().getData()->isUniform();
     },
     {types::BOOL::typeIndex});
 

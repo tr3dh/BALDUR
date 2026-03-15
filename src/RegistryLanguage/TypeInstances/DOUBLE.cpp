@@ -1273,6 +1273,19 @@ namespace types{
         },
         {DOUBLE::typeIndex});
 
+    registerFunction("now", {},
+        [__functionLabel__ = "now", __numArgs__ = 0](FREG_ARGS){
+
+            ASSERT_IS_NO_MEMBER_FUNCTION;
+            ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+            PREPARE_RETURNS;
+
+            GET_RETURN(DOUBLE, 0);
+
+            ret0->getMember() = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+        },
+        {DOUBLE::typeIndex});
+
         return true;
     }
 };

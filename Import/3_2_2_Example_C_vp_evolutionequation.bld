@@ -27,7 +27,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
-int [orderTSM, dimension] = 4, 3
+int [orderTSM, dimension] = 2, 3
 bool seperateFluctuations = true
 
 //
@@ -43,11 +43,12 @@ decl evaluateExample(int orderTSM, int dimension){
     // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
     // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
     // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten
-    // tExpr expDiff
-    // for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
-    // setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
-    // for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplScalar ^ i, tmplB) }
-    // setDiffTemplate(exp(tmplScalar, orderTSM, false), tmplB, expDiff)
+
+    tExpr expDiff
+    for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
+    setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
+    for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplScalar ^ i, tmplB) }
+    setDiffTemplate(exp(tmplScalar, orderTSM, false), tmplB, expDiff)
 
     //
     tExpr ref result
@@ -71,10 +72,6 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [sigma] = E . (epsilon - epsilonvp)
     tExpr [sigmaY0, sigmaYTild] = tExpr("sigmaY", 0), tExpr("sigmaYTild", 0)
     tExpr [sigmaY] = sigmaY0 + sigmaYTild
-
-    // // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
-    // removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
-    // setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
 
     //
     tExpr devSigma = tExpr("devSigma", 1, args(nVoigtComps))
@@ -141,7 +138,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
     // Ermitteln der Tangenten
@@ -179,7 +176,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
@@ -189,7 +186,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch
@@ -244,7 +241,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
     // Ermitteln der Tangenten
@@ -282,7 +279,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
@@ -292,7 +289,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch
@@ -341,7 +338,13 @@ decl main(){
     // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen pthread mit einem Stack der übergebenen
     // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
     // und der Thread wieder freigegeben.
+
+    double startTime = now()
     callOnExtendedStack("evaluateExample", 1500, args(orderTSM, dimension))
+
+    logSeparator()
+    slog("Ausführungszeit des Beispiels : ", now() - startTime, "s")
+    logSeparator()
 
     return 0
 }

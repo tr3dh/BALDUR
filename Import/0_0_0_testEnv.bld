@@ -10,23 +10,22 @@
 
 // Includes
 fetch backend ["tensor"]
-fetch script ["pckg/preDecls", "pckg/functions"]
+requires bool uniform g_unwrapOperands
 
-decl get(void member){
+int tmplID
+tExpr [tmplScalar, tmplTensor] = tExprTmpl(string(tmplID++), 0), tExprTmpl(string(tmplID++))
+tExpr [tmplScalarA, tmplTensorA] = tExprTmpl(string(tmplID++), 0), tExprTmpl(string(tmplID++))
+tExpr [zerosInstanceTemplate]  = tExprInstTmpl("zeros")
 
-    slog(member)
-}
+tExpr [A, B, C] = tExpr("A", 2), tExpr("B", 2), tExpr("C", 2)
+tExpr [a, b, c] = tExpr("a", 0), tExpr("b", 0), tExpr("c", 0)
 
-if(calledAs(__MainProc__)){
+setEqual(tmplScalar * tmplTensor + tmplScalarA * tmplTensor, (tmplScalar + tmplScalarA) * tmplTensor)
+setEqual(0 + tmplScalar, tmplScalar)
+setEqual(zerosInstanceTemplate + tmplTensor, tmplTensor)
+setEqual(0 * tmplTensor, zeros(tmplTensor))
+setEqual(1 * tmplTensor, tmplTensor)
 
-    //
-    slog("Test Umgebung aufgesetzt")
-    slog("------------------------")
+tExpr expr = 0.5 * A + (-0.5) * A
 
-    //
-    // ...
-
-    //
-    slog("------------------------")
-    slog("Test Umgebung wird geschlossen ...")
-}
+slog(simplified(expr))

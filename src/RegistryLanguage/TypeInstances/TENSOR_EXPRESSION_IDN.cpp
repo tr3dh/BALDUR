@@ -1648,7 +1648,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     //
     res += "\n";
-    res += "function autodiff_" + instanceLabel + "(";
+    res += "function " + instanceLabel + "(";
 
     //
     bool filledInFirstExternal = false;
@@ -1741,7 +1741,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     if(generateDebugCall){
 
-        res += "start_time = time()\nres = autodiff_" + instanceLabel + "(";
+        res += "start_time = time()\nres = " + instanceLabel + "(";
 
         //
         for(auto it = externalNodes.begin(); it != externalNodes.end(); ){
@@ -2163,8 +2163,8 @@ namespace types{
         {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
 
         // Konstruktoren
-        registerFunction("tIDN", {STRING::typeIndex, INT::typeIndex},
-            [__functionLabel__ = "tIDN", __numArgs__ = 2](FREG_ARGS){
+        registerFunction("tIdn", {STRING::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "tidn", __numArgs__ = 2](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;

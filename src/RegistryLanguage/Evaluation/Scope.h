@@ -113,6 +113,40 @@ struct Scope {
         return nullptr;
     }
 
+    bool eraseVariable(const std::string& variableName) {
+    
+        if (variableTable.contains(variableName)) {
+            
+            variableTable.erase(variableName);
+            return true;
+        }
+        else if (parent != nullptr) {
+            
+            return parent->eraseVariable(variableName);
+        }
+        
+        return false;
+    }
+
+    bool eraseVariable(Variable* ptr) {
+        
+        for (auto it = variableTable.begin(); it != variableTable.end(); ++it) {
+            
+            if (&it->second == ptr) {
+                
+                variableTable.erase(it);
+                return true;
+            }
+        }
+        
+        if (parent != nullptr) {
+            
+            return parent->eraseVariable(ptr);
+        }
+        
+        return false;
+    }
+
     //
     friend std::ostream& operator<<(std::ostream& os, const Scope& scope){
 

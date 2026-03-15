@@ -1,5 +1,5 @@
-include("juliaScripts/3.2.2_C_wrapped_tangent_epsilonvp_E_1.jl")
-include("juliaScripts/3.2.2_C_wrapped_tangent_epsilonvp_Y_1.jl")
+include("juliaScripts/3.2.2_optimized_C_wrapped_tangent_epsilonvp_E_1.jl")
+include("juliaScripts/3.2.2_optimized_C_wrapped_tangent_epsilonvp_Y_1.jl")
 
 eta      = 20.0
 delta_t  = 0.01
@@ -45,8 +45,5 @@ function create_Identity_Voigt(dims::Integer...)
     return tensor
 end
 
-epsilonvp_E_1 = zeros(6,6,6)
-epsilonvp_Y_1 = zeros(6)
-
-print(autodiff_epsilonvp_Y_1(eta, P, E0, eps, epsvp, sigmaY, epsilonvp_Y_1) * delta_t)
-permutedims(autodiff_epsilonvp_E_1(eta, P, E0, eps, epsvp, sigmaY, epsilonvp_E_1), (1,3,2)) * delta_t
+print(eval_epsilonvp_Y_1(eta, P, E0, eps, epsvp, sigmaY, zeros(6)) * delta_t)
+permutedims(eval_epsilonvp_E_1(eta, P, E0, eps, epsvp, sigmaY, zeros(6,6,6)), (1,3,2)) * delta_t

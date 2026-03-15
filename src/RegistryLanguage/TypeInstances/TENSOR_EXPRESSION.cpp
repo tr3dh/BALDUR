@@ -2465,8 +2465,8 @@ namespace types{
         {TENSOR_EXPRESSION::typeIndex});
 
         // Konstruktoren
-        registerFunction("tExprInstcTmpl", {STRING::typeIndex},
-            [__functionLabel__ = "tExprInstcTmpl", __numArgs__ = 1](FREG_ARGS){
+        registerFunction("tExprInstTmpl", {STRING::typeIndex},
+            [__functionLabel__ = "tExprInstTmpl", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -3980,8 +3980,8 @@ namespace types{
         {BOOL::typeIndex});
 
         // Operatoren
-        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "isUnWrapped", {},
-            [__functionLabel__ = "isUnWrapped", __numArgs__ = 0](FREG_ARGS){
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "isUnwrapped", {},
+            [__functionLabel__ = "isUnwrapped", __numArgs__ = 0](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_MEMBER_FUNCTION;

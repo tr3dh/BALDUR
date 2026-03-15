@@ -193,6 +193,10 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     nullScope.constructAndReturnVariable("ExecMode")->constructByObject(new types::STRING(&ExecMode));
 
     //
+    nullScope.constructAndReturnVariable("g_unwrapOperands")->constructByObject(new types::BOOL(&unwrapOperands));
+    // noch mehr davon freischalten (abbruch nach erster Assertion, suppress assertions, etc)
+
+    //
     // nullScope.constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
 
     // Scope befüllen
@@ -414,7 +418,7 @@ void defaultSetupLexicalInstances(){
         "~", "'", "°", "$",                             // Ops für Index Notation
         "^~", "^'", "^°",                               // Ops für Index Notation
         "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
-        "dref", "invl"              
+        "dref", "invl", "delete",
     };
 
     //
@@ -436,6 +440,7 @@ void defaultSetupLexicalInstances(){
         {"$", "__sectionAssign__"},
         {"dref", "__dereference__"},
         {"invl", "__invalidate__"},
+        {"delete", "__delete__"},
     };
 
     // Map der Form Operator | Funktionslabel
