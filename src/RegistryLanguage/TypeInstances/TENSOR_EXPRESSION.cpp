@@ -790,6 +790,30 @@ void TensorExpression::addAssign(const TensorExpression& other){
         return;
     }
 
+    bool thisIsDestinedOperation = Relation == TkType::Operator && Operator == operation;
+    bool thisIsConstantInstance = isConstant && !isConstantTemplate();
+    bool otherIsConstantInstance = other.isConstant && !other.isConstantTemplate();
+
+    // Wenn zwei Konstantennodes beaufschlagt werden kann wert einfach direkt bearbeitet werden
+    if(thisIsConstantInstance && otherIsConstantInstance){
+
+        value += other.value;
+        return;
+    }
+    // Wenn Operation der aufgerufenen entspricht und ein child eine nicht template konstante ist
+    // wird Wert einfach beaufschlagt
+    else if(thisIsDestinedOperation && otherIsConstantInstance){
+
+        for(auto& child : children){
+
+            if(child.isConstant && !child.isConstantTemplate()){
+
+                child.value += other.value;
+                return;
+            }
+        }
+    }
+
     //
     bool copySelf = false;
 
@@ -862,6 +886,30 @@ void TensorExpression::subAssign(const TensorExpression& other){
         return;
     }
 
+    bool thisIsDestinedOperation = Relation == TkType::Operator && Operator == operation;
+    bool thisIsConstantInstance = isConstant && !isConstantTemplate();
+    bool otherIsConstantInstance = other.isConstant && !other.isConstantTemplate();
+
+    // Wenn zwei Konstantennodes beaufschlagt werden kann wert einfach direkt bearbeitet werden
+    if(thisIsConstantInstance && otherIsConstantInstance){
+
+        value -= other.value;
+        return;
+    }
+    // Wenn Operation der aufgerufenen entspricht und ein child eine nicht template konstante ist
+    // wird Wert einfach beaufschlagt
+    else if(thisIsDestinedOperation && otherIsConstantInstance){
+
+        for(auto& child : children){
+
+            if(child.isConstant && !child.isConstantTemplate()){
+
+                child.value -= other.value;
+                return;
+            }
+        }
+    }
+
     //
     bool copySelf = false;
 
@@ -928,6 +976,30 @@ void TensorExpression::mulAssign(const TensorExpression& other){
     else if(!other.isValid())
     {
         return;
+    }
+
+    bool thisIsDestinedOperation = Relation == TkType::Operator && Operator == operation;
+    bool thisIsConstantInstance = isConstant && !isConstantTemplate();
+    bool otherIsConstantInstance = other.isConstant && !other.isConstantTemplate();
+
+    // Wenn zwei Konstantennodes beaufschlagt werden kann wert einfach direkt bearbeitet werden
+    if(thisIsConstantInstance && otherIsConstantInstance){
+
+        value *= other.value;
+        return;
+    }
+    // Wenn Operation der aufgerufenen entspricht und ein child eine nicht template konstante ist
+    // wird Wert einfach beaufschlagt
+    else if(thisIsDestinedOperation && otherIsConstantInstance){
+
+        for(auto& child : children){
+
+            if(child.isConstant && !child.isConstantTemplate()){
+
+                child.value *= other.value;
+                return;
+            }
+        }
     }
 
     //

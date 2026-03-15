@@ -170,7 +170,7 @@ decl evaluateExample(int orderTSM, int dimension){
         logSeparator()
 
         // Tangente in Julia Skript schreiben
-        result << tangentE
+        result << tmpTangentE
         tResultLabel = "sigma_E_" + string(order)
         log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 
@@ -180,7 +180,7 @@ decl evaluateExample(int orderTSM, int dimension){
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
-        result << tangentY
+        result << tmpTangentY
         tResultLabel = "sigma_Y_" + string(order)
         log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 

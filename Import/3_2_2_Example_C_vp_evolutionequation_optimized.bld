@@ -28,7 +28,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2_optimized", "Modelling of the evolution equation of elasto-viscoplasticity"
-int [orderTSM, dimension] = 5, 3
+int [orderTSM, dimension] = 2, 3
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
@@ -135,6 +135,40 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     // slog(tangent)
 
+    //
+    devSigma->replace(epsilonvp, s_epsilonvp_TSM)
+
+    // Erweitern der Evolutionsgleichung, ändert hier tatsächlich nichts, nur Platzhalter für nicht subtituierten Fall
+    tExpr epsilonvp_dot_TSM <+ epsilonvp_dot
+    epsilonvp_dot_TSM->replace(epsilonvp, s_epsilonvp_TSM)
+    wrpSimplify(epsilonvp_dot_TSM)
+
+    // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
+    // Ableitung der Approximation der internen Variable
+    // Dadurch ergibt sich die Gleichung (3.75) [Geisler]
+    //
+    // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
+    // 
+    // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
+
+    //
+    slog("Gewählter Ansatz für sigma")
+    slog(sigma_TSM)
+    logSeparator()
+
+    //
+    slog("Gewählter Ansatz für epsilonvp")
+    slog(s_epsilonvp_TSM)
+    logSeparator()
+
+    slog("Evolutiongleichung")
+    slog(epsilonvp_dot)
+    logSeparator()
+
+    slog("erweiterte Evolutiongleichung")
+    slog(epsilonvp_dot_TSM)
+    logSeparator()
+
     // Tangente in Julia Skript schreiben
     result << tangent
     tResultLabel = "sigma_0"
@@ -157,6 +191,7 @@ decl evaluateExample(int orderTSM, int dimension){
         // Tangente i mal ableiten und D mit null substituieren
         tangentE \diff= D
         wrpSimplify(tangentE)
+        // slog(tangentE)
 
         tmpTangentE <+ tangentE
         tmpTangentE->replace(D, zeros(D))
@@ -164,12 +199,13 @@ decl evaluateExample(int orderTSM, int dimension){
         wrpSimplify(tmpTangentE)
 
         logSeparator()
-        slog("Tangente epsilonvp_E_" + string(order))
-        // slog(tangentE)
+        slog("Tangente sigma_E_" + string(order))
+        slog(tmpTangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
         tangentY \diff= sigmaYTild
         wrpSimplify(tangentY)
+        // slog(tangentY)
 
         tmpTangentY <+ tangentY
         tmpTangentY->replace(D, zeros(D))
@@ -177,18 +213,14 @@ decl evaluateExample(int orderTSM, int dimension){
         wrpSimplify(tmpTangentY)
 
         logSeparator()
-        slog("Tangente epsilonvp_Y_" + string(order))
-        // slog(tangentY)
-
-        logSeparator()
         slog("Tangente sigma_Y_" + string(order))
-        slog(tangentY)
+        slog(tmpTangentY)
         
         //
         logSeparator()
 
         // Tangente in Julia Skript schreiben
-        result << tangentE
+        result << tmpTangentE
         tResultLabel = "sigma_E_" + string(order)
         log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 
@@ -198,7 +230,7 @@ decl evaluateExample(int orderTSM, int dimension){
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
-        result << tangentY
+        result << tmpTangentY
         tResultLabel = "sigma_Y_" + string(order)
         log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
 
@@ -210,35 +242,6 @@ decl evaluateExample(int orderTSM, int dimension){
         // DREF vor Schleifenabbruch
         if(order == orderTSM){ dref result }
     }
-
-    //
-    devSigma->replace(epsilonvp, s_epsilonvp_TSM)
-
-    // Erweitern der Evolutionsgleichung, ändert hier tatsächlich nichts, nur Platzhalter für nicht subtituierten Fall
-    tExpr epsilonvp_dot_TSM <+ epsilonvp_dot
-    epsilonvp_dot_TSM->replace(epsilonvp, s_epsilonvp_TSM)
-    wrpSimplify(epsilonvp_dot_TSM)
-
-    // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
-    // Ableitung der Approximation der internen Variable
-    // Dadurch ergibt sich die Gleichung (3.75) [Geisler]
-    //
-    // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
-    // 
-    // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
-
-    //
-    slog("Gewählter Ansatz für epsilonvp")
-    slog(s_epsilonvp_TSM)
-    logSeparator()
-
-    slog("Evolutiongleichung")
-    slog(epsilonvp_dot)
-    logSeparator()
-
-    slog("erweiterte Evolutiongleichung")
-    slog(epsilonvp_dot_TSM)
-    logSeparator()
 
     slog("Tangente epsilonvp_0")
 

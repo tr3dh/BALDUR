@@ -132,7 +132,7 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     if(fs::exists(fs::path(scriptPath).parent_path().string() + "/__LPECONFIG.JSON")){
 
         //
-        LOG << "[" + getTimestamp() + "] LPEConfig gefunden, Umgebung wird aufgesetzt" << endl;
+        // LOG << "[" + getTimestamp() + "] LPEConfig gefunden, Umgebung wird aufgesetzt" << endl;
 
         //
         nlohmann::json lpeConfig = nlohmann::json::parse(std::ifstream(fs::path(scriptPath).parent_path() / "__LPECONFIG.JSON"), nullptr, true, true);
@@ -146,13 +146,13 @@ std::vector<std::unique_ptr<IObject>> executeProgram(const std::string& scriptPa
     else{
 
         //
-        LOG << "[" + getTimestamp() + "] keine LPEConfig gefunden, Umgebung wird mit default Config aufgesetzt" << endl;
+        // LOG << "[" + getTimestamp() + "] keine LPEConfig gefunden, Umgebung wird mit default Config aufgesetzt" << endl;
         
         //
         defaultSetupLexicalInstances();
 
         //
-        LOG << "[" + getTimestamp() + "] Default LPEConfig wird exportiert ..." << endl;
+        // LOG << "[" + getTimestamp() + "] Default LPEConfig wird exportiert ..." << endl;
 
         //
         nlohmann::ordered_json lpeConfig;

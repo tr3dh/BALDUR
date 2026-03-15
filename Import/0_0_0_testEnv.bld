@@ -26,6 +26,6 @@ setEqual(zerosInstanceTemplate + tmplTensor, tmplTensor)
 setEqual(0 * tmplTensor, zeros(tmplTensor))
 setEqual(1 * tmplTensor, tmplTensor)
 
-tExpr expr = 0.5 * A + (-0.5) * A
+tExpr expr = a + 0.5 + b + 0.7 
 
 slog(simplified(expr))
