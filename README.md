@@ -9,6 +9,13 @@ Assembling Library for Building Embedded Runtime and Independent Interpreters Co
 # BALDUR
 Basic Algebraic Language for Deriving unified Tensor Representations
 
+# Lizenzen
+
+Die für die Logos verwendete Vektorgrafiken stammen aus dem SVG-Repo und sind unter der CC0 Lizenz lizensiert. Sie lassen sich unter folgenden Links finden.
+
+https://www.svgrepo.com/svg/308950/anvil-hard-metal-metalworking-tool
+https://www.svgrepo.com/svg/37858/spear
+
 # 🤝 Many thanks
 
 I would like to express my special thanks to my supervisor Dr. Hendrik Geisler, who made this thetis possible spontaneously and through his support and was a great help during its development.

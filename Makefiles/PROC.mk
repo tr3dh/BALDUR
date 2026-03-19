@@ -60,8 +60,9 @@ ifeq ($(LINKING), STATIC)
 	CXXFLAGS += -static-libgcc -static-libstdc++
 endif
 
+# für angle -lEGL -lGLESv2
 LDFLAGS += -L./src \
-	-L./thirdParty/raylib/build/raylib -L./thirdParty/raylib/dynamicBuild/raylib -lraylib \
+	-L./thirdParty/raylib/build/raylib -lraylib \
 	-L/mingw64/lib \
 	-L./thirdparty/symengine/build/symengine -lsymengine \
 	-L./thirdParty/rlImGui/bin -lrlimgui \

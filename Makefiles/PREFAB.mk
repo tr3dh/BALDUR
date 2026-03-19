@@ -185,18 +185,30 @@ raylib:
 			-DBUILD_SHARED_LIBS=OFF \
 			-DCMAKE_BUILD_TYPE=Release; \
 		cmake --build build; \
-		cmake -B dynamicBuild -G "MinGW Makefiles" \
-			-DGRAPHICS=GRAPHICS_API_OPENGL_43 \
-			-DSUPPORT_FILEFORMAT_GLTF=ON \
-			-DSUPPORT_FILEFORMAT_GLTF_DRACO=ON \
-			-DSUPPORT_FILEFORMAT_ASSIMP=ON \
-			-DUSE_EXTERNAL_GLFW=ON \
-			-DBUILD_SHARED_LIBS=ON \
-			-DCMAKE_BUILD_TYPE=Release; \
-		cmake --build dynamicBuild; \
 	fi
-	
-#	@make dllCopy COPYTARGET=thirdParty/r3d/build/
+
+angle:
+	$(PACMAN) $(MINGW_PREFIX)-angleproject
+
+ANGLE_LDFLAGS := -L/mingw64/lib -lEGL -lGLESv2
+
+angleRaylib:
+
+	@if [ -d "thirdParty/raylib" ]; then \
+		echo "Info: 'thirdParty/raylib' existiert bereits. Überspringe Build.";\
+	else \
+		cd thirdParty && git clone https://github.com/raysan5/raylib.git; \
+		cd raylib/; \
+		cmake -B buildAngle -G "MinGW Makefiles" \
+			-DCUSTOMIZE_BUILD=ON \
+			-DOPENGL_VERSION="ES 3.0" \
+			-DSUPPORT_FILEFORMAT_GLTF=ON \
+			-DBUILD_EXAMPLES=OFF \
+			-DUSE_EXTERNAL_GLFW=ON \
+			-DBUILD_SHARED_LIBS=OFF \
+			-DCMAKE_BUILD_TYPE=Release; \
+		cmake --build buildAngle; \
+	fi
 
 magic_enum:
 	@if [ -d "thirdParty/magic_enum" ]; then \
@@ -321,7 +333,7 @@ dllCopy:
 	cp -n /mingw64/bin/libgomp-1.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libgmp-10.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libmpfr-6.dll $(COPYTARGET);
-	cp -n thirdParty/raylib/dynamicBuild/raylib/libraylib.dll $(COPYTARGET);
+#	cp -n thirdParty/raylib/dynamicBuild/raylib/libraylib.dll $(COPYTARGET);
 	cp -n /mingw64/bin/glfw3.dll $(COPYTARGET);
 # 	cp -n /mingw64/bin/vulkan-1.dll $(COPYTARGET);
 # 	cp -n /mingw64/bin/libsfml-graphics-2.dll $(COPYTARGET);

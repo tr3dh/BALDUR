@@ -3640,6 +3640,26 @@ namespace types{
         },
         {});
 
+        registerFunction("removeEqual", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "removeEqual", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); 
+
+                TensorExpression& member0 = arg0->getMember();
+
+                auto key = member0;
+                size_t removed = tensorExpressionSimplifications.erase(key);
+                
+                RETURNING_ASSERT(removed > 0, "Kein Differential für gegebenes Tensortemplatepaar gefunden : " + member0.toString(),);
+        },
+        {});
+
         //
         registerFunction("logPresetDiffs", {},
             [__functionLabel__ = "logPresetDiffs", __numArgs__ = 0](FREG_ARGS){

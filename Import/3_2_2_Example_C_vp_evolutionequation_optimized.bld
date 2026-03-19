@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-//                              Example 3.2.2 B
+//                              Example 3.2.2 C
 // ---------------------------------------------------------------------------
 // Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
 // "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
@@ -13,29 +13,53 @@
 // Für Release
 // - $ make exec BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
 // - $ make launch BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
-
+//
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
-
-// Bechmarking Release mit anschließender Vereinfachung von nichtoptimierter Version
-// nopt Version minimale Vereinfachung ~    600s  | 10 min
-// nopt Version maximale Vereinfachung ~ 35 000s  | 10 h
-// opt  Version maximale Vereinfachung ~  4 100s  | 1.2 h
+//
+// Benchmark :
+//
+// Ausführung dieses Skript mit Angabe verschiedener Stufen für die TSM
+//
+// Verwendete Hardware :
+// - RAM : 32 GB
+// - Prozessor : Intel i-7 13th Gen
+//
+// | Stufe | Evaluierzeit | größter Vereinfachter Ausruck | größte exportierte Tangente | längstes Julia Tangentenskript |
+// |-------|--------------|-------------------------------|-----------------------------|--------------------------------|
+// |   0   |    0.02 s    |              60 Nodes         |              50 Nodes       |              40 Zeilen         |
+// |   1   |    0.02 s    |             800 Nodes         |             250 Nodes       |             130 Zeilen         |
+// |   2   |    0.25 s    |           5 500 Nodes         |           1 400 Nodes       |             500 Zeilen         |
+// |   3   |    3    s    |          65 000 Nodes         |           8 600 Nodes       |           2 400 Zeilen         |
+// |   4   |   40    s    |         680 000 Nodes         |          60 000 Nodes       |          13 000 Zeilen         |
+// |   5   |   11    min  |       8 000 000 Nodes         |         450 000 Nodes       |          85 000 Zeilen         |
+// |   6   |    3.5  h    |     110 000 000 Nodes         |       3 600 000 Nodes       |         635 000 Zeilen         |
+// |-------|--------------|-------------------------------|-----------------------------|--------------------------------|
 
 // Includes
-fetch backend []
+fetch backend ["tensor"]
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// Wird nach dem Ermitteln der Spannungstangenten zurückgesetzt
+bool g_emplaceExtendedSimplifications = true
+
+//
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2_optimized", "Modelling of the evolution equation of elasto-viscoplasticity"
-int [orderTSM, dimension] = 2, 3
+int [orderTSM, dimension] = 3, 3
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
 
 //
 // disableDiffTemplateDefaults()
-setGenerateJLDebugCall(false)
+setGenerateJLDebugCall(true)
 
 //
 decl evaluateExample(int orderTSM, int dimension){
@@ -44,11 +68,16 @@ decl evaluateExample(int orderTSM, int dimension){
     // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
     // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten
 
+    //
     tExpr expDiff
     for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
     setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
     for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplScalar ^ i, tmplB) }
     setDiffTemplate(exp(tmplScalar, orderTSM, false), tmplB, expDiff)
+
+    //
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplA ^ i, tmplB, i * ((tmplA ^ (i - 1)) . diff(tmplA, tmplB))) }
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplScalar ^ i, tmplB, i * (tmplScalar ^ (i-1)) * diff(tmplScalar, tmplB)) }
 
     //
     tExpr ref result
@@ -172,7 +201,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // Tangente in Julia Skript schreiben
     result << tangent
     tResultLabel = "sigma_0"
-    log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+    log("Writing Tangents '", tResultLabel, "' with ", result->getNumOfNodes(), " wrapped IDN Representation to jl File ...")
 
     //
     tIDNResult = toWrappedIDN(result)
@@ -222,7 +251,7 @@ decl evaluateExample(int orderTSM, int dimension){
         // Tangente in Julia Skript schreiben
         result << tmpTangentE
         tResultLabel = "sigma_E_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        log("Writing Tangents '", tResultLabel, "' with ", result->getNumOfNodes(), " wrapped IDN Representation to jl File ...")
 
         //
         tIDNResult = toWrappedIDN(result)
@@ -232,7 +261,7 @@ decl evaluateExample(int orderTSM, int dimension){
         // Tangente in Julia Skript schreiben
         result << tmpTangentY
         tResultLabel = "sigma_Y_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        log("Writing Tangents '", tResultLabel, "' with ", result->getNumOfNodes(), " wrapped IDN Representation to jl File ...")
 
         //
         tIDNResult = toWrappedIDN(result)
@@ -243,6 +272,11 @@ decl evaluateExample(int orderTSM, int dimension){
         if(order == orderTSM){ dref result }
     }
 
+    // Die erweiterten Simplifizierungstemplates zahlen sich in erster Linie für
+    // die Spannungstangenten aus
+    if(g_emplaceExtendedSimplifications){ removeExtendedSimplifications() }
+
+    //
     slog("Tangente epsilonvp_0")
 
     // Tangente i mal ableiten und D mit null substituieren
@@ -258,7 +292,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // Tangente in Julia Skript schreiben
     result << tangent
     tResultLabel = "epsilonvp_0"
-    log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+    log("Writing Tangents '", tResultLabel, "' with ", result->getNumOfNodes(), " wrapped IDN Representation to jl File ...")
 
     //
     tIDNResult = toWrappedIDN(result)
@@ -306,7 +340,7 @@ decl evaluateExample(int orderTSM, int dimension){
         // Tangente in Julia Skript schreiben
         result << tmpTangentE
         tResultLabel = "epsilonvp_E_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        log("Writing Tangents '", tResultLabel, "' with ", result->getNumOfNodes(), " wrapped IDN Representation to jl File ...")
 
         //
         tIDNResult = toWrappedIDN(result)
@@ -316,7 +350,7 @@ decl evaluateExample(int orderTSM, int dimension){
         // Tangente in Julia Skript schreiben
         result << tmpTangentY
         tResultLabel = "epsilonvp_Y_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        log("Writing Tangents '", tResultLabel, "' with ", result->getNumOfNodes(), " wrapped IDN Representation to jl File ...")
 
         //
         tIDNResult = toWrappedIDN(result)
@@ -354,7 +388,7 @@ decl main(){
     
     //
     logSeparator()
-    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    log("[", timeStamp(), "] Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
     logSeparator()
 
     // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.

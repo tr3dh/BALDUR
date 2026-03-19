@@ -10,16 +10,29 @@
 // - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_A_ve_evolutionequation.bld
 // - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_A_ve_evolutionequation.bld
 //
+// Für Release
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_A_ve_evolutionequation.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_2_Example_A_ve_evolutionequation.bld
+//
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_2_Example_A_ve_evolutionequation.bld
 
+//
+fetch backend ["tensor"]
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// bool g_emplaceExtendedSimplifications = true
+
 // Includes
-fetch backend []
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling of the evolution equation of viscoelasticity"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 5, 2
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }

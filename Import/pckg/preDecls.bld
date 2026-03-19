@@ -132,9 +132,6 @@ assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be execu
 // Assert uniforms
 requires string uniform ExecMode
 
-// Config
-setUnwrapOperands(true)
-
 // Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
 // DISABLE_AUTOMATIC_DREF()
 
@@ -183,13 +180,6 @@ decl tIdnEps(int order){ return [tIDN("eps", order)] }
 //
 decl cofactor(tExpr ref lhs){ return [det(lhs) * transpose(inverse(lhs))] }
 
-// Beide Notationen sind korrekt die Notation mit .n verursacht teilweise nur bei der
-// Produktregel Probleme, da .n keine Stufe ermittelt und für später setzt sonder
-// immer die maximal mögliche Anzahl an Indizes kontrahiert
-
-//
-// decl frobenius(tExpr ref lhs){ return [sqrt(lhs .n lhs)] }
-
 // !! Funktionsdeklaration überschreibt vom Interpreter standardmäßig definierte Funktion 'frobenius',
 //    die einfache Containerbildung betreibt und die konkrete Ermittlung der Frobenius Norm einer gewissen
 //    an das Julia Skript auslagern 
@@ -217,7 +207,7 @@ tExpr [identityInstanceTemplate]                = tExprInstTmpl("Identity")
 tExpr [epsInstanceTemplate]                     = tExprInstTmpl("eps")
 
 // std Templates für Tensoren konkreter Stufe
-tExpr [tmplScalar]                              = tExprTmpl("tmplSc", 0)
+tExpr [tmplScalar, otherTmplScalar]             = tExprTmpl("tmplScalar", 0), tExprTmpl("otherTmplScalar", 0)
 tExpr [tmplVector]                              = tExprTmpl("tmplVec", 1)
 tExpr [tmplMatrix]                              = tExprTmpl("tmplMat", 2)
 tExpr [tmplTensor]                              = tExprTmpl("tmplTensor", -1)
@@ -265,6 +255,37 @@ setEqual(CnstTmplA * ArgTmplA + CnstTmplB * ArgTmplA, (CnstTmplA + CnstTmplB) * 
 setEqual(ArgTmplA - ArgTmplA, zeros(ArgTmplA))
 setEqual(ArgTmplA - CnstTmplA * ArgTmplA, (CnstTmplA - 1) * ArgTmplA)
 setEqual(CnstTmplA * ArgTmplA - CnstTmplB * ArgTmplA, (CnstTmplA - CnstTmplB) * ArgTmplA)
+
+decl emplaceExtendedSimplifications(){
+    
+    setEqual((tmplA + tmplB) + tmplB, tmplA + 2 * tmplB)
+    setEqual((tmplB + tmplA) + tmplB, tmplA + 2 * tmplB)
+    setEqual((tmplA + tmplScalar * tmplB) + tmplB, tmplA + (tmplScalar + 1) * tmplB)
+    setEqual((tmplA + tmplB) + tmplScalar * tmplB, tmplA + (tmplScalar + 1) * tmplB)
+    setEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB, tmplA + (tmplScalar + otherTmplScalar) * tmplB)
+
+    setEqual(CnstTmplA * (CnstTmplB * tmplB), (CnstTmplA * CnstTmplB) * tmplB)
+}
+
+decl removeExtendedSimplifications(){
+    
+    removeEqual((tmplA + tmplB) + tmplB)
+    removeEqual((tmplB + tmplA) + tmplB)
+    removeEqual((tmplA + tmplScalar * tmplB) + tmplB)
+    removeEqual((tmplA + tmplB) + tmplScalar * tmplB)
+    removeEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB)
+
+    removeEqual(CnstTmplA * (CnstTmplB * tmplB))
+}
+
+// Diese Simplifizierungen sind vergleichsweise teuer, simplifizieren aber stark
+// Zudem sind sie ausschließlich für die Vereinfachung von gepackten Ausdrücken ausgelegt
+if(!variableExists("g_emplaceExtendedSimplifications")){}
+else if(typename(g_emplaceExtendedSimplifications) != "bool"){}
+else if(g_emplaceExtendedSimplifications == true){
+
+    emplaceExtendedSimplifications()
+}
 
 // Nullmatrix Vereinfachungen
 setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +

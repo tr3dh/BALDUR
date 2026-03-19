@@ -10,15 +10,29 @@
 // - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
 // - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
 //
+// Für Release
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_B_ReactionForce.bld
+//
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_1_Example_B_ReactionForce.bld
+
+//
+fetch backend ["tensor"]
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// bool g_emplaceExtendedSimplifications = true
 
 // Includes
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "B", "3.2.1", "TSM - Modelling ReactionForce"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 5, 2
 
 //
 // setUnwrapOperands(false)
@@ -36,6 +50,7 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr Xi = tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
     tExpr [BMat, NMat] = tExpr("BMat", 2, args(nVoigtComps, nVoigtComps)), tExpr("NMat", 2, args(nVoigtComps, nVoigtComps))
     tExpr [N] = tExpr("N", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [t, rho] = tExpr("t", 0), tExpr("rho", 0)
 
     //
     tExpr [sigma, u] = tExpr("sigma", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps))

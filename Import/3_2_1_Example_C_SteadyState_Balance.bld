@@ -10,8 +10,22 @@
 // - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_C_SteadyState_Balance.bld
 // - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_C_SteadyState_Balance.bld
 //
+// Für Release
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_C_SteadyState_Balance.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/ProcTestEnv SCRIPT=../Import/3_2_1_Example_C_SteadyState_Balance.bld
+//
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/3_2_1_Example_C_SteadyState_Balance.bld
+
+//
+fetch backend ["tensor"]
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// bool g_emplaceExtendedSimplifications = true
 
 // Includes
 fetch script ["pckg/preDecls", "pckg/functions"]
