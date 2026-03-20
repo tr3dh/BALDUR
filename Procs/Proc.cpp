@@ -86,43 +86,9 @@ int main(void)
     LOG << "llvm wird genutzt" << ENDL;
     #endif
 
-    putenv("GLFW_USE_HYBRID_HPG=1");                       // Nutzt High Performance GPU (bei Laptops)
-
-    putenv("__GL_THREADED_OPTIMIZATIONS=0");              // Threaded Optimierung AUS – gut bei Flickering
-    putenv("__GL_SYNC_TO_VBLANK=1");                      // VSync AN – reduziert Tearing
-    putenv("__GL_SHADER_DISK_CACHE=1");                   // Shader Cache AN
-    putenv("__GL_LOG_ERRORS=1");                          // Fehler Logging
-    putenv("__GL_GPU_DISALLOW_SYNC_OBJECTS=1");           // Sync Objekte deaktivieren
-
-    // erweitertes Gl logging
-    // putenv("__GL_LOG_ERRORS=1");
-    // putenv("__GL_DEBUG=verbose");
-    // putenv("__GL_DUMP_SHADERS=1");
-
     //
-    putenv("__GL_ALLOW_UNOFFICIAL_PROTOCOL=1");           // Erlaubt inoffizielle Protokolle – gut bei Problemen mit älteren Anwendungen
-    putenv("__GL_YIELD=USLEEP");                          // Setzt Yield-Modus auf usleep – verbessert Synchronisation
-    putenv("__GL_MaxFramesAllowed=1");                    // Reduziert Triple-Buffering – reduziert Input-Lag (Standard ist 2 oder 3)
-    putenv("__GL_SINGLE_THREADED=1");                     // Setzt OpenGL in Single Thread Modus (Legacy-Kompatibilität)
-    putenv("__GL_NO_SHADER_STORAGE_CACHE=1");             // Deaktiviert Shader Storage Cache (testen bei Grafikfehlern)
-    putenv("__GL_DUMP_SHADERS=1");                        // Dump Shader Binärdaten – Debugging
-    putenv("__GL_VRR_ALLOWED=0");                         // Variable Refresh Rate deaktivieren – bei Flickern auf G-Sync/FreeSync
-    putenv("__GL_FORCE_DIRECT_RENDERING=1");              // Erzwingt Direct Rendering – nützlich bei Remote-Desktops oder VM
-    putenv("__GL_IGNORE_BLACKLIST=1");                    // Erzwingt volle GPU-Nutzung, selbst wenn inkompatibel markiert
-    putenv("__GL_LOG_MAX_ANISO=1");                       // Loggt Anisotrope Filter Nutzung
-    putenv("__GL_SHOW_GRAPHICS_OSD=1");                   // Zeigt NVIDIA Overlay an (wenn aktivierbar) – Performance Debugging
-    putenv("__GL_DEFAULT_LOG_LEVEL=2");                   // Logging-Level erhöhen (0 = none, 1 = error, 2 = warn, 3 = info)
-
-    // konkret für Quadro karten
-    putenv("__GL_WORKSTATION_MODE=1");                    // Aktiviert Optimierungen speziell für Quadro/Workstation-Treiber
-
-    // experimentell 
-    // putenv("__GL_SYNC_DISPLAY_DEVICE=\\.\DISPLAY1");      // Synchronisiert auf bestimmten Monitor
-    // putenv("__GL_DEBUG=verbose");                         // Verbose Debug-Ausgabe
-
-    //
-    mkdir("../bin");
-    openLogFile();
+    // mkdir("../bin");
+    // openLogFile();
     getEnv();
 
     //
@@ -172,10 +138,10 @@ int main(void)
     LOG << "** GPU Vendor: " << vendor << ENDL;
 
     // string splitten da im glVersion String noch Infos über die graphikkarte stehen
-    g_glVersion = string::convert<float>(std::string(glVersion).substr(0,3));
+    g_glVersion = std::string(glVersion);
 
     // ab der 4.3 enthält opengl eine shader pipeline für comp shaders
-    g_ComputeShaderBackendEnabled = g_glVersion >= 4.3f;
+    // g_ComputeShaderBackendEnabled = g_glVersion >= 4.3f;
 
     //
     g_vendorCorp = std::string(vendor);
@@ -186,13 +152,13 @@ int main(void)
     //
     LOG << "** Init in GENV " << g_env << ENDL;
 
-    LOG << (g_ComputeShaderBackendEnabled ? "** Computeshader Backend freigeschaltet" :
-        "** Computeshader Backend gesperrt, opengl version " + std::to_string(g_glVersion).substr(0,3) + " ist nicht mit comp shadern kompatibel, erforderliche Version : OpenGL 4.3") << ENDL;
+    // LOG << (g_ComputeShaderBackendEnabled ? "** Computeshader Backend freigeschaltet" :
+    //     "** Computeshader Backend gesperrt, opengl version " + std::to_string(g_glVersion).substr(0,3) + " ist nicht mit comp shadern kompatibel, erforderliche Version : OpenGL 4.3") << ENDL;
 
-    LOG << (g_CudaBackendEnabled ? "** Cuda Backend freigeschaltet" :
-        "** Cuda Backend gesperrt, vendor " + g_vendorCorp + " ist nicht mit Cuda kompatibel") << ENDL;
+    // LOG << (g_CudaBackendEnabled ? "** Cuda Backend freigeschaltet" :
+    //     "** Cuda Backend gesperrt, vendor " + g_vendorCorp + " ist nicht mit Cuda kompatibel") << ENDL;
 
-    LOG << "** -----------------------------------------" << ENDL;
+    // LOG << "** -----------------------------------------" << ENDL;
 
     // Raylib Fenster init
     float winSizeFaktor = 0.6f;
@@ -532,7 +498,7 @@ int main(void)
             }
             if (ImGui::BeginMenu("Hardware"))
             {
-                ImGui::Text("OpenGL Version : %.2f", g_glVersion);
+                ImGui::Text("OpenGL Version : %s", glVersion);
                 ImGui::Text("GPU Vendor : %s", vendor);
                 ImGui::Text("Env : %s", g_env.c_str());
 

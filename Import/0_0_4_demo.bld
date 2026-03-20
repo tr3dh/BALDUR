@@ -1,0 +1,9 @@
+struct expr {
+    
+}
+
+
+if(calledAs(__MainProc__)){
+    
+    slog("Demo")
+}

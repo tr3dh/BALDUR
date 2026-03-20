@@ -60,9 +60,19 @@ ifeq ($(LINKING), STATIC)
 	CXXFLAGS += -static-libgcc -static-libstdc++
 endif
 
+RAYLIB_USES_ANGLE ?= TRUE
+
 # für angle -lEGL -lGLESv2
-LDFLAGS += -L./src \
-	-L./thirdParty/raylib/build/raylib -lraylib \
+LDFLAGS += -L./src
+
+ifeq ($(RAYLIB_USES_ANGLE), TRUE)
+	LDFLAGS += -L./thirdParty/raylib/buildAngle/raylib -lraylib
+	CXXFLAGS += -DRAYLIB_USES_ANGLE
+else
+	LDFLAGS += -L./thirdParty/raylib/build/raylib -lraylib
+endif
+
+LDFLAGS += \
 	-L/mingw64/lib \
 	-L./thirdparty/symengine/build/symengine -lsymengine \
 	-L./thirdParty/rlImGui/bin -lrlimgui \
@@ -70,10 +80,17 @@ LDFLAGS += -L./src \
 	-L./thirdParty/imgui/bin -limgui \
 	-L./thirdParty/enet/build -lenet \
 	-L./thirdParty/lsp-framework/build -llsp \
-	-lkernel32 \
+	-lkernel32
+
+ifeq ($(RAYLIB_USES_ANGLE), TRUE)
+	LDFLAGS += -lEGL -lGLESv2
+else
+	LDFLAGS += -lopengl32
+endif
+
+LDFLAGS += \
 	-lgdi32 -lopengl32 -ld3d11 -ld3d9 -ldxgi \
 	-lwinmm -lws2_32\
-	-lglfw3 \
 	-lgmp -lmpfr \
 	-lpthread\
 

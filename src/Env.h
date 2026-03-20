@@ -171,7 +171,11 @@ extern "C" {
 #include <implot.h>
 
 #include <rlgl.h>
+#ifdef RAYLIB_USES_ANGLE
+#include <GLES3/gl3.h>
+#else
 #include <GL/gl.h>
+#endif
 
 // #include <magic_enum/magic_enum.hpp>
 
