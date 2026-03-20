@@ -171,7 +171,7 @@ extern "C" {
 #include <implot.h>
 
 #include <rlgl.h>
-#include <GL/gl.h>
+#include <GLES3/gl3.h>
 
 // #include <magic_enum/magic_enum.hpp>
 

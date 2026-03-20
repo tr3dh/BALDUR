@@ -62,7 +62,7 @@ endif
 
 # für angle -lEGL -lGLESv2
 LDFLAGS += -L./src \
-	-L./thirdParty/raylib/build/raylib -lraylib \
+	-L./thirdParty/raylib/buildAngle/raylib -lraylib \
 	-L/mingw64/lib \
 	-L./thirdparty/symengine/build/symengine -lsymengine \
 	-L./thirdParty/rlImGui/bin -lrlimgui \
@@ -70,12 +70,11 @@ LDFLAGS += -L./src \
 	-L./thirdParty/imgui/bin -limgui \
 	-L./thirdParty/enet/build -lenet \
 	-L./thirdParty/lsp-framework/build -llsp \
-	-lkernel32 \
-	-lgdi32 -lopengl32 -ld3d11 -ld3d9 -ldxgi \
-	-lwinmm -lws2_32\
-	-lglfw3 \
+	-lEGL -lGLESv2 \
+	-lgdi32 -ld3d11 -ld3d9 -ldxgi \
+	-lkernel32 -lwinmm -lws2_32 \
 	-lgmp -lmpfr \
-	-lpthread\
+	-lpthread
 
 ifeq ($(USE_LLVM),TRUE)
     CXXFLAGS += $(shell llvm-config --cxxflags)

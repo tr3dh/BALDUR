@@ -120,10 +120,10 @@ int main(void)
     // putenv("__GL_SYNC_DISPLAY_DEVICE=\\.\DISPLAY1");      // Synchronisiert auf bestimmten Monitor
     // putenv("__GL_DEBUG=verbose");                         // Verbose Debug-Ausgabe
 
-    //
-    mkdir("../bin");
-    openLogFile();
-    getEnv();
+    // //
+    // mkdir("../bin");
+    // openLogFile();
+    // getEnv();
 
     //
     LOG << "-- starte Programm in ENV " << g_env << endl;
@@ -172,27 +172,27 @@ int main(void)
     LOG << "** GPU Vendor: " << vendor << ENDL;
 
     // string splitten da im glVersion String noch Infos über die graphikkarte stehen
-    g_glVersion = string::convert<float>(std::string(glVersion).substr(0,3));
+    g_glVersion = std::string(glVersion);
 
-    // ab der 4.3 enthält opengl eine shader pipeline für comp shaders
-    g_ComputeShaderBackendEnabled = g_glVersion >= 4.3f;
+    // // ab der 4.3 enthält opengl eine shader pipeline für comp shaders
+    // g_ComputeShaderBackendEnabled = g_glVersion >= 4.3f;
 
     //
     g_vendorCorp = std::string(vendor);
 
-    //
-    g_CudaBackendEnabled = string::contains(g_vendorCorp, "NVIDIA");
+    // //
+    // g_CudaBackendEnabled = string::contains(g_vendorCorp, "NVIDIA");
 
-    //
-    LOG << "** Init in GENV " << g_env << ENDL;
+    // //
+    // LOG << "** Init in GENV " << g_env << ENDL;
 
-    LOG << (g_ComputeShaderBackendEnabled ? "** Computeshader Backend freigeschaltet" :
-        "** Computeshader Backend gesperrt, opengl version " + std::to_string(g_glVersion).substr(0,3) + " ist nicht mit comp shadern kompatibel, erforderliche Version : OpenGL 4.3") << ENDL;
+    // LOG << (g_ComputeShaderBackendEnabled ? "** Computeshader Backend freigeschaltet" :
+    //     "** Computeshader Backend gesperrt, opengl version " + std::to_string(g_glVersion).substr(0,3) + " ist nicht mit comp shadern kompatibel, erforderliche Version : OpenGL 4.3") << ENDL;
 
-    LOG << (g_CudaBackendEnabled ? "** Cuda Backend freigeschaltet" :
-        "** Cuda Backend gesperrt, vendor " + g_vendorCorp + " ist nicht mit Cuda kompatibel") << ENDL;
+    // LOG << (g_CudaBackendEnabled ? "** Cuda Backend freigeschaltet" :
+    //     "** Cuda Backend gesperrt, vendor " + g_vendorCorp + " ist nicht mit Cuda kompatibel") << ENDL;
 
-    LOG << "** -----------------------------------------" << ENDL;
+    // LOG << "** -----------------------------------------" << ENDL;
 
     // Raylib Fenster init
     float winSizeFaktor = 0.6f;
@@ -534,7 +534,7 @@ int main(void)
             {
                 ImGui::Text("OpenGL Version : %.2f", g_glVersion);
                 ImGui::Text("GPU Vendor : %s", vendor);
-                ImGui::Text("Env : %s", g_env.c_str());
+                // ImGui::Text("Env : %s", g_env.c_str());
 
                 ImGui::EndMenu();
             }
