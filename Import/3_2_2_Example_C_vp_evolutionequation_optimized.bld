@@ -59,7 +59,7 @@ decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
 
 //
 // disableDiffTemplateDefaults()
-setGenerateJLDebugCall(true)
+setGenerateJLDebugCall(false)
 
 //
 decl evaluateExample(int orderTSM, int dimension){

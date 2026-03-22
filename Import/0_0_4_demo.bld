@@ -1,9 +1,10 @@
+fetch backend ["tensor"]
+
 struct expr {
     
 }
 
-
 if(calledAs(__MainProc__)){
     
-    slog("Demo")
+    slog(tExpr(2))
 }
