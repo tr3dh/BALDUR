@@ -3,7 +3,7 @@
 #include <string>
 #include <typeinfo>
 
-#include "RegistryLanguage/Interpreter.h"
+#include "Alberich/Interpreter.h"
 
 //
 template<typename Ret, typename... Args>
