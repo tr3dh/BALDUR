@@ -320,6 +320,12 @@ lsp:
 		cd thirdParty/lsp-framework && cmake -S . -B build && cmake --build build --parallel; \
 	fi
 	
+python:
+	$(PACMAN) $(MINGW_PREFIX)-python-pip
+
+compiledb: python
+	pip install compiledb
+
 COPYTARGET ?= build/
 dllCopy:
 	mkdir -p $(COPYTARGET);
@@ -426,3 +432,5 @@ prefab:
 	@make filebrowser
 	@make raylibImgui
 	@make implot
+
+	@make compiledb

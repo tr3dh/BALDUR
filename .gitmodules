@@ -1,0 +1,3 @@
+[submodule "src/Alberich"]
+	path = src/Alberich
+	url = https://github.com/tr3dh/ALBERICH.git

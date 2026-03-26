@@ -51,6 +51,7 @@ CXXFLAGS += -Wextra -MMD -MP -std=c++23 -fuse-ld=lld -fexceptions \
 	-Wno-cpp \
 	-I./\
 	-I./src \
+	-I./src/Alberich/src \
 	-I./thirdParty \
 	$(RAYLIB_INCLUDES) \
 	-I/mingw64/include \
