@@ -8,24 +8,6 @@
 //   ╚══════╝   ╚═╝   ╚═════╝     ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝╚══════╝                                                                       
 //                                                                                                                                         
 // ---------------------------------------------------------------------------
-// !! HINWEIS
-// ---------------------------------------------------------------------------
-// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
-// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
-// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
-// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
-// Dokumentation, Einführung oder Anleitung.
-// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
-// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
-// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert
-// denen die Ableitungen und Vereinfachungen in Folge unterliegen
-// Wir übernehmen keine Haftung oder Verantwortung für die Gültigkeit /
-// Richtigkeit der hier implementierten Inhalte und der Sprache / des
-// Backends im Allgemeinen!
-// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten
-// die Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit
-// überprüfen!
-// ---------------------------------------------------------------------------
 // MIT License
 // ---------------------------------------------------------------------------
 // Copyright (c) 2025-2026 Tim Rother, Dr. Hendrik Geisler
@@ -49,6 +31,22 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+// ---------------------------------------------------------------------------
+// !! HINWEIS
+// ---------------------------------------------------------------------------
+// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
+// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
+// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
+// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
+// Dokumentation, Einführung oder Anleitung.
+// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
+// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
+// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert,
+// denen die Ableitungen und Vereinfachungen in Folge unterliegen.
+// Wir übernehmen ausdrücklich keine Haftung oder Verantwortung für die Gültigkeit und
+// Richtigkeit der hier implementierten Inhalte!
+// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten die
+// Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
 // ---------------------------------------------------------------------------
 
 //
@@ -319,7 +317,7 @@ decl smplfDiff(tExpr ref expr, tExpr ref dExpr, int amount){
 
     for(int i = 0, i < amount + 1, i++){
 
-        __diffAssign__(tmp, dExpr)
+        tmp \diff= dExpr
         wrpSimplify(tmp)
     }
 

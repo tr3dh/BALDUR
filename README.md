@@ -11,7 +11,7 @@ Basic Algebraic Language for Deriving unified Tensor Representations
 
 # Lizenzen
 
-Die für die Logos verwendete Vektorgrafiken stammen aus dem SVG-Repo und sind unter der CC0 Lizenz lizensiert. Sie lassen sich unter folgenden Links finden.
+Die für die Logos verwendeten Vektorgrafiken stammen aus dem SVG-Repo und sind unter der CC0 Lizenz lizensiert. Sie lassen sich unter folgenden Links finden.
 
 https://www.svgrepo.com/svg/308950/anvil-hard-metal-metalworking-tool
 https://www.svgrepo.com/svg/37858/spear

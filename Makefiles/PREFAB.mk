@@ -326,6 +326,28 @@ python:
 compiledb: python
 	pip install compiledb
 
+doxygen:
+	$(PACMAN) $(MINGW_PREFIX)-llvm $(MINGW_PREFIX)-llvm-libs $(MINGW_PREFIX)-llvm-tools $(MINGW_PREFIX)-lld
+	$(PACMAN) $(MINGW_PREFIX)-doxygen
+	$(PACMAN) $(MINGW_PREFIX)-wkhtmltopdf
+	$(PACMAN) mingw-w64-ucrt-x86_64-texlive-bin
+	$(PACMAN) $(MINGW_PREFIX)-graphviz
+	$(PACMAN) $(MINGW_PREFIX)-qt5-base
+
+# Doxy generieren über $ doxygen .Doxygen/Doxyfile.Import
+
+# html anschauen über 
+
+# start ./.Doxygen/baldur_pckg/html/index.html
+
+# Druck zu pdf über
+#
+# "/c/Program Files/Google/Chrome/Application/chrome.exe" \
+#   --headless \
+#   --print-to-pdf="C:/Uni/IKM/BALDUR/baldur.pdf" \
+#   --no-pdf-header-footer \
+#   "file:///C/Uni/IKM/BALDUR/.Doxygen/baldur_pckg/html/index.html"
+
 COPYTARGET ?= build/
 dllCopy:
 	mkdir -p $(COPYTARGET);

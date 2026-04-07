@@ -123,9 +123,9 @@ int main(int argc, char* argv[]){
 
         std::string path = kwargs["execute"];
 
-        RETURNING_ASSERT(fs::exists(path), "Script existiert nicht", 1);
+        RETURNING_ASSERT(fs::exists(path), "Script " + path + " existiert nicht", 1);
 
-        std::filesystem::current_path(exeDir);
+        // std::filesystem::current_path(exeDir);
         // LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
         // LOG << "Start Unpacking and Simulating " << path << ENDL;
 

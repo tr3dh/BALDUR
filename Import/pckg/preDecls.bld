@@ -8,24 +8,6 @@
 //    ╚══════╝   ╚═╝   ╚═════╝     ╚═════╝ ╚══════╝ ╚═════╝╚══════╝╚══════╝
 //                                                                                                                                         
 // ---------------------------------------------------------------------------
-// !! HINWEIS
-// ---------------------------------------------------------------------------
-// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
-// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
-// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
-// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
-// Dokumentation, Einführung oder Anleitung.
-// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
-// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
-// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert
-// denen die Ableitungen und Vereinfachungen in Folge unterliegen
-// Wir übernehmen keine Haftung oder Verantwortung für die Gültigkeit /
-// Richtigkeit der hier implementierten Inhalte und der Sprache / des
-// Backends im Allgemeinen!
-// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten
-// die Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit
-// überprüfen!
-// ---------------------------------------------------------------------------
 // MIT License
 // ---------------------------------------------------------------------------
 // Copyright (c) 2025-2026 Tim Rother, Dr. Hendrik Geisler
@@ -50,78 +32,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 // ---------------------------------------------------------------------------
-// Dokumentation
+// !! HINWEIS
 // ---------------------------------------------------------------------------
-// Config Tensorausdrücke
-// . Template Größen 
-// . Standard Instanzen
-// . Simplifizierungen
-// . Ableitungsersetzungen
-// . Ableitugstemplates
-// 
-// Template Tensorausdrücke
-// Stufe -1 bedeutet Arbitary Template, hier kann jeder beliebige andere Ausdruck eingesetzt werden
-// eine konkrete Stufe ermöglicht nur das Einsetzen von Ausdrücke dieser konkreten Stufe
-// 
-// Dabei werden die Register überladen nach
-// . Tensorstufe (>> tExprTmpl(tmplA, 0) vor tExprTmpl(tmplA, -1))
-// . TensorInstanz (>> tExpr(A, ?) vor tExprTmpl(A, ?))
-// . Struktur (>> tExprTmpl(A, ?) .. tExprTmpl(A, ?) vor tExprTmpl(A, ?) .. tExprTmpl(B, ?))
-//      . ohne diese Überladung würde ein Ausdruck der durch [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] repräsentiert werden kann
-//        unter Umständen zuerst auf Gleichheit mit [tExprTmpl(A, ?) .. tExprTmpl(B, ?)] überprüft werden und dieses
-//        Template als Repräsentation gewählt werden, obwohl [tExprTmpl(A, ?) .. tExprTmpl(A, ?)] es besser repräsentiert
-// . Ausdruckskomplexität bzw. Spezifizierungen (>> (a . a) . b vor a . b)
-// . Ausdruckstyp (>> Instanzen, Constanttemplates, Instancetemplates, Standardtemplates, ...)
-//
-// | Template Typen               | repräsentierte Objekte                                        | Syntax                                    |
-// | -----------------------------------------------------------------------------------------------------------------------------------------|
-// | Tensor Standard Templates    | alle Tensor Ausdrücke (inkl. Nodes, Konstanten, ...)          | tExprTmpl("label", order)                 |
-// |                              | bei order = -1 werden beliebig stufige Ausdrücke              |                                           |
-// |                              | repräsentiert bei order > -1 Ausdrücke der konkreten Stufe    |                                           |
-// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
-// | Tensor Instance Tempates     | alle beliebig stufigen Tensorausdrucksargumente mit dem       | tExprInstTmpl("label")                   |
-// |                              | gleichen label der template Instanz                           |                                           |
-// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
-// | Tensor Constant Templates    | repräsentieren beliebige Konstanten                           | tExprCnstTmpl("label") || tExprCnstTmpl() |
-// |                              | die Angabe des labels dient nur der Unterscheidung innerhalb  |                                           |
-// |                              | innerhalb eines template Ausdrucks                            |                                           | 
-// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
-// | Tensor Arg Templates         | repräsentieren beliebige Argumente                            | tExprArgTmpl("label") ||                  |
-// |                              | Operationen können nicht repräsentert werden                  | tExprArgTmpl("label", order)              |
-// |                              | nur beliebige Instanzen (auch gewrappt >> det, inv, ...)      |                                           | 
-// |------------------------------|---------------------------------------------------------------|-------------------------------------------|
-//
-// Grundlegende Informationen zum Template System
-// . verschiedene Instanzierungen in die Diffs, die Difftemplates oder die Simplifizierungsvorlagen können
-//   stark abweichenden Evaluierzeiten verursachen
-// . dabei handelt es sich meistens um mit template Instanzen angereicherten Ausdrücke mit makroskopisch sehr ähnlichen
-//   Aufbauten zu vorkommenden Ausdrucksinstanzen 
-// . Diese müssen beim Abgleich mit anderen Instanzen (==, <, ...) häufig erst in eine gewisse Rekursionstiefe gelangen,
-//   bis das Template von der Instanz unterschieden werden kann
-// > Beispiel : das Vereinfachungstemplate 'setEqual(tmplA + tmplA, 2 * tmplA)' allein kann die 
-//   Evaluierzeit extrem verzögern. Und je komplexer die Ausdrücke werden, desto extremer wird die Evaluierzeit 
-//   verzögert. Das liegt daran dass der Ausdruck 'tmplA + tmplA' grundsäzlich erstmal jede Additionsoperation mit zwei Nodes
-//   (wrapped Expr) repräsentieren kann. Zum einen wird es deshalb in sehr vielen Fällen tiefergehend abgeglichen.
-//   Zum anderen muss bei jedem tiefergehenden Abgleich, zum Feststellen ob die Repräsentierung
-//   konsistent ist, für das template und die sich aus der Kommutativität ergebende Permutation eine Substitutionsmaps
-//   erstellt und diese beim Befüllen auf Konsistenz geprüft werden. Bei diesen Konsistenzagleichen kommt es wieder jeweils zum
-//   Agleich aller childs über mögliche kommutative Permutationen mit dem ersten beliebig komplexen eingelagerten Ausdruck
-//   (tmplA, erste Child Node der gepackten Addition)
-// . DiffInstanzen/Difftemplates/Vereinfachungsinstanzen/Vereinfachungstemplates die sehr instanzspezifisch sind,
-//   führen analog dazu, zu keiner nennenswerten Verzögerung der Evaluierzeit 
-// . Vor Implementierung von vor allem allgemeinen Templates sollte deshalb geprüft werden, wie das Template sich auf Evaluierzeit
-//   auswirkt und unter Umständen eine spezifischere Formulierung gewählt werden
-// . Zudem empfiehlt sich die Überlegung ob spezifische templates wie Instance, Constant oder Arg templates, die meistens
-//   deutlich weniger Evaluierzeit brauchen nicht genausogut geeignet sind
-// > zb. statt 'setEqual(tmplA + tmplA, 2 * tmplA)' zu nutzen könnte 'setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)' genutzt werden
-//   dieses Template deckt zwar nicht den allgemeinen Fall ab, sorgt aber für keine nennenswerte Steigerung der Evaluierzeit
-//   der meisten moderaten Tensorausdrücke
-// . Wie stark Template- und Instanzvorlagen die Evaluierzeit beeinflussen hängt natürlich auch stark davon ab
-//   wie komplex der abzuleitende / zu vereinfachende Ausdruck ist und wie er ausgebaut ist
-// > Wenn zb viele Dot Produkte mit beteiligten Inversen auftauchen kann 'setEqual(tmplA . inverse(tmplA), identity(tmplA))'
-//   ein bottleneck verursachen
-// . Bei der Formulierung sollte eher darauf geachtet werden, den gepackten Fall abzudecken, da die Überführung und Vereinfachung
-//   von Ausdrücken für diese Struktur deutlich einfacher ist als die Angabe aller benötigten Templates für den entpackten Fall
+// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
+// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
+// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
+// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
+// Dokumentation, Einführung oder Anleitung.
+// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
+// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
+// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert,
+// denen die Ableitungen und Vereinfachungen in Folge unterliegen.
+// Wir übernehmen ausdrücklich keine Haftung oder Verantwortung für die Gültigkeit und
+// Richtigkeit der hier implementierten Inhalte!
+// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten die
+// Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
+// ---------------------------------------------------------------------------
 
 //
 fetch backend ["core", "tensor"]
@@ -234,21 +160,6 @@ setEqual(tmplScalar - 0, tmplScalar)
 setEqual(0 - tmplScalar, (-1) * tmplScalar)
 
 // Vereinfachung von Standard Operationen
-
-// // Nur für kleinere Ausdrücke setzen, Vereinfachungen können massiven overhead und SMPLF3 verursachen
-// // Das liegt daran, dass der Konsistenz Check teilweise sehr teuer wird
-// // zb. wenn die Konsistenz von 'setEqual(tmplA - tmplA, zeros(tmplA))' geprüft werden soll muss für jede Minus Operation
-// // im gepackten Ausdrucksbaum (wrpSimplify) überprüft werden, ob der zweite Operand mit derm ersten übereinstimmt
-// // das sind teilweise Abgleiche von Nodes mit jeweils mehreren Millionen Nodes
-// // >> algemeinere Formulierung wählen
-// setEqual(tmplA + tmplA, 2 * tmplA)
-// setEqual(tmplA + CnstTmplA * tmplA, (CnstTmplA + 1) * tmplA)
-// setEqual(CnstTmplA * tmplA + CnstTmplB * tmplA, (CnstTmplA + CnstTmplB) * tmplA)
-// setEqual(tmplA - tmplA, zeros(tmplA))
-// setEqual(tmplA - CnstTmplA * tmplA, (CnstTmplA - 1) * tmplA)
-// setEqual(CnstTmplA * tmplA - CnstTmplB * tmplA, (CnstTmplA - CnstTmplB) * tmplA)
-
-// Spezifizierte Varianten (ArgTemplate statt StdTemplate)
 setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
 setEqual(ArgTmplA + CnstTmplA * ArgTmplA, (CnstTmplA + 1) * ArgTmplA)
 setEqual(CnstTmplA * ArgTmplA + CnstTmplB * ArgTmplA, (CnstTmplA + CnstTmplB) * ArgTmplA)
