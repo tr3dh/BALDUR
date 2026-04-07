@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/src",
+                "${workspaceFolder}/src/Alberich/src",
                 "C:/msys64/mingw64/include",
                 "${workspaceFolder}/thirdParty",
                 "${workspaceFolder}/thirdParty/imgui"

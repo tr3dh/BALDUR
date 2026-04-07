@@ -179,37 +179,66 @@ extern "C" {
 
 // #include <magic_enum/magic_enum.hpp>
 
-//
-#if defined(LOG) | defined(_ERROR)
-#error "Logging Direktiven können nicht definiert werden, Makros bereits deklariert"
-#endif
+// //
+// #if defined(LOG) | defined(_ERROR)
+// #error "Logging Direktiven können nicht definiert werden, Makros bereits deklariert"
+// #endif
 
 // Für Logging relevante Treiber
-#include "Drivers/ReccHandling/__timeStamp.h"
+#include "Alberich/Drivers/__timeStamp.h"
 
 //
 extern std::ofstream g_logFile;
 
+#ifndef LOG_RED
 #define LOG_RED     "\033[31m"
+#endif
+
+#ifndef LOG_GREEN
 #define LOG_GREEN   "\033[32m"
+#endif
+
+#ifndef LOG_YELLOW
 #define LOG_YELLOW  "\033[93m"
+#endif
+
+#ifndef LOG_BLUE
 #define LOG_BLUE    "\033[34m"
+#endif
+
+#ifndef LOG_ORANGE
 #define LOG_ORANGE  "\033[38;2;255;165;0m"
+#endif
+
+#ifndef LOG_RESET
 #define LOG_RESET   "\033[0m"
+#endif
 
-#define LOG std::cout << LOG_ORANGE
-#define _ERROR std::cerr << LOG_RED
+#ifndef LOG
+#define LOG     std::cout << LOG_ORANGE
+#endif
 
+#ifndef _ERROR
+#define _ERROR  std::cerr << LOG_RED
+#endif
+
+#ifndef ENDL
 #define ENDL "\n" << LOG_RESET << std::flush;
+#endif
 
 // #endif
 
 // Debugging über message ausgabe und instance debugging, dass direkt überladung für string stream mit << aufruft
+#ifndef mbug
 #define mbug(message) LOG << LOG_YELLOW << "___Passed : " << #message << ENDL;
+#endif
+
+#ifndef ibug
 #define ibug(objekt) LOG << LOG_YELLOW << "___Objekt : " << #objekt << " " << objekt << ENDL;
+#endif
 
 //
-#include "Drivers/ReccHandling/__Asserts.h"
+#include "Alberich/Drivers/__Asserts.h"
 
 // Grade gibts nen multiple definition error aber issue im magic_enum ist schon aufgemacht worden
 // Kann in paar Tagen einfach wieder einkommentiert werden

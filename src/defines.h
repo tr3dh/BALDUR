@@ -13,11 +13,11 @@
 #include "Drivers/OSInteractions/__Win32MessageProcessing.h"
 #include "Drivers/OSInteractions/__backgroundShell.h"
 
-#include "Drivers/ReccHandling/__Asserts.h"
-#include "Drivers/ReccHandling/__StringProcessing.h"
+#include "Alberich/Drivers/__Asserts.h"
+#include "Alberich/Drivers/__StringProcessing.h"
 #include "Drivers/ReccHandling/__jsonSerialize.h"
 #include "Drivers/ReccHandling/__lineCounter.h"
-#include "Drivers/ReccHandling/__timeStamp.h"
+#include "Alberich/Drivers/__timeStamp.h"
 #include "Drivers/ReccHandling/__Threadsafe.h"
 
 #include "Drivers/Calculations/__SymbolicExpressions.h"
@@ -39,14 +39,15 @@
 #include "decorators/timeFunction.h"
 
 //
-#include <enet/enet.h>
 #include <magic_enum/magic_enum.hpp>
 
 //
-#include "Serialization/ByteSequence.h"
+#include "Alberich/ByteSequence/src/ByteSequence/ByteSequence.h"
 #include "Serialization/SequenceSerializations.h"
 
-#define endl ENDL
+#ifndef endln
+#define endln ENDL
+#endif
 
 // typedefs
 typedef uint16_t NodeIndex;
@@ -78,98 +79,4 @@ static std::string githubRepositoryUrl = "https://github.com/tr3dh/ALF";
 
 static std::string g_encoderKey = "ALF";
 
-static std::string g_languageScriptSuffix = "bld";
-
 extern std::string g_env;
-
-//
-template<typename T>
-std::ostream& operator<<(std::ostream& os, std::vector<T>& vec) {
-
-    os << "Vector with " << vec.size() << " elements" << endl; 
-    for(size_t idx = 0; idx < vec.size(); idx++){
-        os << idx << " " << vec[idx] << endl;
-    }
-    return os;
-}
-
-//
-template<typename Key, typename Value>
-std::ostream& operator<<(std::ostream& os, const std::map<Key, Value>& map) {
-
-    os << "Map with " << map.size() << " elements" << endl; 
-    for(const auto& [k,v] : map){
-        os << k << " " << v << endl;
-    }
-    return os;
-}
-
-template<typename T>
-std::string printPlainVector(const std::vector<T>& vec, bool logParens = true, const std::string& token = ", ") {
-
-    if(vec.empty()) {
-        return logParens ? "()" : "";
-    }
-    
-    std::string result = logParens ? "(" : "";
-    for(size_t i = 0; i < vec.size(); ++i) {
-        result += std::to_string(vec[i]);
-        if(i != vec.size() - 1) {
-            result += token;
-        }
-    }
-    result += logParens ? ")" : "";
-    return result;
-}
-
-template<typename T>
-std::string printIncreasedPlainVector(const std::vector<T>& vec, bool logParens = true, const std::string& token = ", ") {
-
-    if(vec.empty()) {
-        return logParens ? "()" : "";
-    }
-    
-    std::string result = logParens ? "(" : "";
-    for(size_t i = 0; i < vec.size(); ++i) {
-        result += std::to_string(vec[i] + 1);
-        if(i != vec.size() - 1) {
-            result += token;
-        }
-    }
-    result += logParens ? ")" : "";
-    return result;
-}
-
-template<typename T, typename Func>
-std::string fprintPlainVector(std::vector<T>& vec, const Func& printFunc, bool logParens = true, const std::string& token = ", ") {
-
-    if(vec.empty()) {
-        return logParens ? "()" : "";
-    }
-    
-    std::string result = logParens ? "(" : "";
-    for(size_t i = 0; i < vec.size(); ++i) {
-        
-        result += printFunc(vec[i]);
-        if(i != vec.size() - 1) {
-            result += token;
-        }
-    }
-    result += logParens ? ")" : "";
-    return result;
-}
-
-template<typename K, typename V>
-void emplaceVectorsIntoMap(std::map<K, V>& map, const std::vector<K>& keys, const std::vector<K>& vals) {
-
-    //
-    RETURNING_ASSERT(keys.size() == vals.size(), "...",);
-
-    //
-    if(keys.empty()){ return; }
-
-    for (size_t i = 0; i < keys.size(); ++i) {
-
-        map.try_emplace(keys[i], vals[i]);
-    }
-}

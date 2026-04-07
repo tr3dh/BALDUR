@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ByteSequence.h"
+#include "Alberich/ByteSequence/src/ByteSequence/ByteSequence.h"
 #include "Drivers/Calculations/__SymbolicExpressions.h"
 #include "Drivers/Calculations/__MatrixConversions.h"
 

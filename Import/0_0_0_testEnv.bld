@@ -8,54 +8,7 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/ProcLang_d execute Import/0_0_0_testEnv.bld
 
-// Includes
-fetch backend ["tensor"]
-requires bool uniform g_unwrapOperands
-
-int tmplID
-tExpr [tmplScalar, tmplTensor] = tExprTmpl(string(tmplID++), 0), tExprTmpl(string(tmplID++))
-tExpr [tmplScalarA, tmplTensorA] = tExprTmpl(string(tmplID++), 0), tExprTmpl(string(tmplID++))
-tExpr [zerosInstanceTemplate]  = tExprInstTmpl("zeros")
-
-tExpr [A, B, C] = tExpr("A", 2), tExpr("B", 2), tExpr("C", 2)
-tExpr [a, b, c] = tExpr("a", 0), tExpr("b", 0), tExpr("c", 0)
-
-decl __expAssign__(tExpr ref lhs, int ref rhs){
-
-    bool lhsIsScalar = lhs->getOrder() == 0
-
-    if(rhs < 1 && !lhsIsScalar){
-
-        lhs <- identity(lhs)
-        return {}
-    }
-    else if(rhs < 1){
-
-        lhs <- tExpr(1)
-        return {}
-    }
-
-    //
-    tExpr res <+ lhs
-
-    //
-    for(int i = 0, i < rhs - 1, i++){
-
-        if(lhsIsScalar){ res *= lhs } 
-        else{ res .= lhs }
-    }
-
-    lhs <- res
+//
+if(calledAs(__MainProc__)){
+    slog("Init Main")
 }
-
-
-tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
-setDiff(A, B, C)
-
-for(int i = 1, i < 4 + 1, i++){
-
-    setDiffTemplate(tmplA ^ i, tmplB, i * (tmplA ^ (i - 1)) * diff(tmplA, B))
-    slog(diff(A ^ i, B))
-}
-
-slog(simplified(A + B + B + B))

@@ -69,7 +69,7 @@ void CodeEditor::save(){
     
     ASSERT(fs::exists(cScriptPath), "Skript Datei existiert nicht");
 
-    LOG << "** [Editor] Speichere File unter : " << cScriptPath << endl;
+    LOG << "** [Editor] Speichere File unter : " << cScriptPath << endln;
 
     std::ofstream outFile(cScriptPath);
 
@@ -238,7 +238,7 @@ void CodeEditor::deleteCursorRange(){
     //
     auto [startAtLine, stopAtLine, startAtCol, stopAtCol] = getCursorRange();
 
-    // LOG << startAtLine << " " << stopAtLine << " " << startAtCol << " " << stopAtCol << endl;
+    // LOG << startAtLine << " " << stopAtLine << " " << startAtCol << " " << stopAtCol << endln;
 
     bool startLineIsFull = false;
     bool stopLineIsFull = false;
@@ -775,7 +775,7 @@ void CodeEditor::render(const ImVec2& leftCorner, const ImVec2& size, bool ignor
 
             //
             undo();
-            // LOG << mainCursor.cursorLine << " " << mainCursor.cursorCol << endl;
+            // LOG << mainCursor.cursorLine << " " << mainCursor.cursorCol << endln;
         }
         else if(!writeRestriction && selectionNotActive && ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_Z)){
 

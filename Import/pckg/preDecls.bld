@@ -56,7 +56,7 @@ fetch backend ["core", "tensor"]
 assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
 
 // Assert uniforms
-requires string uniform ExecMode
+// ...
 
 // Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
 // DISABLE_AUTOMATIC_DREF()

@@ -15,9 +15,9 @@
 #include "Logging/Logging.h"
 #include "GUI/CodeEditor.h"
 #include "GUI/Terminal.h"
-#include "Alberich/SemanticAnalysis/AST.h"
+
 #include "CleanUp/ClearCaches.h"
-#include "Alberich/Interpreter.h"
+#include "AlberichDistro/Interpreter.h"
 
 // Precompiles
 #include "templatePreCompiles/EigenPrecompiles.h"

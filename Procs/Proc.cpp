@@ -92,7 +92,7 @@ int main(void)
     getEnv();
 
     //
-    LOG << "-- starte Programm in ENV " << g_env << endl;
+    LOG << "-- starte Programm in ENV " << g_env << endln;
 
     //
     loadCachedConfigs();
@@ -342,7 +342,7 @@ int main(void)
 
             for (int i = 0; i < (int)droppedFiles.count; i++)
             {
-                LOG << droppedFiles.paths[i] << endl;
+                LOG << droppedFiles.paths[i] << endln;
             }
 
             UnloadDroppedFiles(droppedFiles);    // Unload filepaths from memory
@@ -855,7 +855,7 @@ int main(void)
     }
 
     //
-    LOG << "-- Fenster geschlossen" << endl;
+    LOG << "-- Fenster geschlossen" << endln;
 
     //
     ImPlot::DestroyContext();
@@ -875,7 +875,7 @@ int main(void)
 
     if(g_env == "sh.exe" && PseudoTerminal::constructedMemberThisExecution){ // && PseudoTerminal::hasConstructedMembersThisExecution){
 
-        LOG << "-- Resette Msys Terminal" << endl;
+        LOG << "-- Resette Msys Terminal" << endln;
         std::system("reset");
     }
 

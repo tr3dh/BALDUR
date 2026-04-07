@@ -129,7 +129,7 @@ int main(int argc, char* argv[]){
         // LOG << "Arbeitsverzeichnis auf " << exeDir << " gesetzt" << ENDL;
         // LOG << "Start Unpacking and Simulating " << path << ENDL;
 
-        auto result = executeProgram(path);
+        auto result = executeDistroProgram(path);
     }
 
     // Programm ohne args gestartet

@@ -52,6 +52,7 @@ CXXFLAGS += -Wextra -MMD -MP -std=c++23 -fuse-ld=lld -fexceptions \
 	-I./\
 	-I./src \
 	-I./src/Alberich/src \
+	-I./src/Alberich/src/Alberich/ByteSequence/src \
 	-I./thirdParty \
 	$(RAYLIB_INCLUDES) \
 	-I/mingw64/include \
@@ -113,7 +114,9 @@ CXXFLAGS += -std=c++23 -fexceptions
 
 SRCDIR := src
 OBJDIR := build
-SRC = $(shell find $(SRCDIR) -name '*.cpp')
+SRC = $(shell find $(SRCDIR) \
+  \( -path '*/thirdParty' -o -path '*/external' -o -path '*/build' -o -path '*/CMakeFiles' \) -prune \
+  -o -name '*.cpp' -print)
 OBJ = $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRC))
 
 # Größen für precompiled Header

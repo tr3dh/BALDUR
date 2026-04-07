@@ -11,13 +11,13 @@ void iterateTypes(Ret(*func)(Args...)) {
     
     {
         using ReturnType = Ret;
-        std::cout << "Return: " << typeid(ReturnType).name() << endl;
+        std::cout << "Return: " << typeid(ReturnType).name() << endln;
     }
     
     size_t index = 0;
     ([&]<typename T>() {
         using ParamType = T;
-        std::cout << "Param " << index++ << ": " << typeid(ParamType).name() << endl;
+        std::cout << "Param " << index++ << ": " << typeid(ParamType).name() << endln;
     }.template operator()<Args>(), ...);
 }
 
@@ -27,30 +27,30 @@ void iterateTypes(Ret(Class::*func)(Args...)) {
 
     {
         using ReturnType = Ret;
-        std::cout << "Return: " << typeid(ReturnType).name() << endl;
+        std::cout << "Return: " << typeid(ReturnType).name() << endln;
     }
     
     size_t index = 0;
     ([&]<typename T>() {
         using ParamType = T;
-        std::cout << "Param " << index++ << ": " << typeid(ParamType).name() << endl;
+        std::cout << "Param " << index++ << ": " << typeid(ParamType).name() << endln;
     }.template operator()<Args>(), ...);
 }
 
 //
 template<typename Class, typename Ret, typename... Args>
 void iterateTypes(Ret(Class::*func)(Args...) const) {
-    std::cout << "Member-Funktion (const)" << endl;
+    std::cout << "Member-Funktion (const)" << endln;
     
     {
         using ReturnType = Ret;
-        std::cout << "Return: " << typeid(ReturnType).name() << endl;
+        std::cout << "Return: " << typeid(ReturnType).name() << endln;
     }
     
     size_t index = 0;
     ([&]<typename T>() {
         using ParamType = T;
-        std::cout << "Param " << index++ << ": " << typeid(ParamType).name() << endl;
+        std::cout << "Param " << index++ << ": " << typeid(ParamType).name() << endln;
     }.template operator()<Args>(), ...);
 }
 
@@ -76,16 +76,16 @@ void freeFunc(int a, float b) {}
 
 int main() {
 
-    std::cout << "=== Freie Funktion ===" << endl;
+    std::cout << "=== Freie Funktion ===" << endln;
     iterateTypes(&freeFunc);
     
-    std::cout << "\n=== Statische Member-Funktion ===" << endl;
+    std::cout << "\n=== Statische Member-Funktion ===" << endln;
     iterateTypes(&MyClass::staticFunc);
     
-    std::cout << "\n=== Member-Funktion ===" << endl;
+    std::cout << "\n=== Member-Funktion ===" << endln;
     iterateTypes(&MyClass::memberFunc);
     
-    std::cout << "\n=== Const Member-Funktion ===" << endl;
+    std::cout << "\n=== Const Member-Funktion ===" << endln;
     iterateTypes(&MyClass::constMemberFunc);
 
     return 0;
