@@ -1,0 +1,94 @@
+{
+  "name": "baldur",
+  "publisher": "tr3dh",
+  "displayName": "Baldur",
+  "description": "Baldur Language Support",
+  "version": "1.0.0",
+  "icon": "icons/Baldur_File_Logo.png",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "node build-extension.js",
+    "package": "npm run build && vsce package"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "bld.runFileButton",
+        "title": "▶ Run Baldur",
+        "icon": "$(play)"
+      },
+      {
+        "command": "bld.runFile",
+        "title": "Run Baldur File"
+      },
+      {
+        "command": "baldur.showOutput",
+        "title": "Baldur: Show Output"
+      }
+    ],
+    "languages": [
+      {
+        "id": "bld",
+        "aliases": [
+          "Baldur"
+        ],
+        "extensions": [
+          ".bld"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/Baldur_File_Logo_raw_slim.svg",
+          "dark": "./icons/Baldur_File_Logo_raw_slim.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bld",
+        "scopeName": "source.bld",
+        "path": "./syntaxes/bld.tmLanguage.json"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "bld.runFileButton",
+          "when": "resourceLangId == bld",
+          "group": "navigation"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "bld.runFile",
+        "key": "f5",
+        "when": "editorTextFocus && resourceLangId == bld"
+      }
+    ]
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.107.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.39.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tr3dh/BALDUR"
+  }
+}

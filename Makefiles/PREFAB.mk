@@ -376,12 +376,16 @@ dllCopy:
 	cp -n /mingw64/bin/libintl-8.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libiconv-2.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libpcre2-8-0.dll $(COPYTARGET);
-	cp -n /mingw64/bin/libLLVM-20.dll $(COPYTARGET);
+	cp -n /mingw64/bin/libLLVM-22.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libxml2-16.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libGLESv2.dll $(COPYTARGET);
 	cp -n /mingw64/bin/libEGL.dll $(COPYTARGET);
 
 	echo "DLLs kopiert nach $(COPYTARGET)";
+
+npm:
+	$(PACMAN) $(MINGW_PREFIX)-nodejs
+#	npm install -g @vscode/vsce
 
 prefab:
 

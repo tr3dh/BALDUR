@@ -1,0 +1,26 @@
+{
+  "scopeName": "source.bld",
+  "patterns": [
+    {
+      "name": "comment.line.double-slash.bld",
+      "match": "//.*$"
+    },
+    {
+      "name": "string.quoted.double.bld",
+      "begin": "\"",
+      "end": "\""
+    },
+    {
+      "name": "keyword.control.bld",
+      "match": "\\b(if|xIf|requires|fetch|rIf|nIf|decl|else|while|func|return|struct)\\b"
+    },
+    {
+      "name": "constant.numeric.bld",
+      "match": "\\b[0-9]+\\b"
+    },
+    {
+      "name": "variable.other.bld",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+    }
+  ]
+}

@@ -10,6 +10,7 @@
 *.elf
 *.gch
 *.h.gch
+*.vsix
 
 # Caches
 *.RESULTCACHE
@@ -33,6 +34,7 @@ thirdparty/
 temp/
 tmp/
 bin/
+__OUT/
 
 #
 Import/juliaScripts/*

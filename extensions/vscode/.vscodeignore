@@ -1,0 +1,35 @@
+# Development
+.vscode/**
+.vscode-test/**
+.gitignore
+.git/**
+
+# Tests
+test/**
+*.test.js
+*.spec.js
+
+# Config
+tsconfig.json
+.eslintrc.json
+.eslintrc.js
+
+# Source files (werden gebundelt)
+extension.js
+build-extension.js
+
+# ALLE node_modules (alles ist in dist/extension.js gebundelt)
+node_modules/**
+
+# Build artifacts
+*.map
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.vsix
+src/**
+bin/**

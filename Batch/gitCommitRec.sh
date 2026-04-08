@@ -1,3 +1,5 @@
+# In Git Bash : $ bash Batch/gitCommitRec.sh "..."
+
 MESSAGE=${1:-"chore: update all submodules"}
 
 commit_and_push() {

@@ -88,7 +88,6 @@ LDFLAGS += \
 	-L./thirdParty/rlImGui/bin -lrlimgui \
 	-L./thirdParty/implot/bin -limplot \
 	-L./thirdParty/imgui/bin -limgui \
-	-L./thirdParty/enet/build -lenet \
 	-L./thirdParty/lsp-framework/build -llsp \
 	-lkernel32
 
@@ -149,7 +148,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(PCH)
 	
 # -include $(PCH_SRC)
 
-SRCLIB := build/libalf$(SUFFIX).a
+SRCLIB := build/libbaldur$(SUFFIX).a
 $(SRCLIB): $(OBJ) $(PCH)
 	ar rcs $(SRCLIB) $^
 
