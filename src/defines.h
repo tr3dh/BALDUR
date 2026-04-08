@@ -77,6 +77,6 @@ static Color g_backgroundColor = Color(30,30,30,255);
 
 static std::string githubRepositoryUrl = "https://github.com/tr3dh/ALF";
 
-static std::string g_encoderKey = "ALF";
+static std::string g_encoderKey = "//BLD\\\\";
 
 extern std::string g_env;

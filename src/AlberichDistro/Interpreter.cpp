@@ -139,9 +139,12 @@ void defaultSetupLexicalInstances(){
     };
 }
 
+LSPData g_LSPData;
+std::string g_lspEncoderKey = "*__$§%//BLD\\\\%§$*__";
+
 void processScopeBeforeDeletion(Scope* scope){
 
-    LOG << "Lösche Scope " << scope << endln;
+    g_LSPData.addScope(scope);
 }
 
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
@@ -199,8 +202,26 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     distroScope.constructAndReturnVariable("g_unwrapOperands")->constructByObject(new types::BOOL(&unwrapOperands));
     distroScope.constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
     
+    //
+    ByteSequence LSPDataBs;
+    g_LSPData = LSPData();
+
+    //
+    if(fs::exists(fs::path(scriptPath).parent_path().string() + "/__LSPCONFIG.BYTESEQ")){
+
+        LSPDataBs.fromFile(fs::path(scriptPath).parent_path().string() + "/__LSPCONFIG.BYTESEQ");
+        LSPDataBs.decode(g_lspEncoderKey);
+        LSPDataBs -= g_LSPData;
+    }
+
     // Aufruf des Alberich-Interpreters
-    return executeProgram(scriptPath, &distroScope);
+    auto results = executeProgram(scriptPath, &distroScope);
+
+    // distroScope abhandlen, wird erst am Ende der Funktion sauber dekonstruiert
+    (*g_processScopeBeforeDeletion)(&distroScope);
+
+    //
+    g_LSPData.addAll();
 
     // Distroscope löschen und Filehandhabung für LSP regeln
     // Ab besten ergebnisse zwischen speichern und später zurückgeben
@@ -217,4 +238,14 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     
     // Bei Goto Defi einfach nach decl word und struct word suchen
     // gleiches Prinzip für hover doku
+
+    //
+    LSPDataBs += g_LSPData;
+    LSPDataBs.encode(g_lspEncoderKey);
+
+    // ByteSequence wird in File geschrieben
+    LSPDataBs.toFile(fs::path(scriptPath).parent_path().string() + "/__LSPCONFIG.BYTESEQ");
+
+    // Rückgabe
+    return results;
 }

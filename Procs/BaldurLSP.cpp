@@ -9,20 +9,7 @@
 #include <string_view>
 #include <thread>
 
-/*
- * This is an example implementation of a simple server using the lsp-framework.
- * It demonstrates how to create a language server that is either
- * 1. listening for incoming client connections on a given port
- *     $ LspServerExample --port=12345
- * 2. started by a client and communicating via stdio
- *
- * Initialization, shutdown and the textDocument/hover request are handled by this example.
- * Incoming messages are written to stderr.
- *
- * Note that this example is focused on the usage of the lsp-framework.
- * For usage information about the protocol itself, see the official documentation at
- * https://microsoft.github.io/language-server-protocol
- */
+// Basiert auf dem Standard Language Server Beispiel aus dem LSP Framework
 
 namespace{
 
@@ -82,10 +69,10 @@ void registerCallbacks(lsp::MessageHandler& messageHandler)
 						.change    = lsp::TextDocumentSyncKind::Full,
 						.save      = true
 					},
-					.hoverProvider = true,
+					.hoverProvider = true
 				},
 				.serverInfo = lsp::InitializeResultServerInfo{
-					.name    = "Language Server Example",
+					.name    = "Language Server",
 					.version = "1.0.0"
 				},
 			};

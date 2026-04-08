@@ -11,6 +11,7 @@
 *.gch
 *.h.gch
 *.vsix
+*.BYTESEQ
 
 # Caches
 *.RESULTCACHE
