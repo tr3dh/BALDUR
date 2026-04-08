@@ -2,6 +2,12 @@
 
 int countLinesInFile(const fs::path& filePath) {
 
+    if(filePath.string().contains("build") || filePath.string().contains("thirdParty") ||
+        filePath.string().contains("thirdparty") || filePath.string().contains("CMakeFiles")){
+
+        return 0;
+    }
+
     std::ifstream file(filePath);
     return std::count(std::istreambuf_iterator<char>(file),
         std::istreambuf_iterator<char>(), '\n');

@@ -27,12 +27,12 @@ void SetupImGuiStyle()
     style.ItemSpacing   = ImVec2(8,6);
     style.IndentSpacing = 20.0f;
 
-    // Setze alle weißen und blauen Farben auf rot
-    ImVec4 backgroundColor = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    ImVec4 baseUIColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    ImVec4 baseUIElemColor = ImVec4(0.35f, 0.35f, 0.35f, 1.0f);
-    ImVec4 hoverUIElemColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-    ImVec4 activeUIElemColor = ImVec4(0.4f, 0.25f, 0.0f, 1.0f);
+    //
+    ImVec4 backgroundColor    = ImVec4(0.08f, 0.06f, 0.04f, 1.0f); // Sehr dunkles Braun-Schwarz
+    ImVec4 baseUIColor        = ImVec4(1.0f,  0.45f, 0.0f,  1.0f); // Kräftiges Orange
+    ImVec4 baseUIElemColor    = ImVec4(0.25f, 0.18f, 0.08f, 1.0f); // Dunkles Braun-Grau
+    ImVec4 hoverUIElemColor   = ImVec4(0.45f, 0.30f, 0.10f, 1.0f); // Mittleres Braun-Orange
+    ImVec4 activeUIElemColor  = ImVec4(0.35f, 0.22f, 0.05f, 1.0f); // Gedämpftes dunkles Orange-Braun
 
     for (int i = 0; i < ImGuiCol_COUNT; i++)
     {

@@ -139,10 +139,16 @@ void defaultSetupLexicalInstances(){
     };
 }
 
+void processScopeBeforeDeletion(Scope* scope){
+
+    LOG << "Lösche Scope " << scope << endln;
+}
+
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
 
     // ByteSequence Setup
     G_BYTESEQ_ASSERT_HANDLER = triggerAssertHandler;
+    g_processScopeBeforeDeletion = processScopeBeforeDeletion;
 
     //
     if(fs::exists(fs::path(scriptPath).parent_path().string() + "/__LPECONFIG.JSON")){
@@ -195,4 +201,20 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     
     // Aufruf des Alberich-Interpreters
     return executeProgram(scriptPath, &distroScope);
+
+    // Distroscope löschen und Filehandhabung für LSP regeln
+    // Ab besten ergebnisse zwischen speichern und später zurückgeben
+    // Clean up oder beforeDeletionHandler für distro Scope so aufrufen
+    // File für LSP schreiben
+
+    // Infos abspeichern mit Info >> TypeKeywords, Funktion etc
+    // Keywords abspeichern
+    // Typekeywords
+    // Funktions
+    // Operators
+    // static / memberfunktions
+    // vars
+    
+    // Bei Goto Defi einfach nach decl word und struct word suchen
+    // gleiches Prinzip für hover doku
 }
