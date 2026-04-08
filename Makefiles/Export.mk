@@ -3,6 +3,7 @@ include $(MAKE)files/PROC.mk
 fullRelease:
 
 	$(MAKE) clear
+	rm -rf __OUT
 
 	$(MAKE) debug
 	$(MAKE) lib BUILD_MODE=DEBUG
@@ -73,14 +74,19 @@ exportRelease:# fullRelease
 
 	rm -rf tmp
 
-fexport: fullRelease exportRelease
-
 extension:
 
+	rm -rf extensions/vscode/build
 	mkdir -p extensions/vscode/build
 
-	cp -r __OUT/prebuild/tmp/* extensions/vscode/build
+	cp -r __OUT/prebuild/tmp/. extensions/vscode/build
 	cp -r Recc/textures/* extensions/vscode/icons
+	
+	find extensions/vscode/build/build -type f -name "*.exe" ! -name "Baldur.exe" ! -name "BaldurLSP.exe" -delete
+	find extensions/vscode/build/build -type f -name "*LLVM*.dll" -delete
 
-#	start "" cmd //k ".\\Batch\\buildExtension.bat"
-# 	zum Bau der Extension Skript in VSCode Shell ausführen : .\Batch\buildExtension.bat 
+	rm -rf extensions/vscode/build/Recc
+
+	find extensions/vscode/icons -type f ! -name "Baldur_File_Logo.png" ! -name "Baldur_File_Logo_raw_slim.svg" -delete
+
+fexport: fullRelease movRelease exportRelease extension

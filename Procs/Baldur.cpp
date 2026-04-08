@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
     // argv dann das array der größe argc die die übergebene Argumente aus char Ptrs enthält
     // um auf n-tes übergebenes argument zu kommen argv[n] abfragen -> Indizierung ab 1 nicht ab Null
 
-    mkdir("../bin");
+    // mkdir("../bin");
 
     // openLogFile();
 

@@ -15,7 +15,7 @@ int main(int argc, const char* argv[]){
     const std::string scriptPath = argc > 1 ? argv[1] : "../Import/exp.bld";
 
     //
-    std::string cmd = ".\\ProcLang" + fSuffix + " execute " + scriptPath;
+    std::string cmd = ".\\Baldur" + fSuffix + " execute " + scriptPath;
 
     //
     streamWinCommand(cmd, [&](const char* callback){

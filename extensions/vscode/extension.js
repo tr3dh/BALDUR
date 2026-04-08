@@ -52,17 +52,10 @@ async function activate(context) {
     console.log('Baldur extension activating...');
     
     try {
-        const tag = await getLatestTag("raysan5", "raylib");
-        outputChannel.appendLine(`Latest tag: ${tag}`); // das ist die Stelle, wo du es siehst
-    } catch (err) {
-        outputChannel.appendLine(`Error: ${err.message}`);
-    }
-
-    try {
 
         // Pfade
-        const serverExe = path.join(context.extensionPath, 'build', 'build', 'ProcLSP.exe');
-        const langExe   = path.join(context.extensionPath, 'build', 'build', 'ProcLang.exe');
+        const serverExe = path.join(context.extensionPath, 'build', 'build', 'BaldurLSP.exe');
+        const langExe   = path.join(context.extensionPath, 'build', 'build', 'Baldur.exe');
 
         outputChannel.appendLine(`Extension path: ${context.extensionPath}`);
         outputChannel.appendLine(`Server exe: ${serverExe}`);

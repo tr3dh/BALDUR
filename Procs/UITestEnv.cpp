@@ -51,7 +51,7 @@ int main()
 
     while (!WindowShouldClose())
     {
-        // 1️⃣ UI auf RenderTexture rendern
+        // UI auf RenderTexture rendern
         BeginTextureMode(uiTexture);
         ClearBackground(BLANK);
 
@@ -67,7 +67,7 @@ int main()
 
         EndTextureMode();
 
-        // 2️⃣ RenderTexture auf Bildschirm zeichnen
+        // RenderTexture auf Bildschirm zeichnen
         BeginDrawing();
         ClearBackground(WHITE);
 
@@ -90,13 +90,13 @@ int main()
 
         EndDrawing();
 
-        // 3️⃣ Bei Button-Click RenderTexture speichern
+        // Bei Button-Click RenderTexture speichern
         if (saveTexture)
         {
-            // 1. Image erzeugen
+            // Image erzeugen
             Image img = GenImageColor(uiTexture.texture.width, uiTexture.texture.height, BLANK);
 
-            // 2. Pixel auslesen
+            // Pixel auslesen
             void *pixels = rlReadTexturePixels(
                 uiTexture.texture.id,
                 uiTexture.texture.width,

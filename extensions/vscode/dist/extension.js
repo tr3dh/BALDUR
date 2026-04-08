@@ -18017,30 +18017,6 @@ var client;
 var terminal;
 var outputChannel;
 var statusBarItem;
-async function getLatestTag(owner, repo) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: "api.github.com",
-      path: `/repos/${owner}/${repo}/releases/latest`,
-      headers: {
-        "User-Agent": "vscode-extension",
-        "Accept": "application/vnd.github.v3+json"
-      }
-    };
-    https.get(options, (res) => {
-      let data = "";
-      res.on("data", (chunk) => data += chunk);
-      res.on("end", () => {
-        try {
-          const json = JSON.parse(data);
-          resolve(json.tag_name);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    }).on("error", reject);
-  });
-}
 async function activate(context) {
   outputChannel = vscode.window.createOutputChannel("Baldur Extension");
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -18050,14 +18026,8 @@ async function activate(context) {
   outputChannel.appendLine("=== Baldur extension activating ===");
   console.log("Baldur extension activating...");
   try {
-    const tag = await getLatestTag("raysan5", "raylib");
-    outputChannel.appendLine(`Latest tag: ${tag}`);
-  } catch (err) {
-    outputChannel.appendLine(`Error: ${err.message}`);
-  }
-  try {
-    const serverExe = path.join(context.extensionPath, "build", "build", "ProcLSP.exe");
-    const langExe = path.join(context.extensionPath, "build", "build", "ProcLang.exe");
+    const serverExe = path.join(context.extensionPath, "build", "build", "BaldurLSP.exe");
+    const langExe = path.join(context.extensionPath, "build", "build", "Baldur.exe");
     outputChannel.appendLine(`Extension path: ${context.extensionPath}`);
     outputChannel.appendLine(`Server exe: ${serverExe}`);
     outputChannel.appendLine(`Lang exe: ${langExe}`);

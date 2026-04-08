@@ -2,11 +2,11 @@
 //                      Example 0.0.1 recursiveDemo
 // ---------------------------------------------------------------------------
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/ProcTestEnv SCRIPT=../Import/0_0_0_testEnv.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/ProcTestEnv SCRIPT=../Import/0_0_0_testEnv.bld
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=../Import/0_0_0_testEnv.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=../Import/0_0_0_testEnv.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
-// $ ./build/ProcLang_d execute Import/0_0_0_testEnv.bld
+// $ ./build/Baldur_d execute Import/0_0_0_testEnv.bld
 
 //
 if(calledAs(__MainProc__)){

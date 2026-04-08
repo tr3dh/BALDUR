@@ -9,7 +9,7 @@ all:
 	@time $(MAKE) build -j
 	@echo "-------------------"
 
-TARGET = build/Proc
+TARGET = build/BaldurEditor
 SCRIPT =
 exec:
 	@echo "Wechsel in: $(dir $(TARGET))"

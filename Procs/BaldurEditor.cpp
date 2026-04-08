@@ -4,10 +4,6 @@
 #include "templateDecls.h"
 #include "Libaries/Libaries.h"
 
-extern "C" {
-    __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-}
-
 const std::string g_programsConfigCache = "../bin/example.CONFIG_CACHE";
 std::string g_fileBrowserCWD = fs::current_path().string() + "/../Import/";
 
@@ -221,7 +217,7 @@ int main(void)
 
     //
     CodeEditor editor;
-    editor.openScript("../Import/exp.bld");
+    // editor.openScript("../Import/exp.bld");
 
     Terminal terminal;
 
@@ -328,7 +324,7 @@ int main(void)
         if(IsKeyPressed(KEY_F5)){
 
             editor.save();
-            std::string cmd = ".\\ProcLang_d execute " + editor.cScriptPath;
+            std::string cmd = ".\\Baldur_d execute " + editor.cScriptPath;
             terminal.m_shell.sendCommand(cmd);
         }
 
