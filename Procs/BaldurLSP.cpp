@@ -123,24 +123,22 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					const auto& data = getLSPData(path);
 					state->applyLSPData(data);
 
-					std::vector<lsp::CompletionItem> items;
-
-					for(const auto& kw : state->keywords)
-						items.push_back({ .label = kw, .kind = lsp::CompletionItemKind::Keyword });
-
-					for(const auto& t : state->typeKeywords)
-						items.push_back({ .label = t, .kind = lsp::CompletionItemKind::Class });
-
-					for(const auto& [key, details] : data.functions)
-						items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Function, .detail = details.first });
-
-					for(const auto& [key, details] : data.variables)
-						items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first });
+					// Contains Case Insensitive -> Groß-/Kleinschreibung wird nicht beachtet
+					auto containsCI = [](const std::string& haystack, const std::string& needle) {
+						
+						if(needle.empty()) return true;
+						auto it = std::search(
+							haystack.begin(), haystack.end(),
+							needle.begin(),   needle.end(),
+							[](char a, char b) { return std::tolower(a) == std::tolower(b); }
+						);
+						return it != haystack.end();
+					};
 
 					const auto& text = state->documents[params.textDocument.uri.toString()];
 					const auto  line = params.position.line;
 					const auto  col  = params.position.character;
-
+					
 					// Zeile finden
 					size_t lineStart = 0;
 					for(uint32_t i = 0; i < line; i++){
@@ -164,9 +162,28 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					const auto currentWord = text.substr(wordStart, lineStart + col - wordStart);
 					std::cerr << "Completing: " << currentWord << std::endl;
 
+					std::vector<lsp::CompletionItem> items;
+
+					for(const auto& kw : state->keywords)
+						if(containsCI(kw, currentWord))
+							items.push_back({ .label = kw, .kind = lsp::CompletionItemKind::Keyword, .detail = "keyword", .sortText = "1_" });
+
+					for(const auto& t : state->typeKeywords)
+						if(containsCI(t, currentWord))	
+							items.push_back({ .label = t, .kind = lsp::CompletionItemKind::Class, .detail = "type", .sortText = "2_" });
+
+					for(const auto& [key, details] : data.functions)
+						if(containsCI(key.first, currentWord))
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Function, .detail = "function" + details.first,
+								.sortText = "4_", .insertText = key.first + "($1)", .insertTextFormat = lsp::InsertTextFormat::Snippet });
+
+					for(const auto& [key, details] : data.variables)
+						if(containsCI(key.first, currentWord))
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first, .sortText = "5_" });
+
 					for(const auto& ops : data.operators)
 						if(ops.contains(currentWord))
-							items.push_back({ .label = ops, .kind = lsp::CompletionItemKind::Operator, .detail = "operator" });
+							items.push_back({ .label = ops, .kind = lsp::CompletionItemKind::Operator, .detail = "operator", .sortText = "3_" });
 
 					return lsp::requests::TextDocument_Completion::Result(std::move(items));
 				}

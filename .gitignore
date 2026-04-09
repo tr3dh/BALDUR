@@ -41,6 +41,8 @@ __OUT/
 Import/juliaScripts/*
 Import/!juliaScripts/.gitignore
 
+__LPECONFIG.JSON
+
 # Os Dateien
 .DS_Store
 Thumbs.db
