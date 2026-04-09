@@ -1,5 +1,11 @@
 #include "templateDecls.h"
 
+#include <lsp/connection.h>
+#include <lsp/io/socket.h>
+#include <lsp/io/standardio.h>
+#include <lsp/messagehandler.h>
+#include <lsp/messages.h>
+
 #undef LOG
 #undef _ERROR
 

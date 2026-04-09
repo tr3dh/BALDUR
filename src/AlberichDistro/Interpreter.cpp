@@ -142,6 +142,34 @@ void defaultSetupLexicalInstances(){
 LSPData g_LSPData;
 std::string g_lspEncoderKey = "*__$§%//BLD\\\\%§$*__";
 
+LSPData getLSPData(const std::string& path, const std::string& filename){
+
+    //
+    ByteSequence bs;
+    LSPData res;
+
+    //
+    if(fs::exists(fs::path(path).parent_path().string() + "/" + filename)){
+
+        bs.fromFile(fs::path(path).parent_path().string() + "/" + filename);
+        bs.decode(g_lspEncoderKey);
+        bs -= res;
+    }
+
+    return res;
+}
+
+void saveLSPData(const LSPData& data, const std::string& path, const std::string& filename){
+
+    //
+    ByteSequence bs;
+    bs += data;
+    bs.encode(g_lspEncoderKey);
+
+    // ByteSequence wird in File geschrieben
+    bs.toFile(fs::path(path).parent_path().string() + "/" + filename);
+}
+
 void processScopeBeforeDeletion(Scope* scope){
 
     g_LSPData.addScope(scope);
@@ -203,16 +231,7 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     distroScope.constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
     
     //
-    ByteSequence LSPDataBs;
-    g_LSPData = LSPData();
-
-    //
-    if(fs::exists(fs::path(scriptPath).parent_path().string() + "/__LSPCONFIG.BYTESEQ")){
-
-        LSPDataBs.fromFile(fs::path(scriptPath).parent_path().string() + "/__LSPCONFIG.BYTESEQ");
-        LSPDataBs.decode(g_lspEncoderKey);
-        LSPDataBs -= g_LSPData;
-    }
+    g_LSPData = getLSPData(scriptPath);
 
     // Aufruf des Alberich-Interpreters
     auto results = executeProgram(scriptPath, &distroScope);
@@ -223,28 +242,11 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     //
     g_LSPData.addAll();
 
-    // Distroscope löschen und Filehandhabung für LSP regeln
-    // Ab besten ergebnisse zwischen speichern und später zurückgeben
-    // Clean up oder beforeDeletionHandler für distro Scope so aufrufen
-    // File für LSP schreiben
-
-    // Infos abspeichern mit Info >> TypeKeywords, Funktion etc
-    // Keywords abspeichern
-    // Typekeywords
-    // Funktions
-    // Operators
-    // static / memberfunktions
-    // vars
-    
-    // Bei Goto Defi einfach nach decl word und struct word suchen
+    // Für Goto Defi einfach nach decl word und struct word suchen
     // gleiches Prinzip für hover doku
 
     //
-    LSPDataBs += g_LSPData;
-    LSPDataBs.encode(g_lspEncoderKey);
-
-    // ByteSequence wird in File geschrieben
-    LSPDataBs.toFile(fs::path(scriptPath).parent_path().string() + "/__LSPCONFIG.BYTESEQ");
+    saveLSPData(g_LSPData, scriptPath);
 
     // Rückgabe
     return results;

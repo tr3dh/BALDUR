@@ -15,9 +15,11 @@ struct LSPData{
     // . Funktionen (eigenständige, Attributs- und statische)
     // . Variablen (aus dekonstruierten Scopes)
 
+    std::vector<std::string> keywords = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct" };
+    std::vector<std::string> operators = {};
     std::map<std::string, TypeIndex> types = {};
-    std::map<FunctionRegisterKey, std::string> functions = {};
-    std::map<std::pair<std::string, TypeIndex>, std::string> variables = {};
+    std::map<FunctionRegisterKey, std::pair<std::string, std::string>> functions = {};
+    std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> variables = {};
 
     void addTypes(){
 
@@ -35,20 +37,47 @@ struct LSPData{
     void addAllFRegs(){
         
         // Alle Funktionen eintragen
-        addFReg(g_FunctionRegister);
+        // addFReg(g_FunctionRegister);
+        for(const auto& [key, val] : g_FunctionRegister.functions){
 
-        for(const auto& [key, freg] : g_MemberFunctionRegisters){
+            std::string shortDetail = "[" + fprintPlainVector(key.second, [](const TypeIndex& elem){ if(elem > 0){ return getKeywordByTypeIndex(elem); } else{ return std::string("arbitary"); } }, false) + "]";
             
-            addFReg(freg);
+            std::string detail = key.first;
+            detail += fprintPlainVector(key.second, [](const TypeIndex& elem){ if(elem > 0){ return getKeywordByTypeIndex(elem); } else{ return std::string("arbitary"); } });
+            
+            functions.try_emplace(key, std::make_pair(shortDetail, detail));
         }
 
-        for(const auto& [key, freg] : g_StaticFunctionRegisters){
+        for(const auto& [idx, freg] : g_MemberFunctionRegisters){
             
-            addFReg(freg);
+            for(const auto& [key, val] : freg.functions){
+
+                std::string shortDetail = getKeywordByTypeIndex(idx) + " -> [" + fprintPlainVector(key.second, [](const TypeIndex& elem){ if(elem > 0){ return getKeywordByTypeIndex(elem); } else{ return std::string("arbitary"); } }, false) + "]";
+
+                std::string detail = getKeywordByTypeIndex(idx) + " -> " + key.first;
+                detail += fprintPlainVector(key.second, [](const TypeIndex& elem){ if(elem > 0){ return getKeywordByTypeIndex(elem); } else{ return std::string("arbitary"); } });
+                
+                functions.try_emplace(key, std::make_pair(shortDetail, detail));
+            }
+        }
+
+        for(const auto& [idx, freg] : g_StaticFunctionRegisters){
+            
+            for(const auto& [key, val] : freg.functions){
+
+                std::string shortDetail = getKeywordByTypeIndex(idx) + " >> [" + fprintPlainVector(key.second, [](const TypeIndex& elem){ if(elem > 0){ return getKeywordByTypeIndex(elem); } else{ return std::string("arbitary"); } }, false) + "]";
+
+                std::string detail = getKeywordByTypeIndex(idx) + " >> " + key.first;
+                detail += fprintPlainVector(key.second, [](const TypeIndex& elem){ if(elem > 0){ return getKeywordByTypeIndex(elem); } else{ return std::string("arbitary"); } });
+                
+                functions.try_emplace(key, std::make_pair(shortDetail, detail));
+            }
         }
     }
 
     void addAll(){
+
+        operators = g_UsedOperators;
 
         addTypes();
         addAllFRegs();
@@ -56,10 +85,53 @@ struct LSPData{
 
     void addScope(Scope* scope){
 
-        for(const auto& [label, var] : scope->variableTable){
+        for(auto& [label, var] : scope->variableTable){
 
-            variables.try_emplace(std::make_pair(label, var.getData()->getTypeIndex()));
+            std::string shortDetail = var.getData()->getTypeKeyword();
+
+            std::string detail = var.getData()->isUniform() ? "uniform " : "";
+            detail += var.getData()->getTypeKeyword() + " ";
+            detail += var.isReference() ?  "ref " : "instc ";
+            detail += label;
+
+            variables.try_emplace(std::make_pair(label, var.getData()->getTypeIndex()), std::make_pair(shortDetail, detail));
         }
+    }
+
+    bool isEmpty(){
+
+        return types.empty() && functions.empty() && variables.empty();
+    }
+};
+
+LSPData getLSPData(const std::string& path, const std::string& filename = "__LSPCONFIG.BYTESEQ");
+void saveLSPData(const LSPData& data, const std::string& path, const std::string& filename = "__LSPCONFIG.BYTESEQ");
+
+struct LspState {
+
+    std::unordered_set<std::string> keywords;
+    std::unordered_set<std::string> typeKeywords;
+    std::unordered_set<std::string> variables;
+    std::unordered_set<std::string> functions;
+
+    std::unordered_map<std::string, std::string> documents;
+
+    void applyLSPData(const LSPData& data){
+
+        //
+        typeKeywords.clear();
+        for(const auto& [name, typeIndex] : data.types)
+            typeKeywords.insert(name);
+
+        //
+        functions.clear();
+        for(const auto& [key, info] : data.functions)
+            functions.insert(key.first);
+
+        //
+        variables.clear();
+        for(const auto& [key, info] : data.variables)
+            variables.insert(key.first);
     }
 };
 

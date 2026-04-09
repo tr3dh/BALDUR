@@ -89,4 +89,6 @@ extension:
 
 	find extensions/vscode/icons -type f ! -name "Baldur_File_Logo.png" ! -name "Baldur_File_Logo_raw_slim.svg" -delete
 
+rawExtension: fullRelease movRelease extension
+
 fexport: fullRelease movRelease exportRelease extension

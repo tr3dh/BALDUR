@@ -202,7 +202,7 @@ clean:
 	rm -f $(PROCS_TARGETS) $(PROCS_OBJ)
 
 clear:
-	rm -r build
+	rm -rf build
 
 clearBuild:
 	@echo "Cleaning build directory (except .exe files)..."

@@ -5,9 +5,12 @@
 #include <lsp/io/socket.h>
 #include <lsp/io/standardio.h>
 #include <lsp/messagehandler.h>
+#include <lsp/types.h>
 #include <lsp/messages.h>
 #include <string_view>
 #include <thread>
+
+#include "AlberichDistro/Interpreter.h"
 
 // Basiert auf dem Standard Language Server Beispiel aus dem LSP Framework
 
@@ -50,8 +53,24 @@ void printMessage()
 
 thread_local bool g_running = false;
 
-void registerCallbacks(lsp::MessageHandler& messageHandler)
+std::string uriToPath(const std::string_view& uri)
 {
+	std::string path = std::string(lsp::Uri::parse(uri).path());
+
+	#ifdef _WIN32
+		path = (path.size() >= 3 && path[0] == '/' && path[2] == ':') ? path.substr(1) : path;
+	#endif
+
+	return path;
+}
+
+void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& connection){
+
+	auto state = std::make_shared<LspState>();
+
+	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct" };
+    state->typeKeywords = { "void", "bool", "int", "double", "args" };
+
 	messageHandler.add<lsp::requests::Initialize>(
 		[](lsp::requests::Initialize::Params&& params)
 		{
@@ -69,7 +88,21 @@ void registerCallbacks(lsp::MessageHandler& messageHandler)
 						.change    = lsp::TextDocumentSyncKind::Full,
 						.save      = true
 					},
-					.hoverProvider = true
+					.completionProvider = lsp::CompletionOptions{
+						.triggerCharacters = lsp::Array<lsp::String>{ 
+							"+", "-", "*", "/", "=", "<", ">", "!", "&", "|", 
+							"^", "%", "~", ".", ":", "?", "@", "#", "\\"
+						}
+					},
+					// .semanticTokensProvider = lsp::SemanticTokensOptions{
+                    //     .legend = lsp::SemanticTokensLegend{
+                    //         // Reihenfolge = Index! keyword=0, type=1, variable=2, function=3
+                    //         .tokenTypes   = { "keyword", "type", "variable", "function" },
+                    //         .tokenModifiers = {}
+                    //     },
+                    //     .full = true
+                    // },
+					.hoverProvider = true,
 				},
 				.serverInfo = lsp::InitializeResultServerInfo{
 					.name    = "Language Server",
@@ -77,8 +110,90 @@ void registerCallbacks(lsp::MessageHandler& messageHandler)
 				},
 			};
 		}
-	).add<lsp::requests::TextDocument_Hover>(
-		[](lsp::requests::TextDocument_Hover::Params&& params)
+	)
+
+	.add<lsp::requests::TextDocument_Completion>(
+		[state](lsp::requests::TextDocument_Completion::Params&& params)
+		{
+			return std::async(std::launch::deferred,
+				[state, params = std::move(params)]()
+				{	
+					const std::string path = uriToPath(params.textDocument.uri.toString());
+					
+					const auto& data = getLSPData(path);
+					state->applyLSPData(data);
+
+					std::vector<lsp::CompletionItem> items;
+
+					for(const auto& kw : state->keywords)
+						items.push_back({ .label = kw, .kind = lsp::CompletionItemKind::Keyword });
+
+					for(const auto& t : state->typeKeywords)
+						items.push_back({ .label = t, .kind = lsp::CompletionItemKind::Class });
+
+					for(const auto& [key, details] : data.functions)
+						items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Function, .detail = details.first });
+
+					for(const auto& [key, details] : data.variables)
+						items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first });
+
+					const auto& text = state->documents[params.textDocument.uri.toString()];
+					const auto  line = params.position.line;
+					const auto  col  = params.position.character;
+
+					// Zeile finden
+					size_t lineStart = 0;
+					for(uint32_t i = 0; i < line; i++){
+						lineStart = text.find('\n', lineStart);
+						if(lineStart == std::string::npos) break;
+						lineStart++;
+					}
+
+					auto isWordChar = [](char c) {
+						return !std::isspace(c) 
+							&& c != '(' && c != ')' 
+							&& c != '{' && c != '}'
+							&& c != '[' && c != ']'
+							&& c != ',' && c != ';';
+					};
+
+					size_t wordStart = lineStart + col;
+					while(wordStart > 0 && isWordChar(text[wordStart-1]))
+						wordStart--;
+
+					const auto currentWord = text.substr(wordStart, lineStart + col - wordStart);
+					std::cerr << "Completing: " << currentWord << std::endl;
+
+					for(const auto& ops : data.operators)
+						if(ops.contains(currentWord))
+							items.push_back({ .label = ops, .kind = lsp::CompletionItemKind::Operator, .detail = "operator" });
+
+					return lsp::requests::TextDocument_Completion::Result(std::move(items));
+				}
+			);
+		}
+	)
+
+	.add<lsp::notifications::TextDocument_DidChange>(
+		[state](lsp::notifications::TextDocument_DidChange::Params&& params)
+		{
+			const auto& change = params.contentChanges[0];
+
+			std::visit([&](const auto& c){
+				state->documents[params.textDocument.uri.toString()] = c.text;
+			}, change);
+		}
+	)
+
+	.add<lsp::notifications::TextDocument_DidOpen>(
+		[state](lsp::notifications::TextDocument_DidOpen::Params&& params)
+		{
+			state->documents[params.textDocument.uri.toString()] = params.textDocument.text;
+		}
+	)
+
+	.add<lsp::requests::TextDocument_Hover>(
+		[state](lsp::requests::TextDocument_Hover::Params&& params)
 		{
 			printMessage<lsp::requests::TextDocument_Hover>(params);
 
@@ -88,21 +203,111 @@ void registerCallbacks(lsp::MessageHandler& messageHandler)
 			 * This means a deferred future can be used and it is not necessary to spawn extra threads.
 			 */
 			return std::async(std::launch::deferred,
-				[params = std::move(params)]()
-				{
-					// simulate longer running task
-					// std::this_thread::sleep_for(std::chrono::seconds(2));
+				[state, params = std::move(params)](){
 
-					// return the result
-					// TextDocument_Hover::Result is NullOr<Hover>
+					const std::string path = uriToPath(params.textDocument.uri.toString());
+					
+					const auto& data = getLSPData(path);
+					state->applyLSPData(data);
+
+					// Text aus Cache holen statt Datei öffnen
+					const auto& text = state->documents[params.textDocument.uri.toString()];
+
+					const auto line = params.position.line;
+					const auto col  = params.position.character;
+
+					// Zeile finden
+					size_t lineStart = 0;
+					for(uint32_t i = 0; i < line; i++){
+						lineStart = text.find('\n', lineStart);
+						if(lineStart == std::string::npos)
+							return lsp::requests::TextDocument_Hover::Result{};
+						lineStart++;
+					}
+
+					// Wortgrenzen
+					size_t wordStart = lineStart + col;
+					size_t wordEnd   = lineStart + col;
+
+					auto isWordChar = [](char c) {
+						return !std::isspace(c) 
+							&& c != '(' && c != ')' 
+							&& c != '{' && c != '}'
+							&& c != '[' && c != ']'
+							&& c != ',' && c != ';';
+					};
+
+					while(wordStart > 0 && isWordChar(text[wordStart-1]))
+						wordStart--;
+
+					while(wordEnd < text.size() && isWordChar(text[wordEnd]))
+						wordEnd++;
+
+					const auto word = text.substr(wordStart, wordEnd - wordStart);
+					std::cerr << "Hover " << word << "\n";
+
+					std::string hoverContent;
+
+					for(const auto& kw : state->keywords)
+						if(kw == word)
+							hoverContent += "- 🔑 **keyword** `" + word + "`\n";
+
+					for(const auto& t : state->typeKeywords)
+						if(t == word)
+							hoverContent += "- 🏷️ **type** `" + word + "`\n";
+
+					for(const auto& [key, details] : data.functions)
+						if(key.first == word)
+							hoverContent += "- ⚙️ **function** `" + details.second + "`\n";
+
+					for(const auto& [key, details] : data.variables)
+						if(key.first == word)
+							hoverContent += "- 📦 **variable** `" + details.second + "`\n";
+
+					for(const auto& ops : data.operators)
+						if(ops == word)
+							hoverContent += "- 🔧 **operator** `" + ops + "`\n";
+
+					lsp::MarkupContent mc{
+						.kind = lsp::MarkupKind::Markdown,
+						.value = hoverContent
+					};
+
 					auto hover = lsp::Hover{
-						.contents = "Hover result"
+						.contents = mc
 					};
 					return lsp::requests::TextDocument_Hover::Result(std::move(hover));
 				}
 			);
 		}
-	).add<lsp::requests::Shutdown>(
+	)
+
+	// .add<lsp::requests::TextDocument_Hover>(
+	// 	[](lsp::requests::TextDocument_Hover::Params&& params)
+	// 	{
+	// 		printMessage<lsp::requests::TextDocument_Hover>(params);
+
+	// 		/*
+	// 		 * Handle the request asynchronously.
+	// 		 * It is executed in a worker thread by the message handler.
+	// 		 * This means a deferred future can be used and it is not necessary to spawn extra threads.
+	// 		 */
+	// 		return std::async(std::launch::deferred,
+	// 			[params = std::move(params)]()
+	// 			{
+	// 				// simulate longer running task
+	// 				// std::this_thread::sleep_for(std::chrono::seconds(2));
+
+	// 				// return the result
+	// 				// TextDocument_Hover::Result is NullOr<Hover>
+	// 				auto hover = lsp::Hover{
+	// 					.contents = "Hover result"
+	// 				};
+	// 				return lsp::requests::TextDocument_Hover::Result(std::move(hover));
+	// 			}
+	// 		);
+	// 	}
+	.add<lsp::requests::Shutdown>(
 		[]()
 		{
 			printMessage<lsp::requests::Shutdown>();
@@ -127,7 +332,7 @@ void runLanguageServer(lsp::io::Stream& io)
 	{
 		auto connection     = lsp::Connection(io);
 		auto messageHandler = lsp::MessageHandler(connection);
-		registerCallbacks(messageHandler);
+		registerCallbacks(messageHandler, connection);
 
 		g_running = true;
 

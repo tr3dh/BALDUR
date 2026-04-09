@@ -83,7 +83,7 @@ int main(void)
     #endif
 
     //
-    // mkdir("../bin");
+    mkdir("../bin");
     // openLogFile();
     getEnv();
 
