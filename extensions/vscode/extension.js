@@ -36,6 +36,15 @@ async function getLatestTag(owner, repo) {
     });
 }
 
+function getOrCreateTerminal(name = 'Baldur') {
+
+    const existing = vscode.window.terminals.find(t => t.name === name && !t.exitStatus);
+    if (existing) {
+        return existing;
+    }
+    return vscode.window.createTerminal(name);
+}
+
 async function activate(context) {
 
     // Output Channel erstellen
@@ -147,18 +156,14 @@ async function activate(context) {
                 filePath = filePath[0].toUpperCase() + filePath.slice(1);
             }
 
-            if (!terminal || terminal.exitStatus) {
-                terminal = vscode.window.createTerminal('Baldur');
-                outputChannel.appendLine('Created new terminal');
-            }
-
             const command = `${langExe} execute ${filePath}`;
             outputChannel.appendLine(`Terminal command: ${command}`);
             
             // Notification mit Dateinamen
-            const fileName = path.basename(filePath);
-            vscode.window.showInformationMessage(`▶️ Führe aus: ${fileName}`);
+            // const fileName = path.basename(filePath);
+            // vscode.window.showInformationMessage(`▶️ Führe aus: ${fileName}`);
             
+            terminal = getOrCreateTerminal('Baldur');
             terminal.show(true);
             terminal.sendText(command);
             

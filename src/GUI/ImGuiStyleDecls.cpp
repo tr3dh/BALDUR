@@ -75,8 +75,8 @@ void SetupImGuiStyle()
     ImGuiIO& io = ImGui::GetIO();
 
     // Fonts laden
-    ttfJuliaMonoItalic = io.Fonts->AddFontFromFileTTF("../Recc/Fonts/JuliaMono-ttf/JuliaMono-MediumItalic.ttf", 16.0f);
-    ttfJuliaMonoBold = io.Fonts->AddFontFromFileTTF("../Recc/Fonts/JuliaMono-ttf/JuliaMono-Bold.ttf", 16.0f);
+    ttfJuliaMonoItalic = io.Fonts->AddFontFromFileTTF("Recc/Fonts/JuliaMono-ttf/JuliaMono-MediumItalic.ttf", 16.0f);
+    ttfJuliaMonoBold = io.Fonts->AddFontFromFileTTF("Recc/Fonts/JuliaMono-ttf/JuliaMono-Bold.ttf", 16.0f);
     // ...
 
     io.FontDefault = ttfJuliaMonoBold;

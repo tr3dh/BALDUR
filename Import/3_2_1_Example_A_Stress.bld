@@ -7,12 +7,12 @@
 // Kapitel : 3.2.1, Example A : TSM - Modelling Stress, S.34 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_1_Example_A_Stress.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_1_Example_A_Stress.bld
 //
 // Für Release
-// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
-// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_1_Example_A_Stress.bld
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_1_Example_A_Stress.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_1_Example_A_Stress.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/3_2_1_Example_A_Stress.bld
@@ -108,7 +108,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     // //
@@ -116,7 +116,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     // //
     // tIDNResult = toUnwrappedIDN(result)
-    // tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    // tIDNResult->toJuliaString(tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
     //     examplePrefix + "_autodiff_unwrapped" + tResultLabel + ".jl")
 
     //
@@ -125,7 +125,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    tIDNResult->toJuliaString(tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
 
     //

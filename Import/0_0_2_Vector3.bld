@@ -2,8 +2,8 @@
 //                 Example 0.0.2 Vector3 - exploring Baldurs OOP
 // ---------------------------------------------------------------------------
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=../Import/0_0_2_Vector3.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=../Import/0_0_2_Vector3.bld
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Import/0_0_2_Vector3.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/0_0_2_Vector3.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/0_0_2_Vector3.bld
@@ -23,24 +23,24 @@ struct Vector3{
     
     // Attribs
     double[x,y,z]
-    
+
     //
     decl mul(double ref db){ combineInplaceByOperator(args([x,y,z]), args(db), "*=", "colmajor") }
-    decl print(){ slog(this->getAttribs()) }
+    decl print(){ slog(this -> getAttribs()) }
 }
 
 // Konstruktor
 decl Vector3(double ref [xIn, yIn, zIn]){
     
-    Vector3 >> constructedEntities++
+    Vector3 >> constructedEntities ++
 
     Vector3 vec
-    vec->[x,y,z] = xIn, yIn, zIn
+    vec -> [x,y,z] = xIn, yIn, zIn
     
     // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
     // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
     // ohne, dass es zu einem Kopiervorgang kommt
-    return [<-vec]
+    return [<- vec]
 }
 
 // Konstruktor

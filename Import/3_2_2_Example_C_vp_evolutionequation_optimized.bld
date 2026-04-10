@@ -7,10 +7,10 @@
 // Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter DEBUG build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
-// - Ohne Interpreter DEBUG build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
-// - Mit Interpreter NDEBUG build: $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
-// - Ohne Interpreter NDEBUG build: $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
+// - Mit Interpreter DEBUG build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
+// - Ohne Interpreter DEBUG build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
+// - Mit Interpreter NDEBUG build: $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
+// - Ohne Interpreter NDEBUG build: $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
 // 
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/3_2_2_Example_C_vp_evolutionequation_optimized.bld
@@ -204,7 +204,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
     // Ermitteln der Tangenten
@@ -254,7 +254,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
@@ -264,7 +264,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch
@@ -295,7 +295,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
         examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
     // Ermitteln der Tangenten
@@ -343,7 +343,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
@@ -353,7 +353,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch

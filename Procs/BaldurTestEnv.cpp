@@ -12,10 +12,10 @@ int main(int argc, const char* argv[]){
     timePoint procStart = chrono::now();
 
     //
-    const std::string scriptPath = argc > 1 ? argv[1] : "../Import/exp.bld";
+    const std::string scriptPath = argc > 1 ? argv[1] : "Import/0_0_0_testEnv.bld";
 
     //
-    std::string cmd = ".\\Baldur" + fSuffix + " execute " + scriptPath;
+    std::string cmd = ".\\build\\Baldur" + fSuffix + " execute " + scriptPath;
 
     //
     streamWinCommand(cmd, [&](const char* callback){

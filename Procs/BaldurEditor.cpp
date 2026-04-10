@@ -5,7 +5,7 @@
 #include "Libaries/Libaries.h"
 
 const std::string g_programsConfigCache = "../bin/example.CONFIG_CACHE";
-std::string g_fileBrowserCWD = fs::current_path().string() + "/../Import/";
+std::string g_fileBrowserCWD = fs::current_path().string();
 
 bool g_bindStartUpToReloadRecent = false;
 
@@ -182,7 +182,7 @@ int main(void)
 
     LOG << "-- init auf Bildsirm mit Screensize [" << screenWidth << "|" << screenHeight << "]" << ENDL;
 
-    Image icon = LoadImage("../Recc/Compilation/icon.png");
+    Image icon = LoadImage("Recc/Compilation/icon.png");
 
     // RGB zu RGBA falls alpha Kanal fehlt
     if (icon.format != PIXELFORMAT_UNCOMPRESSED_R8G8B8A8) {
@@ -217,7 +217,7 @@ int main(void)
 
     //
     CodeEditor editor;
-    // editor.openScript("../Import/exp.bld");
+    // editor.openScript("Import/exp.bld");
 
     Terminal terminal;
 

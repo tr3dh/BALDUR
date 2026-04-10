@@ -68,7 +68,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 	auto state = std::make_shared<LspState>();
 
-	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct" };
+	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct", "ref" };
     state->typeKeywords = { "void", "bool", "int", "double", "args" };
 
 	messageHandler.add<lsp::requests::Initialize>(
@@ -142,17 +142,14 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					// Zeile finden
 					size_t lineStart = 0;
 					for(uint32_t i = 0; i < line; i++){
+
 						lineStart = text.find('\n', lineStart);
 						if(lineStart == std::string::npos) break;
 						lineStart++;
 					}
 
 					auto isWordChar = [](char c) {
-						return !std::isspace(c) 
-							&& c != '(' && c != ')' 
-							&& c != '{' && c != '}'
-							&& c != '[' && c != ']'
-							&& c != ',' && c != ';';
+						return !std::isspace(c) && c != '(' && c != ')' && c != '{' && c != '}' && c != '[' && c != ']' && c != ',' && c != ';';
 					};
 
 					size_t wordStart = lineStart + col;
@@ -172,18 +169,53 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 						if(containsCI(t, currentWord))	
 							items.push_back({ .label = t, .kind = lsp::CompletionItemKind::Class, .detail = "type", .sortText = "2_" });
 
+					for(const auto& [key, detail] : data.constKeywords)
+						if(containsCI(key.first, currentWord))	
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Constant, .detail = detail.first, .sortText = "3_" });
+				
 					for(const auto& [key, details] : data.functions)
 						if(containsCI(key.first, currentWord))
-							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Function, .detail = "function" + details.first,
-								.sortText = "4_", .insertText = key.first + "($1)", .insertTextFormat = lsp::InsertTextFormat::Snippet });
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Function, .detail = "function " + details.first,
+								.sortText = "5_", .insertText = key.first + "($1)", .insertTextFormat = lsp::InsertTextFormat::Snippet });
 
 					for(const auto& [key, details] : data.variables)
 						if(containsCI(key.first, currentWord))
-							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first, .sortText = "5_" });
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first, .sortText = "6_" });
+					
+					// Die meisten Editoren sind nicht darauf ausgelegt Operatoren zu autovervollständigen
+					// Da Baldur aber mit einer umfangreichen, unkonventionellen, dynamisch anpassbaren Operatorenauswahl arbeitet ist das hier nötigt
+					// Um die korrekte Behandlung zu gewährleisten muss die Autovervollständigung beser vorsortiert werden und das bestehende Wort bei der
+					// Autovervollständigung ersetzt
+					// ansonsten wird der Autovervollständigungstext des Operators einfach hinten angehängt 
+					for(const auto& ops : data.operators) {
 
-					for(const auto& ops : data.operators)
-						if(ops.contains(currentWord))
-							items.push_back({ .label = ops, .kind = lsp::CompletionItemKind::Operator, .detail = "operator", .sortText = "3_" });
+						if(ops.contains(currentWord)) {
+
+							// Item
+							lsp::CompletionItem item{
+								.label   = ops,
+								.kind    = lsp::CompletionItemKind::Operator,
+								.detail  = "operator",
+								.sortText = "4_"
+							};
+
+							// Bereich von wordStart bis Cursor Position
+							lsp::Range range{ .start = lsp::Position{
+												.line = static_cast<int32_t>(line),
+												.character = static_cast<int32_t>(wordStart - lineStart) },
+											  .end = lsp::Position{
+												.line = static_cast<int32_t>(line),
+												.character = static_cast<int32_t>(col) }};
+
+							// Da die Autovervollständigung erst wieder bereinigt funktioniert wenn hinter das zu vervollständigende
+							// Wort durch ein Leerzeichen vom Operatore getrennt ist kann hier auch direkt automatisch ein Leerzeichen
+							// hinter den Operator geschrieben werden über '.newText = ops + " "'
+							lsp::TextEdit textEdit{ .range   = range, .newText = ops };
+
+							item.textEdit = std::move(textEdit);
+							items.push_back(std::move(item));
+						}
+					}
 
 					return lsp::requests::TextDocument_Completion::Result(std::move(items));
 				}
@@ -247,11 +279,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					size_t wordEnd   = lineStart + col;
 
 					auto isWordChar = [](char c) {
-						return !std::isspace(c) 
-							&& c != '(' && c != ')' 
-							&& c != '{' && c != '}'
-							&& c != '[' && c != ']'
-							&& c != ',' && c != ';';
+						return !std::isspace(c) && c != '(' && c != ')' && c != '{' && c != '}' && c != '[' && c != ']' && c != ',' && c != ';';
 					};
 
 					while(wordStart > 0 && isWordChar(text[wordStart-1]))
@@ -272,6 +300,10 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					for(const auto& t : state->typeKeywords)
 						if(t == word)
 							hoverContent += "- 🏷️ **type** `" + word + "`\n";
+
+					for(const auto& [key, detail] : data.constKeywords)
+						if(key.first == word)	
+							hoverContent += "- 💈 **const** `" + detail.second + "`\n";
 
 					for(const auto& [key, details] : data.functions)
 						if(key.first == word)

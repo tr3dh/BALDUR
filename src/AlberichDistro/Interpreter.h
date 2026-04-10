@@ -16,6 +16,7 @@ struct LSPData{
     // . Variablen (aus dekonstruierten Scopes)
 
     std::vector<std::string> keywords = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct" };
+    std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> constKeywords = {};
     std::vector<std::string> operators = {};
     std::map<std::string, TypeIndex> types = {};
     std::map<FunctionRegisterKey, std::pair<std::string, std::string>> functions = {};
@@ -75,12 +76,25 @@ struct LSPData{
         }
     }
 
+    void addConstKeywords(){
+
+        for(const auto& [label, object] : g_KeywordRegister.keywordObjects){
+            
+            
+            std::string shortDetail = "const " + object->getTypeKeyword();
+            std::string detail = "const " + object->getTypeKeyword() + " " + label;
+        
+            constKeywords.try_emplace(std::make_pair(label, object->getTypeIndex()), std::make_pair(shortDetail, detail));
+        }
+    }
+
     void addAll(){
 
         operators = g_UsedOperators;
 
         addTypes();
         addAllFRegs();
+        addConstKeywords();
     }
 
     void addScope(Scope* scope){
@@ -135,6 +149,7 @@ struct LspState {
     }
 };
 
+// Serealisierung der ByteSequence für beliebige std::pair
 template<typename first, typename second>
 inline void toByteSequence(const std::pair<first, second>& member, ByteSequence& seq) {
 

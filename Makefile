@@ -12,8 +12,9 @@ all:
 TARGET = build/BaldurEditor
 SCRIPT =
 exec:
-	@echo "Wechsel in: $(dir $(TARGET))"
-	cd $(dir $(TARGET)) && ./$(notdir $(TARGET)$(SUFFIX)) $(SCRIPT)
+#	@echo "Wechsel in: $(dir $(TARGET))"
+#	cd $(dir $(TARGET)) && ./$(notdir $(TARGET)$(SUFFIX)) $(SCRIPT)
+	./$(TARGET)$(SUFFIX) $(SCRIPT)
 
 execr:
 	@make exec SUFFIX=

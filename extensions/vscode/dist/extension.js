@@ -18017,6 +18017,13 @@ var client;
 var terminal;
 var outputChannel;
 var statusBarItem;
+function getOrCreateTerminal(name = "Baldur") {
+  const existing = vscode.window.terminals.find((t) => t.name === name && !t.exitStatus);
+  if (existing) {
+    return existing;
+  }
+  return vscode.window.createTerminal(name);
+}
 async function activate(context) {
   outputChannel = vscode.window.createOutputChannel("Baldur Extension");
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -18097,14 +18104,9 @@ async function activate(context) {
       if (filePath[1] === ":") {
         filePath = filePath[0].toUpperCase() + filePath.slice(1);
       }
-      if (!terminal || terminal.exitStatus) {
-        terminal = vscode.window.createTerminal("Baldur");
-        outputChannel.appendLine("Created new terminal");
-      }
       const command = `${langExe} execute ${filePath}`;
       outputChannel.appendLine(`Terminal command: ${command}`);
-      const fileName = path.basename(filePath);
-      vscode.window.showInformationMessage(`\u25B6\uFE0F F\xFChre aus: ${fileName}`);
+      terminal = getOrCreateTerminal("Baldur");
       terminal.show(true);
       terminal.sendText(command);
       setTimeout(() => {

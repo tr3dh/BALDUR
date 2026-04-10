@@ -7,12 +7,12 @@
 // Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_B_viscousdamage_evogl.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_B_viscousdamage_evogl.bld
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_B_viscousdamage_evogl.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_B_viscousdamage_evogl.bld
 //
 // Für Release
-// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_B_viscousdamage_evogl.bld
-// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=../Import/3_2_2_Example_B_viscousdamage_evogl.bld
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_B_viscousdamage_evogl.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_B_viscousdamage_evogl.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/3_2_2_Example_B_viscousdamage_evogl
@@ -123,7 +123,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         //
         tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString(tResultLabel)->writeToFile("../Import/juliaScripts/" + exampleChapter + "_" + \
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // DREF vor Schleifenabbruch

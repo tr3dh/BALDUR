@@ -12,7 +12,15 @@
     },
     {
       "name": "keyword.control.bld",
-      "match": "\\b(if|xIf|rIf|nIf|else|requires|assert|fetch|script|backend|decl|for|while|return|break|continue|static|struct)\\b"
+      "match": "\\b(if|xIf|rIf|nIf|else|requires|assert|fetch|script|backend|decl|for|while|return|break|continue|static|struct|ref)\\b"
+    },
+    {
+      "name": "keyword.type",
+      "match": "\\b(void|bool|int|double|string|args)\\b"
+    },
+    {
+      "name": "keyword.const.bld",
+      "match": "\\b(true|false|nullArgs)\\b"
     },
     {
       "name": "constant.numeric.bld",
