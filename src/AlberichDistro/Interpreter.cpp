@@ -166,8 +166,8 @@ LSPData getLSPData(const std::string& path){
     ByteSequence bs;
     LSPData res;
 
-    // Laden aus parent/.BALDUR_LSP_CACHE/filename.BYTESEQ
-    const std::string LSPCache = (fs::path(path).parent_path() / ".BALDUR_LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string();
+    // Laden aus parent/.LSP_CACHE/filename.BYTESEQ
+    const std::string LSPCache = (fs::path(path).parent_path() / ".LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string();
 
     //
     if(fs::exists(LSPCache)){
@@ -187,12 +187,30 @@ void saveLSPData(const LSPData& data, const std::string& path){
     bs += data;
     bs.encode(g_lspEncoderKey);
 
-    // Speichern in parent/.BALDUR_LSP_CACHE/filename.BYTESEQ
-    bs.toFile((fs::path(path).parent_path() / ".BALDUR_LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string());
+    // Speichern in parent/.LSP_CACHE/filename.BYTESEQ
+    bs.toFile((fs::path(path).parent_path() / ".LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string());
 }
 
 Scope* g_distroScope; 
 std::vector<LSPData*> g_LSPDatas = {};
+
+void processScopeBeforeDeletion(Scope* scope){
+
+    if(g_LSPDatas.empty()){ return; }
+    g_LSPDatas.back()->addScope(scope);
+}
+
+void processStaticScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope){
+
+    if(g_LSPDatas.empty()){ return; }
+    g_LSPDatas.back()->addStaticScope(tpIdx, scope);
+}
+
+void processMemberScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope){
+
+    if(g_LSPDatas.empty()){ return; }
+    g_LSPDatas.back()->addMemberScope(tpIdx, scope);
+}
 
 void processScriptBeforeExecution(const std::string& scriptPath){
 
@@ -207,8 +225,8 @@ void processScriptAfterExecution(const std::string& scriptPath){
     g_LSPDatas.back()->addAll();
 
     //
-    for(auto& [idx, scope] : STRUCT::attribScopes){ (*g_processScopeBeforeDeletion)(&scope); }
-    for(auto& [idx, scope] : g_staticScopes){ (*g_processScopeBeforeDeletion)(&scope); }
+    for(auto& [idx, scope] : STRUCT::attribScopes){ processMemberScopeBeforeDeletion(idx, &scope); }
+    for(auto& [idx, scope] : g_staticScopes){ processStaticScopeBeforeDeletion(idx, &scope); }
 
     // Distroscope wird erst am Ende von 'executeProgramm' dekonstruiert. Variablen Sollen 
     (*g_processScopeBeforeDeletion)(g_distroScope);
@@ -222,12 +240,6 @@ void processScriptAfterExecution(const std::string& scriptPath){
     //
     delete g_LSPDatas.back();
     g_LSPDatas.erase(--g_LSPDatas.end());
-}
-
-void processScopeBeforeDeletion(Scope* scope){
-
-    if(g_LSPDatas.empty()){ return; }
-    g_LSPDatas.back()->addScope(scope);
 }
 
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
@@ -286,7 +298,6 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     g_distroScope->constructAndReturnVariable("g_terminateAfterAssertionFailed")->constructByObject(new types::BOOL(&g_terminateAfterAssertionFailed));
     g_distroScope->constructAndReturnVariable("g_unwrapOperands")->constructByObject(new types::BOOL(&unwrapOperands));
     g_distroScope->constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
-
 
     // Aufruf des Alberich-Interpreters
     auto results = executeProgram(scriptPath, g_distroScope);

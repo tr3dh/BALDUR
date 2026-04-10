@@ -36,7 +36,7 @@ temp/
 tmp/
 bin/
 __OUT/
-.BALDUR_LSP_CACHE/
+.LSP_CACHE/
 
 #
 Import/juliaScripts/*

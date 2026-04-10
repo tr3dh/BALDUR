@@ -226,7 +226,15 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 					for(const auto& [key, details] : data.variables)
 						if(containsCI(key.first, currentWord))
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first, .sortText = "8_" });
+
+					for(const auto& [key, details] : data.staticVariables)
+						if(containsCI(key.first, currentWord))
 							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first, .sortText = "6_" });
+
+					for(const auto& [key, details] : data.memberVariables)
+						if(containsCI(key.first, currentWord))
+							items.push_back({ .label = key.first, .kind = lsp::CompletionItemKind::Variable, .detail = details.first, .sortText = "7_" });
 					
 					// Die meisten Editoren sind nicht darauf ausgelegt Operatoren zu autovervollständigen
 					// Da Baldur aber mit einer umfangreichen, unkonventionellen, dynamisch anpassbaren Operatorenauswahl arbeitet ist das hier nötigt
@@ -356,6 +364,14 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 							hoverContent += "- ⚙️ **function** `" + details.second + "`\n";
 
 					for(const auto& [key, details] : data.variables)
+						if(key.first == word)
+							hoverContent += "- 📦 **variable** `" + details.second + "`\n";
+
+					for(const auto& [key, details] : data.staticVariables)
+						if(key.first == word)
+							hoverContent += "- 📦 **variable** `" + details.second + "`\n";
+
+					for(const auto& [key, details] : data.memberVariables)
 						if(key.first == word)
 							hoverContent += "- 📦 **variable** `" + details.second + "`\n";
 

@@ -21,6 +21,8 @@ struct LSPData{
     std::map<std::string, TypeIndex> types = {};
     std::map<FunctionRegisterKey, std::pair<std::string, std::string>> functions = {};
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> variables = {};
+    std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> staticVariables = {};
+    std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> memberVariables = {};
 
     void addTypes(){
 
@@ -112,10 +114,47 @@ struct LSPData{
         }
     }
 
+    void addStaticScope(TypeIndex tpIdx, Scope* scope){
+
+        const std::string tpKeyword = getKeywordByTypeIndex(tpIdx);
+
+        for(auto& [label, var] : scope->variableTable){
+
+            std::string shortDetail = tpKeyword + " >> " + var.getData()->getTypeKeyword();
+
+            std::string detail = tpKeyword + " >> "; 
+            detail += var.getData()->isUniform() ? "uniform " : "";
+            detail += var.getData()->getTypeKeyword() + " ";
+            detail += var.isReference() ?  "ref " : "instc ";
+            detail += label;
+
+            staticVariables.try_emplace(std::make_pair(label, var.getData()->getTypeIndex()), std::make_pair(shortDetail, detail));
+        }
+    }
+
+    void addMemberScope(TypeIndex tpIdx, Scope* scope){
+
+        const std::string tpKeyword = getKeywordByTypeIndex(tpIdx);
+
+        for(auto& [label, var] : scope->variableTable){
+
+            std::string shortDetail = tpKeyword + " -> " + var.getData()->getTypeKeyword();
+
+            std::string detail = tpKeyword + " -> ";
+            detail += var.getData()->isUniform() ? "uniform " : "";
+            detail += var.getData()->getTypeKeyword() + " ";
+            detail += var.isReference() ?  "ref " : "instc ";
+            detail += label;
+
+            memberVariables.try_emplace(std::make_pair(label, var.getData()->getTypeIndex()), std::make_pair(shortDetail, detail));
+        }
+    }
+
     bool isEmpty(){
 
         return keywords.empty() && constKeywords.empty() && operators.empty() &&
-                types.empty() && functions.empty() && variables.empty();
+                types.empty() && functions.empty() &&
+                    variables.empty() && staticVariables.empty() && memberVariables.empty();
     }
 };
 
@@ -138,15 +177,15 @@ struct LspState {
         for(const auto& [name, typeIndex] : data.types)
             typeKeywords.insert(name);
 
-        //
-        functions.clear();
-        for(const auto& [key, info] : data.functions)
-            functions.insert(key.first);
+        // //
+        // functions.clear();
+        // for(const auto& [key, info] : data.functions)
+        //     functions.insert(key.first);
 
-        //
-        variables.clear();
-        for(const auto& [key, info] : data.variables)
-            variables.insert(key.first);
+        // //
+        // variables.clear();
+        // for(const auto& [key, info] : data.variables)
+        //     variables.insert(key.first);
     }
 };
 
