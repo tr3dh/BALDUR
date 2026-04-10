@@ -36,6 +36,7 @@ temp/
 tmp/
 bin/
 __OUT/
+.LSPCACHE/
 
 #
 Import/juliaScripts/*

@@ -68,7 +68,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 	auto state = std::make_shared<LspState>();
 
-	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct", "ref" };
+	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct", "ref", "this" };
     state->typeKeywords = { "void", "bool", "int", "double", "args" };
 
 	messageHandler.add<lsp::requests::Initialize>(
@@ -120,7 +120,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 				{	
 					const std::string path = uriToPath(params.textDocument.uri.toString());
 					
-					const auto& data = getLSPData(path);
+					const LSPData data = getLSPData(path);
 					state->applyLSPData(data);
 
 					// Contains Case Insensitive -> Groß-/Kleinschreibung wird nicht beachtet
@@ -256,7 +256,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 					const std::string path = uriToPath(params.textDocument.uri.toString());
 					
-					const auto& data = getLSPData(path);
+					const LSPData data = getLSPData(path);
 					state->applyLSPData(data);
 
 					// Text aus Cache holen statt Datei öffnen

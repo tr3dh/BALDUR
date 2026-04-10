@@ -12,24 +12,6 @@
 #define LOG std::cout
 #define _ERROR std::cerr
 
-std::string getExecutablePath() {
-    
-    char buffer[MAX_PATH];
-    GetModuleFileNameA(NULL, buffer, MAX_PATH);
-    std::string fullPath(buffer);
-    return fullPath;
-}
-
-std::string getExecutableDir() {
-
-    std::string fullPath = getExecutablePath();
-    size_t pos = fullPath.find_last_of("\\/");
-    if (pos != std::string::npos) {
-        return fullPath.substr(0, pos);
-    }
-    return "";
-}
-
 int main(int argc, char* argv[]){
 
     // Windows wird so lange nicht in den Standby versetzt bis flag resettet ist
@@ -84,6 +66,24 @@ int main(int argc, char* argv[]){
         std::string line;
         while (std::getline(file, line)) {
             LOG << line << ENDL;
+        }
+
+        return 0;
+    }
+
+    else if(std::string(argv[1]) == "--license"){
+        
+        std::ifstream file(exeDir + "/../LICENSE");
+        if (!file) {
+            _ERROR << "keine gültige Lizenz gefunden an " << exeDir + "/../LICENSE" << ENDL;
+            return 1;
+        }
+
+        LOG << ENDL;
+
+        std::string line;
+        while (std::getline(file, line)) {
+            LOG << "\t" << line << ENDL;
         }
 
         return 0;

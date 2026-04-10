@@ -12,7 +12,7 @@
     },
     {
       "name": "keyword.control.bld",
-      "match": "\\b(if|xIf|rIf|nIf|else|requires|assert|fetch|script|backend|decl|for|while|return|break|continue|static|struct|ref)\\b"
+      "match": "\\b(if|xIf|rIf|nIf|else|requires|assert|fetch|script|backend|decl|for|while|return|break|continue|static|struct|ref|this)\\b"
     },
     {
       "name": "keyword.type",

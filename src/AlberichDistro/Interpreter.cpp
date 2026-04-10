@@ -1,4 +1,23 @@
 #include "Interpreter.h"
+#include <Windows.h>
+
+std::string getExecutablePath() {
+    
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    std::string fullPath(buffer);
+    return fullPath;
+}
+
+std::string getExecutableDir() {
+
+    std::string fullPath = getExecutablePath();
+    size_t pos = fullPath.find_last_of("\\/");
+    if (pos != std::string::npos) {
+        return fullPath.substr(0, pos);
+    }
+    return "";
+}
 
 void defaultSetupLexicalInstances(){
     
@@ -139,19 +158,21 @@ void defaultSetupLexicalInstances(){
     };
 }
 
-LSPData g_LSPData;
 std::string g_lspEncoderKey = "*__$§%//BLD\\\\%§$*__";
 
-LSPData getLSPData(const std::string& path, const std::string& filename){
+LSPData getLSPData(const std::string& path){
 
     //
     ByteSequence bs;
     LSPData res;
 
-    //
-    if(fs::exists(fs::path(path).parent_path().string() + "/" + filename)){
+    // Laden aus parent/.LSPCACHE/filename.BYTESEQ
+    const std::string LSPCache = (fs::path(path).parent_path() / ".LSPCACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string();
 
-        bs.fromFile(fs::path(path).parent_path().string() + "/" + filename);
+    //
+    if(fs::exists(LSPCache)){
+
+        bs.fromFile(LSPCache);
         bs.decode(g_lspEncoderKey);
         bs -= res;
     }
@@ -159,26 +180,62 @@ LSPData getLSPData(const std::string& path, const std::string& filename){
     return res;
 }
 
-void saveLSPData(const LSPData& data, const std::string& path, const std::string& filename){
+void saveLSPData(const LSPData& data, const std::string& path){
 
     //
     ByteSequence bs;
     bs += data;
     bs.encode(g_lspEncoderKey);
 
-    // ByteSequence wird in File geschrieben
-    bs.toFile(fs::path(path).parent_path().string() + "/" + filename);
+    // Speichern in parent/.LSPCACHE/filename.BYTESEQ
+    bs.toFile((fs::path(path).parent_path() / ".LSPCACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string());
+}
+
+Scope* g_distroScope; 
+std::vector<LSPData*> g_LSPDatas = {};
+
+void processScriptBeforeExecution(const std::string& scriptPath){
+
+    // >> aktuellste LSPData ist immer die letzte
+    g_LSPDatas.emplace_back(new LSPData());
+    *g_LSPDatas.back() = getLSPData(scriptPath);
+}
+
+void processScriptAfterExecution(const std::string& scriptPath){
+
+    //
+    g_LSPDatas.back()->addAll();
+
+    //
+    for(auto& [idx, scope] : STRUCT::attribScopes){ (*g_processScopeBeforeDeletion)(&scope); }
+    for(auto& [idx, scope] : g_staticScopes){ (*g_processScopeBeforeDeletion)(&scope); }
+
+    // Distroscope wird erst am Ende von 'executeProgramm' dekonstruiert. Variablen Sollen 
+    (*g_processScopeBeforeDeletion)(g_distroScope);
+
+    // Für Goto Defi einfach nach decl word und struct word suchen
+    // gleiches Prinzip für hover doku
+
+    //
+    saveLSPData(*g_LSPDatas.back(), scriptPath);
+
+    //
+    delete g_LSPDatas.back();
+    g_LSPDatas.erase(--g_LSPDatas.end());
 }
 
 void processScopeBeforeDeletion(Scope* scope){
 
-    g_LSPData.addScope(scope);
+    if(g_LSPDatas.empty()){ return; }
+    g_LSPDatas.back()->addScope(scope);
 }
 
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
 
     // ByteSequence Setup
     G_BYTESEQ_ASSERT_HANDLER = triggerAssertHandler;
+    g_handleScriptBeforeExecution = processScriptBeforeExecution;
+    g_handleScriptAfterExecution = processScriptAfterExecution;
     g_processScopeBeforeDeletion = processScopeBeforeDeletion;
 
     //
@@ -222,31 +279,20 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     setUpDistroTypes();
 
     // Distributionsscope anlegen, wird im weiteren Verlauf an den Alberich-Interpreter übergeben und dient diesem als Rootscope
-    Scope distroScope = {};
+    g_distroScope = new Scope();
 
     // Eintragen / Linken uniformisierter Größen zur Programm- / Backendsteuerung 
-    distroScope.constructAndReturnVariable("g_suppressAssertionWarnings")->constructByObject(new types::BOOL(&g_suppressAssertionWarnings));
-    distroScope.constructAndReturnVariable("g_terminateAfterAssertionFailed")->constructByObject(new types::BOOL(&g_terminateAfterAssertionFailed));
-    distroScope.constructAndReturnVariable("g_unwrapOperands")->constructByObject(new types::BOOL(&unwrapOperands));
-    distroScope.constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
-    
-    //
-    g_LSPData = getLSPData(scriptPath);
+    g_distroScope->constructAndReturnVariable("g_suppressAssertionWarnings")->constructByObject(new types::BOOL(&g_suppressAssertionWarnings));
+    g_distroScope->constructAndReturnVariable("g_terminateAfterAssertionFailed")->constructByObject(new types::BOOL(&g_terminateAfterAssertionFailed));
+    g_distroScope->constructAndReturnVariable("g_unwrapOperands")->constructByObject(new types::BOOL(&unwrapOperands));
+    g_distroScope->constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
+
 
     // Aufruf des Alberich-Interpreters
-    auto results = executeProgram(scriptPath, &distroScope);
-
-    // distroScope abhandlen, wird erst am Ende der Funktion sauber dekonstruiert
-    (*g_processScopeBeforeDeletion)(&distroScope);
+    auto results = executeProgram(scriptPath, g_distroScope);
 
     //
-    g_LSPData.addAll();
-
-    // Für Goto Defi einfach nach decl word und struct word suchen
-    // gleiches Prinzip für hover doku
-
-    //
-    saveLSPData(g_LSPData, scriptPath);
+    delete g_distroScope;
 
     // Rückgabe
     return results;

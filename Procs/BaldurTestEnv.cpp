@@ -24,7 +24,7 @@ int main(int argc, const char* argv[]){
 
     //
     duration runTime = chrono::now() - procStart;
-    LOG << "Programm took " << runTime.count() << " seconds to run" << endln;
+    LOG << "Program took " << runTime.count() << " seconds to run" << endln;
 
     return 0;
 }

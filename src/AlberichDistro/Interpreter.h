@@ -3,9 +3,9 @@
 #include "TypeInstances/gatheredInstances.h"
 #include "nlohmann/json.hpp"
 
-struct LSPData;
+std::string getExecutablePath();
+std::string getExecutableDir();
 
-extern LSPData g_LSPData;
 extern std::string g_lspEncoderKey;
 
 struct LSPData{
@@ -15,7 +15,7 @@ struct LSPData{
     // . Funktionen (eigenständige, Attributs- und statische)
     // . Variablen (aus dekonstruierten Scopes)
 
-    std::vector<std::string> keywords = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct" };
+    std::vector<std::string> keywords = {};
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> constKeywords = {};
     std::vector<std::string> operators = {};
     std::map<std::string, TypeIndex> types = {};
@@ -114,12 +114,13 @@ struct LSPData{
 
     bool isEmpty(){
 
-        return types.empty() && functions.empty() && variables.empty();
+        return keywords.empty() && constKeywords.empty() && operators.empty() &&
+                types.empty() && functions.empty() && variables.empty();
     }
 };
 
-LSPData getLSPData(const std::string& path, const std::string& filename = "__LSPCONFIG.BYTESEQ");
-void saveLSPData(const LSPData& data, const std::string& path, const std::string& filename = "__LSPCONFIG.BYTESEQ");
+LSPData getLSPData(const std::string& path);
+void saveLSPData(const LSPData& data, const std::string& path);
 
 struct LspState {
 

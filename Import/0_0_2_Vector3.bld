@@ -40,7 +40,7 @@ decl Vector3(double ref [xIn, yIn, zIn]){
     // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
     // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
     // ohne, dass es zu einem Kopiervorgang kommt
-    return [<- vec]
+    return [<-vec]
 }
 
 // Konstruktor
@@ -72,7 +72,7 @@ decl evaluateExample(){
     slog((a - b) - (- b + a))
     slog(normalized(cross(a, b)))
 
-    slog("Es wurden", Vector3 >> constructedEntities, " Vector3 instanzen konstruiert")
+    slog("Es wurden", Vector3 >> constructedEntities, "Vector3 instanzen konstruiert")
 }
 
 //
