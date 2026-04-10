@@ -10,6 +10,8 @@
 #include <string_view>
 #include <thread>
 
+#include "WinHandle/WinCmd.h"
+
 #include "AlberichDistro/Interpreter.h"
 
 // Basiert auf dem Standard Language Server Beispiel aus dem LSP Framework
@@ -45,6 +47,50 @@ template<typename MessageType>
 void printMessage()
 {
 	printMessageMethod<MessageType>();
+}
+
+LSPData provideLSPCache(const std::string& filePath){
+
+	LSPData data = getLSPData(filePath);
+
+	// Wenn valider LSPCache gefunden wurde
+	if(!data.isEmpty()){ return data; }
+		
+	//
+	std::cerr << "Kein gültiger LSPCache für " << filePath << " gefunden - Checke Default Cache..." << std::endl;
+
+	//
+	std::string defaultScriptPath = (fs::path(filePath).parent_path() / "__default.bld").string();
+	data = getLSPData(defaultScriptPath);
+	
+	// default Cache valide
+	if(!data.isEmpty()){ return data; }
+
+	//
+	std::cerr << "Kein gültiger default LSPCache (für " << defaultScriptPath << ") gefunden - Stelle Default Cache her..." << std::endl;
+
+	// Pfad des Interpreters vorrausgesetzt er befindet sich im gleichen Verzeichnis wie der LS
+	std::string interp = (fs::path(getExecutableDir()) / "Baldur").string();
+
+	// Default Skript wird erzeugt
+	std::ofstream(defaultScriptPath) << "slog(\"Default LSPCache erzeugt\")\n";
+
+	// Interpreter führt erzeugtes Default Skript aus, dabei wird eine default LSP Cache erzeugt werden der bei fehlen eines Dateispezifischen
+	// LSP Caches geladen werden kann und den Language Support gewährleisten
+	std::string cmd = interp + " execute " + defaultScriptPath;
+	streamWinCommand(cmd, [&](const char* callback){ std::cerr << callback; });
+
+	// Default Skript wird wieder gelöscht
+	std::error_code ec;
+	fs::remove(defaultScriptPath, ec);
+	if (ec) { std::cerr << "Default Skript konnte nicht gelöscht werden" << ec.message() << std::endl; }
+
+	// LSPCache final aus erzeugtem Default Cache Laden
+	data = getLSPData(defaultScriptPath);
+
+	if(data.isEmpty()){ std::cerr << "Keine LSPCache gefunden" << std::endl; }
+
+	return data;
 }
 
 /*
@@ -120,7 +166,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 				{	
 					const std::string path = uriToPath(params.textDocument.uri.toString());
 					
-					const LSPData data = getLSPData(path);
+					const LSPData data = provideLSPCache(path);
 					state->applyLSPData(data);
 
 					// Contains Case Insensitive -> Groß-/Kleinschreibung wird nicht beachtet
@@ -256,7 +302,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 					const std::string path = uriToPath(params.textDocument.uri.toString());
 					
-					const LSPData data = getLSPData(path);
+					const LSPData data = provideLSPCache(path);
 					state->applyLSPData(data);
 
 					// Text aus Cache holen statt Datei öffnen

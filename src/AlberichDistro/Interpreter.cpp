@@ -166,8 +166,8 @@ LSPData getLSPData(const std::string& path){
     ByteSequence bs;
     LSPData res;
 
-    // Laden aus parent/.LSPCACHE/filename.BYTESEQ
-    const std::string LSPCache = (fs::path(path).parent_path() / ".LSPCACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string();
+    // Laden aus parent/.BALDUR_LSP_CACHE/filename.BYTESEQ
+    const std::string LSPCache = (fs::path(path).parent_path() / ".BALDUR_LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string();
 
     //
     if(fs::exists(LSPCache)){
@@ -187,8 +187,8 @@ void saveLSPData(const LSPData& data, const std::string& path){
     bs += data;
     bs.encode(g_lspEncoderKey);
 
-    // Speichern in parent/.LSPCACHE/filename.BYTESEQ
-    bs.toFile((fs::path(path).parent_path() / ".LSPCACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string());
+    // Speichern in parent/.BALDUR_LSP_CACHE/filename.BYTESEQ
+    bs.toFile((fs::path(path).parent_path() / ".BALDUR_LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string());
 }
 
 Scope* g_distroScope; 
@@ -198,7 +198,7 @@ void processScriptBeforeExecution(const std::string& scriptPath){
 
     // >> aktuellste LSPData ist immer die letzte
     g_LSPDatas.emplace_back(new LSPData());
-    *g_LSPDatas.back() = getLSPData(scriptPath);
+    // *g_LSPDatas.back() = getLSPData(scriptPath);
 }
 
 void processScriptAfterExecution(const std::string& scriptPath){
