@@ -40,7 +40,7 @@ decl Vector3(double ref [xIn, yIn, zIn]){
     // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
     // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
     // ohne, dass es zu einem Kopiervorgang kommt
-    return [<-vec]
+    return [ <- vec ]
 }
 
 // Konstruktor

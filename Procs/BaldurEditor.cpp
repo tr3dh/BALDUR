@@ -104,8 +104,8 @@ int main(void)
     LOG << ENDL;
 
     //
-    LOG << "** Source Code " << countLinesInDirectory("../src") << " lines" << ENDL;
-    LOG << "** Procs Code " << countLinesInDirectory("../Procs") << " lines" << ENDL;
+    LOG << "** Source Code " << countLinesInDirectory("src") << " lines" << ENDL;
+    LOG << "** Procs Code " << countLinesInDirectory("Procs") << " lines" << ENDL;
     LOG << ENDL;
 
     //

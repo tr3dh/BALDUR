@@ -10,5 +10,6 @@
 
 //
 if(calledAs(__MainProc__)){
+    
     slog("Init Main")
 }
