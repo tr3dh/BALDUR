@@ -8,8 +8,18 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/0_0_0_testEnv.bld
 
+struct locals{
+
+    double[x,y,z]
+}
+
+decl main(int [a,b,c]){
+
+    slog("Init Main")
+}
+
 //
 if(calledAs(__MainProc__)){
     
-    slog("Init Main")
+    call("main", args(1,1,2))
 }

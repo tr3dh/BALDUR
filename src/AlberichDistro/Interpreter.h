@@ -1,10 +1,20 @@
 #pragma once
 
 #include "TypeInstances/gatheredInstances.h"
+#include "Alberich/Evaluation/EvaluateExpression.h"
 #include "nlohmann/json.hpp"
 
 std::string getExecutablePath();
 std::string getExecutableDir();
+
+struct Definition;
+extern std::unordered_multimap<std::string, Definition> g_definitions;
+
+struct Definition{
+
+    std::string script, label, definitionLine;
+    size_t defiTokenRow, defiTokenCol, defiTokenLen; 
+};
 
 extern std::string g_lspEncoderKey;
 
@@ -23,6 +33,7 @@ struct LSPData{
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> variables = {};
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> staticVariables = {};
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> memberVariables = {};
+    std::unordered_multimap<std::string, Definition> definitions = {};
 
     void addTypes(){
 
@@ -159,7 +170,7 @@ struct LSPData{
 };
 
 LSPData getLSPData(const std::string& path);
-void saveLSPData(const LSPData& data, const std::string& path);
+void saveLSPData(LSPData& data, const std::string& path);
 
 struct LspState {
 
@@ -202,13 +213,31 @@ inline void fromByteSequence(std::pair<first, second>& member, ByteSequence& seq
     seq.extractMultipleReversed(member.first, member.second);
 }
 
-// //
-// template<typename first, typename second>
-// inline std::ostream& operator<<(std::ostream& os, const std::pair<first, second>& pair) {
+// Serealisierung der ByteSequence für beliebige std::pair
+template<typename Key, typename Val>
+inline void toByteSequence(const std::unordered_multimap<Key, Val>& member, ByteSequence& seq) {
 
-//     os << "Pair [ " << pair.first << " ; " << pair.second << " ]" << endln; 
-//     return os;
-// }
+    for(const auto& [key, val] : member){
+
+        seq.insertMultiple(key, val);
+    }
+
+    seq.insertMultiple(member.size());
+}
+
+template<typename Key, typename Val>
+inline void fromByteSequence(std::unordered_multimap<Key, Val>& member, ByteSequence& seq) {
+
+    size_t size = seq.get<size_t>();
+
+    for(size_t i = 0; i < size; i++){
+
+        Key key; Val val;
+        seq.extractMultipleReversed(key, val);        
+
+        member.emplace(key, val);
+    }
+}
 
 void defaultSetupLexicalInstances();
 

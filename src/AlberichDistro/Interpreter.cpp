@@ -180,7 +180,10 @@ LSPData getLSPData(const std::string& path){
     return res;
 }
 
-void saveLSPData(const LSPData& data, const std::string& path){
+void saveLSPData(LSPData& data, const std::string& path){
+
+    // bisher angestellte Defis kopieren und speichern
+    data.definitions = g_definitions;
 
     //
     ByteSequence bs;
@@ -242,13 +245,44 @@ void processScriptAfterExecution(const std::string& scriptPath){
     g_LSPDatas.erase(--g_LSPDatas.end());
 }
 
+std::unordered_multimap<std::string, Definition> g_definitions = {};
+
+void registerDefinition(const std::string& scriptPath, const std::string& defiLabel, const std::string& defiLine, \
+                        const std::pair<size_t, size_t>& defiTokenPos, size_t defiTokenLen){
+
+    //
+    // LOG << scriptPath << endln;
+    // LOG << defiLabel << endln;
+    // LOG << defiLine << endln;
+    // LOG << defiTokenPos << endln;
+    // LOG << defiTokenLen << endln;
+
+    // LOG << scriptPath << ":" << defiTokenPos.first << ":" << defiTokenPos.second << endln;
+
+    g_definitions.emplace(defiLabel, Definition{
+        .script         = scriptPath,
+        .label          = defiLabel,
+        .definitionLine = defiLine,
+        .defiTokenRow   = defiTokenPos.first,
+        .defiTokenCol   = defiTokenPos.second,
+        .defiTokenLen   = defiTokenLen
+    });
+}
+
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
 
-    // ByteSequence Setup
+    // Handler Setups
+
+    // ByteSequence Assertion Handler
     G_BYTESEQ_ASSERT_HANDLER = triggerAssertHandler;
+
+    // Script- and Scopehandler 
     g_handleScriptBeforeExecution = processScriptBeforeExecution;
     g_handleScriptAfterExecution = processScriptAfterExecution;
     g_processScopeBeforeDeletion = processScopeBeforeDeletion;
+
+    // Defihandler
+    g_handleDefinition = registerDefinition;
 
     //
     if(fs::exists(fs::path(scriptPath).parent_path().string() + "/__LPECONFIG.JSON")){
