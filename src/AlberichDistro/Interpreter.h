@@ -4,16 +4,30 @@
 #include "Alberich/Evaluation/EvaluateExpression.h"
 #include "nlohmann/json.hpp"
 
+#include <lsp/connection.h>
+#include <lsp/io/socket.h>
+#include <lsp/io/standardio.h>
+#include <lsp/messagehandler.h>
+#include <lsp/types.h>
+#include <lsp/messages.h>
+#include <string_view>
+
 std::string getExecutablePath();
 std::string getExecutableDir();
+std::string subwordAt(const std::string& text, uint32_t line, uint32_t col, uint32_t len);
+
+std::string uriToPath(const std::string_view& uri);
+std::string pathToUri(const std::string& path);
 
 struct Definition;
-extern std::unordered_multimap<std::string, Definition> g_definitions;
+extern std::multimap<std::string, Definition> g_definitions;
 
 struct Definition{
 
     std::string script, label, definitionLine;
-    size_t defiTokenRow, defiTokenCol, defiTokenLen; 
+    size_t defiTokenRow, defiTokenCol, defiTokenLen;
+
+    auto operator<=>(const Definition&) const = default;
 };
 
 extern std::string g_lspEncoderKey;
@@ -33,7 +47,7 @@ struct LSPData{
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> variables = {};
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> staticVariables = {};
     std::map<std::pair<std::string, TypeIndex>, std::pair<std::string, std::string>> memberVariables = {};
-    std::unordered_multimap<std::string, Definition> definitions = {};
+    std::multimap<std::string, Definition> definitions = {};
 
     void addTypes(){
 
@@ -215,7 +229,7 @@ inline void fromByteSequence(std::pair<first, second>& member, ByteSequence& seq
 
 // Serealisierung der ByteSequence für beliebige std::pair
 template<typename Key, typename Val>
-inline void toByteSequence(const std::unordered_multimap<Key, Val>& member, ByteSequence& seq) {
+inline void toByteSequence(const std::multimap<Key, Val>& member, ByteSequence& seq) {
 
     for(const auto& [key, val] : member){
 
@@ -226,7 +240,7 @@ inline void toByteSequence(const std::unordered_multimap<Key, Val>& member, Byte
 }
 
 template<typename Key, typename Val>
-inline void fromByteSequence(std::unordered_multimap<Key, Val>& member, ByteSequence& seq) {
+inline void fromByteSequence(std::multimap<Key, Val>& member, ByteSequence& seq) {
 
     size_t size = seq.get<size_t>();
 

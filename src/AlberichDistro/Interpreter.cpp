@@ -19,6 +19,70 @@ std::string getExecutableDir() {
     return "";
 }
 
+std::string subwordAt(const std::string& text, uint32_t line, uint32_t col, uint32_t len) {
+    
+    size_t pos = 0;
+    
+    //
+    for(uint32_t i = 0; i <= line; i++) {
+
+        size_t nextNL = text.find('\n', pos);
+        if (nextNL == std::string::npos) { nextNL = text.size(); }
+        
+        if (i == line) {
+
+            if (col >= nextNL - pos) { return ""; }
+            return text.substr(pos + col, len);
+        }
+        
+        pos = nextNL + 1;
+        if (pos >= text.size()) { return ""; }
+    }
+
+    return "";
+}
+
+std::string uriToPath(const std::string_view& uri)
+{
+	std::string path = std::string(lsp::Uri::parse(uri).path());
+
+	#ifdef _WIN32
+		path = (path.size() >= 3 && path[0] == '/' && path[2] == ':') ? path.substr(1) : path;
+	#endif
+
+	std::replace(path.begin(), path.end(), '/', '\\');
+
+	if(path.size() >= 2 && path[1] == ':')
+    	path[0] = std::toupper(path[0]);
+
+	return path;
+}
+
+//
+std::string pathToUri(const std::string& path)
+{
+    std::string uriPath = path;
+    
+#ifdef _WIN32
+
+    // backslashes zu slashes ersetzen
+    std::replace(uriPath.begin(), uriPath.end(), '\\', '/');
+    
+    // Windows Drive >> lowercase disc char + %3A
+    if (uriPath.size() >= 2 && uriPath[1] == ':') {
+        std::string drive = uriPath.substr(0, 1);
+        std::transform(drive.begin(), drive.end(), drive.begin(), ::tolower);
+        uriPath = "/" + drive + "%3A" + uriPath.substr(2);
+    }
+#else
+    if (!uriPath.empty() && uriPath[0] != '/') {
+        uriPath = "/" + uriPath;
+    }
+#endif
+    
+    return "file://" + uriPath;
+}
+
 void defaultSetupLexicalInstances(){
     
     g_UsedOperators = {
@@ -245,7 +309,7 @@ void processScriptAfterExecution(const std::string& scriptPath){
     g_LSPDatas.erase(--g_LSPDatas.end());
 }
 
-std::unordered_multimap<std::string, Definition> g_definitions = {};
+std::multimap<std::string, Definition> g_definitions = {};
 
 void registerDefinition(const std::string& scriptPath, const std::string& defiLabel, const std::string& defiLine, \
                         const std::pair<size_t, size_t>& defiTokenPos, size_t defiTokenLen){
@@ -258,15 +322,34 @@ void registerDefinition(const std::string& scriptPath, const std::string& defiLa
     // LOG << defiTokenLen << endln;
 
     // LOG << scriptPath << ":" << defiTokenPos.first << ":" << defiTokenPos.second << endln;
+    
+    //
+    std::string fullDefiLine = getScriptLine(g_currentlyEvaluatedScript, defiTokenPos.first);
 
-    g_definitions.emplace(defiLabel, Definition{
+    //
+    Definition currentDefi = Definition{
+
         .script         = scriptPath,
         .label          = defiLabel,
-        .definitionLine = defiLine,
+        // .definitionLine = defiLine,
+        .definitionLine = fullDefiLine,
         .defiTokenRow   = defiTokenPos.first,
         .defiTokenCol   = defiTokenPos.second,
         .defiTokenLen   = defiTokenLen
-    });
+    };
+
+    //
+    auto [begin, end] = g_definitions.equal_range(defiLabel);
+    for(auto it = begin; it != end; ++it){
+
+        const auto& label = it->first;
+        const auto& defi = it->second;
+
+        if(currentDefi == defi){ return; }
+    }
+
+    //
+    g_definitions.emplace(defiLabel, currentDefi);
 }
 
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){

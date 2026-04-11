@@ -49,6 +49,11 @@ void printMessage()
 	printMessageMethod<MessageType>();
 }
 
+std::string getLocationString(const Definition& defi){
+
+	return defi.script + ":" + std::to_string(defi.defiTokenRow) + ":" + std::to_string(defi.defiTokenCol);
+}
+
 LSPData provideLSPCache(const std::string& filePath){
 
 	LSPData data = getLSPData(filePath);
@@ -99,17 +104,6 @@ LSPData provideLSPCache(const std::string& filePath){
 
 thread_local bool g_running = false;
 
-std::string uriToPath(const std::string_view& uri)
-{
-	std::string path = std::string(lsp::Uri::parse(uri).path());
-
-	#ifdef _WIN32
-		path = (path.size() >= 3 && path[0] == '/' && path[2] == ':') ? path.substr(1) : path;
-	#endif
-
-	return path;
-}
-
 void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& connection){
 
 	auto state = std::make_shared<LspState>();
@@ -149,6 +143,8 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
                     //     .full = true
                     // },
 					.hoverProvider = true,
+					.definitionProvider = true,
+					.referencesProvider = true,
 				},
 				.serverInfo = lsp::InitializeResultServerInfo{
 					.name    = "Language Server",
@@ -181,7 +177,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 						return it != haystack.end();
 					};
 
-					const auto& text = state->documents[params.textDocument.uri.toString()];
+					const auto& text = state->documents[path];
 					const auto  line = params.position.line;
 					const auto  col  = params.position.character;
 					
@@ -283,7 +279,8 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 			const auto& change = params.contentChanges[0];
 
 			std::visit([&](const auto& c){
-				state->documents[params.textDocument.uri.toString()] = c.text;
+				const std::string path = uriToPath(params.textDocument.uri.toString());
+				state->documents[path] = c.text;
 			}, change);
 		}
 	)
@@ -291,7 +288,8 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 	.add<lsp::notifications::TextDocument_DidOpen>(
 		[state](lsp::notifications::TextDocument_DidOpen::Params&& params)
 		{
-			state->documents[params.textDocument.uri.toString()] = params.textDocument.text;
+			const std::string path = uriToPath(params.textDocument.uri.toString());
+			state->documents[path] = params.textDocument.text;
 		}
 	)
 
@@ -314,7 +312,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					state->applyLSPData(data);
 
 					// Text aus Cache holen statt Datei öffnen
-					const auto& text = state->documents[params.textDocument.uri.toString()];
+					const auto& text = state->documents[path];
 
 					const auto line = params.position.line;
 					const auto col  = params.position.character;
@@ -393,31 +391,268 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 		}
 	)
 
-	// .add<lsp::requests::TextDocument_Hover>(
-	// 	[](lsp::requests::TextDocument_Hover::Params&& params)
-	// 	{
-	// 		printMessage<lsp::requests::TextDocument_Hover>(params);
+	.add<lsp::requests::TextDocument_Definition>(
+		[state](lsp::requests::TextDocument_Definition::Params&& params)
+		{
+			return std::async(std::launch::deferred,
+				[state, params = std::move(params)]()
+				{
+					const std::string path = uriToPath(params.textDocument.uri.toString());
+					const auto line = params.position.line;
+					const auto col  = params.position.character;
 
-	// 		/*
-	// 		 * Handle the request asynchronously.
-	// 		 * It is executed in a worker thread by the message handler.
-	// 		 * This means a deferred future can be used and it is not necessary to spawn extra threads.
-	// 		 */
-	// 		return std::async(std::launch::deferred,
-	// 			[params = std::move(params)]()
-	// 			{
-	// 				// simulate longer running task
-	// 				// std::this_thread::sleep_for(std::chrono::seconds(2));
+					std::cerr << "[GotoDefinition] triggered at " << path << ":" << (line+1) << ":" << (col+1) << std::endl;
 
-	// 				// return the result
-	// 				// TextDocument_Hover::Result is NullOr<Hover>
-	// 				auto hover = lsp::Hover{
-	// 					.contents = "Hover result"
-	// 				};
-	// 				return lsp::requests::TextDocument_Hover::Result(std::move(hover));
-	// 			}
-	// 		);
-	// 	}
+					//
+					const auto& text = state->documents[path];
+
+					size_t lineStart = 0;
+					for(uint32_t i = 0; i < line; i++){
+						lineStart = text.find('\n', lineStart);
+						if(lineStart == std::string::npos) break;
+						lineStart++;
+					}
+
+					// // können Operatoren von Wörtern absplitten >> Trennung durch Space nicht nötig, Operatoren nicht behandel bar
+					// auto isWordChar = [](char c) {
+					// 	return std::isalnum(c) || c == '_';
+					// };
+
+					// können Operatoren nicht von Wörtern absplitten >> Trennung durch Space nötig
+					auto isWordChar = [](char c) {
+						return !std::isspace(c) && c != '(' && c != ')' && c != '{' 
+							&& c != '}' && c != '[' && c != ']' && c != ',' && c != ';';
+					};
+
+					size_t wordStart = lineStart + col;
+					while(wordStart > 0 && isWordChar(text[wordStart-1]))
+						wordStart--;
+					size_t wordEnd = lineStart + col;
+					while(wordEnd < text.size() && isWordChar(text[wordEnd]))
+						wordEnd++;
+
+					const auto word = text.substr(wordStart, wordEnd - wordStart);
+					std::cerr << "[GotoDefinition] word: " << word << std::endl;
+
+					//
+					const LSPData data = provideLSPCache(path);
+
+					//
+					std::vector<Definition> defs = {};
+
+					//
+					if(data.definitions.contains(word)){
+
+						auto [begin, end] = data.definitions.equal_range(word);
+						for(auto it = begin; it != end; ++it){
+
+							const auto& label = it->first;
+							const auto& defi = it->second;
+
+							std::cerr << "[GotoDefinition] " << defi.script << ":" << defi.defiTokenRow << ":" << defi.defiTokenCol << ":" << defi.defiTokenLen << std::endl;
+
+							if(!state->documents.contains(defi.script)){
+								std::ifstream file(defi.script);
+								state->documents[defi.script] = std::string(
+									std::istreambuf_iterator<char>(file),
+									std::istreambuf_iterator<char>()
+								);
+							}
+
+							if(subwordAt(state->documents[defi.script], defi.defiTokenRow - 1, defi.defiTokenCol - 1, defi.defiTokenLen) != defi.label){
+
+								std::cerr << "[GotoDefinition] Definition " << defi.definitionLine << " nicht mehr an erwarteter Position" << std::endl;
+								continue;
+							}
+
+							defs.emplace_back(defi);
+						}
+					}
+
+					//
+					if(defs.empty()){
+
+						//
+						return lsp::requests::TextDocument_Definition::Result{};
+					}
+
+					//
+					// std::reverse(defs.begin(), defs.end());
+					Definition* targetDefi = &defs[0];
+
+					for(size_t i = 0; i < defs.size(); i++){
+
+						// Wenn Cursor bereits auf letzter Defi ist bleibt die aktuelle einfach die start defi
+						if(line + 1 == defs[i].defiTokenRow && i < defs.size() - 1){
+							
+							targetDefi = &defs[i + 1];
+						}
+					}
+
+					std::cerr << "[GotoDefinition] Target Defi " << getLocationString(*targetDefi) << std::endl;
+
+					// targetDefi Location
+					lsp::Location loc{
+						.uri   = lsp::Uri::parse(pathToUri(targetDefi->script)),
+						.range = {
+							.start = { .line = (int32_t)targetDefi->defiTokenRow - 1, .character = (int32_t)targetDefi->defiTokenCol - 1 },
+							.end   = { .line = (int32_t)targetDefi->defiTokenRow - 1, .character = (int32_t)(targetDefi->defiTokenCol + targetDefi->defiTokenLen) - 1 }
+						}
+					};
+
+					// Alle Locations der gefundenen validen Defis
+					std::vector<lsp::Location> locations;
+					for(const auto& defi : defs){
+						locations.push_back(lsp::Location{
+							.uri   = lsp::Uri::parse(pathToUri(defi.script)),
+							.range = {
+								.start = { .line = (uint32_t)defi.defiTokenRow - 1, .character = (uint32_t)defi.defiTokenCol - 1 },
+								.end   = { .line = (uint32_t)defi.defiTokenRow - 1, .character = (uint32_t)(defi.defiTokenCol + defi.defiTokenLen) - 1 }
+							}
+						});
+					}
+
+					bool returnTargetDefi = true;
+
+					if(returnTargetDefi){ return lsp::requests::TextDocument_Definition::Result{loc}; }
+
+					return lsp::requests::TextDocument_Definition::Result{locations};
+				}
+			);
+		}
+	)
+
+	.add<lsp::requests::TextDocument_References>(
+		[state](lsp::requests::TextDocument_References::Params&& params)
+		{
+			return std::async(std::launch::deferred,
+				[state, params = std::move(params)]()
+				{
+					const std::string path = uriToPath(params.textDocument.uri.toString());
+					const auto line = params.position.line;
+					const auto col  = params.position.character;
+
+					std::cerr << "[GotoDefinition] triggered at " << path << ":" << (line+1) << ":" << (col+1) << std::endl;
+
+					//
+					const auto& text = state->documents[path];
+
+					size_t lineStart = 0;
+					for(uint32_t i = 0; i < line; i++){
+						lineStart = text.find('\n', lineStart);
+						if(lineStart == std::string::npos) break;
+						lineStart++;
+					}
+
+					// // können Operatoren von Wörtern absplitten >> Trennung durch Space nicht nötig, Operatoren nicht behandel bar
+					// auto isWordChar = [](char c) {
+					// 	return std::isalnum(c) || c == '_';
+					// };
+
+					// können Operatoren nicht von Wörtern absplitten >> Trennung durch Space nötig
+					auto isWordChar = [](char c) {
+						return !std::isspace(c) && c != '(' && c != ')' && c != '{' 
+							&& c != '}' && c != '[' && c != ']' && c != ',' && c != ';';
+					};
+
+					size_t wordStart = lineStart + col;
+					while(wordStart > 0 && isWordChar(text[wordStart-1]))
+						wordStart--;
+					size_t wordEnd = lineStart + col;
+					while(wordEnd < text.size() && isWordChar(text[wordEnd]))
+						wordEnd++;
+
+					const auto word = text.substr(wordStart, wordEnd - wordStart);
+					std::cerr << "[GotoDefinition] word: " << word << std::endl;
+
+					//
+					const LSPData data = provideLSPCache(path);
+
+					//
+					std::vector<Definition> defs = {};
+
+					//
+					if(data.definitions.contains(word)){
+
+						auto [begin, end] = data.definitions.equal_range(word);
+						for(auto it = begin; it != end; ++it){
+
+							const auto& label = it->first;
+							const auto& defi = it->second;
+
+							std::cerr << "[GotoDefinition] " << defi.script << ":" << defi.defiTokenRow << ":" << defi.defiTokenCol << ":" << defi.defiTokenLen << std::endl;
+
+							if(!state->documents.contains(defi.script)){
+								std::ifstream file(defi.script);
+								state->documents[defi.script] = std::string(
+									std::istreambuf_iterator<char>(file),
+									std::istreambuf_iterator<char>()
+								);
+							}
+
+							if(subwordAt(state->documents[defi.script], defi.defiTokenRow - 1, defi.defiTokenCol - 1, defi.defiTokenLen) != defi.label){
+
+								std::cerr << "[GotoDefinition] Definition " << defi.definitionLine << " nicht mehr an erwarteter Position" << std::endl;
+								continue;
+							}
+
+							defs.emplace_back(defi);
+						}
+					}
+
+					//
+					if(defs.empty()){
+
+						//
+						return lsp::requests::TextDocument_References::Result{};
+					}
+
+					//
+					// std::reverse(defs.begin(), defs.end());
+					Definition* targetDefi = &defs[0];
+
+					for(size_t i = 0; i < defs.size(); i++){
+
+						// Wenn Cursor bereits auf letzter Defi ist bleibt die aktuelle einfach die start defi
+						if(line + 1 == defs[i].defiTokenRow && i < defs.size() - 1){
+							
+							targetDefi = &defs[i + 1];
+						}
+					}
+
+					std::cerr << "[GotoDefinition] Target Defi " << getLocationString(*targetDefi) << std::endl;
+
+					// targetDefi Location
+					lsp::Location loc{
+						.uri   = lsp::Uri::parse(pathToUri(targetDefi->script)),
+						.range = {
+							.start = { .line = (int32_t)targetDefi->defiTokenRow - 1, .character = (int32_t)targetDefi->defiTokenCol - 1 },
+							.end   = { .line = (int32_t)targetDefi->defiTokenRow - 1, .character = (int32_t)(targetDefi->defiTokenCol + targetDefi->defiTokenLen) - 1 }
+						}
+					};
+
+					// Alle Locations der gefundenen validen Defis
+					std::vector<lsp::Location> locations;
+					for(const auto& defi : defs){
+						locations.push_back(lsp::Location{
+							.uri   = lsp::Uri::parse(pathToUri(defi.script)),
+							.range = {
+								.start = { .line = (uint32_t)defi.defiTokenRow - 1, .character = (uint32_t)defi.defiTokenCol - 1 },
+								.end   = { .line = (uint32_t)defi.defiTokenRow - 1, .character = (uint32_t)(defi.defiTokenCol + defi.defiTokenLen) - 1 }
+							}
+						});
+					}
+
+					bool returnTargetDefi = false;
+
+					// if(returnTargetDefi){ return lsp::requests::TextDocument_References::Result{loc}; }
+
+					return lsp::requests::TextDocument_References::Result{locations};
+				}
+			);
+		}
+	)
+
 	.add<lsp::requests::Shutdown>(
 		[]()
 		{
