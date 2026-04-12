@@ -8,12 +8,11 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/0_0_0_testEnv.bld
 
-fetch script "0_0_0_testInclude"
+fetch script ["0_0_0_testInclude"]
 
 decl main(int [a,b,c]){
 
     slog("Init Main")
-
     testFunction()
 }
 
