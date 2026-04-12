@@ -756,6 +756,30 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					for (const auto& [key, _] : data.memberVariables)  	findAll(key.first, T_VARIABLE);
 					for (const auto& op : data.operators)        		findAll(op, T_OPERATOR);
 
+					// Funktionstokens rausfiltern die nicht vor einer Klammer stehen
+					tokens.erase(
+						std::remove_if(tokens.begin(), tokens.end(), [&](const RawToken& tok) {
+							
+							if(tok.type != T_FUNCTION) return false;
+
+							// Position nach dem Token im Text finden
+							// dafür muss die absolute Position aus line/col zurückgerechnet werden
+							size_t absPos = 0;
+							uint32_t line = 0;
+							while(absPos < text.size() && line < tok.line){
+								if(text[absPos] == '\n') line++;
+								absPos++;
+							}
+							absPos += tok.col + tok.len;
+
+							// nächstes nicht-leerzeichen suchen
+							while(absPos < text.size() && std::isspace(text[absPos])) absPos++;
+
+							return absPos >= text.size() || text[absPos] != '(';
+						}),
+						tokens.end()
+					);
+
 					// Sortiert nach Position und innerhalb der Position nach type
 					// >> kleinerer Type wird immer nach vorne sortiert
 					std::sort(tokens.begin(), tokens.end(), [](const RawToken& a, const RawToken& b) {

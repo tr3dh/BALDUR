@@ -19,5 +19,5 @@ decl main(int [a,b,c]){
 //
 if(calledAs(__MainProc__)){
     
-    call("main", args(1,2,3))
+    call(string main => "main", args(1,2,3))
 }
