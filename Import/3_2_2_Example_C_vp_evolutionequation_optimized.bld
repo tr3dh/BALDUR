@@ -60,6 +60,14 @@ decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
 // disableDiffTemplateDefaults()
 setGenerateJLDebugCall(false)
 
+int nVoigtComps(-1)
+
+decl tVoigtCompsUniTensor(string ref label, int order){
+
+    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
+    return [ <- tUniExpr(label, order, nVoigtComps)]
+}
+
 //
 decl evaluateExample(int orderTSM, int dimension){
     
@@ -83,7 +91,8 @@ decl evaluateExample(int orderTSM, int dimension){
     string tResultLabel
     tIdn tIDNResult
 
-    int nVoigtComps = getNumOfVoigtComponents(dimension)
+    //
+    nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
     tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \

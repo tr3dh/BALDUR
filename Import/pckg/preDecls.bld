@@ -103,6 +103,23 @@ decl tIdnOnes(int order){ return [tIDN("ones", order)] }
 decl tExprEps(int order){ return [tExpr("eps", order)] }
 decl tIdnEps(int order){ return [tIDN("eps", order)] }
 
+// Vervielfältigung von Args über *= / *
+decl __mulAssign__(args ref prms, int n){
+
+    args prmsCpy <+ prms
+
+    for(int i = 0, i < n - 1, i ++){
+
+        prms -> unpackingEmplace(prmsCpy)
+    }
+}
+
+// erzeugt einen algebraischen Tensorausdruck mit uniformen Dimensionen
+decl tUniExpr(string ref label, int order, int uniDimension){
+
+    return [ <- tExpr(label, order, args(uniDimension) * order)]
+}
+
 //
 decl cofactor(tExpr ref lhs){ return [det(lhs) * transpose(inverse(lhs))] }
 
