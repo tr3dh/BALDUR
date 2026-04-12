@@ -49,11 +49,6 @@ void printMessage()
 	printMessageMethod<MessageType>();
 }
 
-std::string getLocationString(const Definition& defi){
-
-	return defi.script + ":" + std::to_string(defi.defiTokenRow) + ":" + std::to_string(defi.defiTokenCol);
-}
-
 LSPData provideLSPCache(const std::string& filePath){
 
 	LSPData data = getLSPData(filePath);

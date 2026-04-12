@@ -222,6 +222,13 @@ void defaultSetupLexicalInstances(){
     };
 }
 
+Scope* g_distroScope; 
+
+std::map<Script*, LSPData*> g_LSPDatas = {};
+std::multimap<std::string, Definition> g_definitions = {};
+
+std::vector<Script*> g_definitionToplevels = {};
+
 std::string g_lspEncoderKey = "*__$§%//BLD\\\\%§$*__";
 
 LSPData getLSPData(const std::string& path){
@@ -246,9 +253,6 @@ LSPData getLSPData(const std::string& path){
 
 void saveLSPData(LSPData& data, const std::string& path){
 
-    // bisher angestellte Defis kopieren und speichern
-    data.definitions = g_definitions;
-
     //
     ByteSequence bs;
     bs += data;
@@ -258,38 +262,25 @@ void saveLSPData(LSPData& data, const std::string& path){
     bs.toFile((fs::path(path).parent_path() / ".LSP_CACHE" / (fs::path(path).filename().string() + ".BYTESEQ")).string());
 }
 
-Scope* g_distroScope; 
-std::vector<LSPData*> g_LSPDatas = {};
-
-void processScopeBeforeDeletion(Scope* scope){
-
-    if(g_LSPDatas.empty()){ return; }
-    g_LSPDatas.back()->addScope(scope);
-}
-
-void processStaticScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope){
-
-    if(g_LSPDatas.empty()){ return; }
-    g_LSPDatas.back()->addStaticScope(tpIdx, scope);
-}
-
-void processMemberScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope){
-
-    if(g_LSPDatas.empty()){ return; }
-    g_LSPDatas.back()->addMemberScope(tpIdx, scope);
-}
+void processScopeBeforeDeletion(Scope* scope);
+void processStaticScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope);
+void processMemberScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope);
 
 void processScriptBeforeExecution(const std::string& scriptPath){
 
-    // >> aktuellste LSPData ist immer die letzte
-    g_LSPDatas.emplace_back(new LSPData());
-    // *g_LSPDatas.back() = getLSPData(scriptPath);
+    //
+    RETURNING_ASSERT(g_currentlyEvaluatedScript->scriptPath == scriptPath, "Inkonsistente Angabe des Skriptes bei LSPCache Erstellung",);
+    g_LSPDatas.try_emplace(g_currentlyEvaluatedScript, new LSPData());
+
+    //
+    g_definitionToplevels.emplace_back(g_currentlyEvaluatedScript);
 }
 
 void processScriptAfterExecution(const std::string& scriptPath){
 
     //
-    g_LSPDatas.back()->addAll();
+    g_LSPDatas[g_currentlyEvaluatedScript]->addAll();
+    g_LSPDatas[g_currentlyEvaluatedScript]->definitions = g_definitions;
 
     //
     for(auto& [idx, scope] : STRUCT::attribScopes){ processMemberScopeBeforeDeletion(idx, &scope); }
@@ -298,18 +289,28 @@ void processScriptAfterExecution(const std::string& scriptPath){
     // Distroscope wird erst am Ende von 'executeProgramm' dekonstruiert. Variablen Sollen 
     (*g_processScopeBeforeDeletion)(g_distroScope);
 
-    // Für Goto Defi einfach nach decl word und struct word suchen
-    // gleiches Prinzip für hover doku
-
     //
-    saveLSPData(*g_LSPDatas.back(), scriptPath);
-
-    //
-    delete g_LSPDatas.back();
-    g_LSPDatas.erase(--g_LSPDatas.end());
+    RETURNING_ASSERT(g_definitionToplevels.back() == g_currentlyEvaluatedScript, "Invalides Defintion Toplevel Script",);
+    g_definitionToplevels.pop_back();
 }
 
-std::multimap<std::string, Definition> g_definitions = {};
+void processScopeBeforeDeletion(Scope* scope){
+
+    if(!g_LSPDatas.contains(g_currentlyEvaluatedScript)){ return; }
+    g_LSPDatas[g_currentlyEvaluatedScript]->addScope(scope);
+}
+
+void processStaticScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope){
+
+    if(!g_LSPDatas.contains(g_currentlyEvaluatedScript)){ return; }
+    g_LSPDatas[g_currentlyEvaluatedScript]->addStaticScope(tpIdx, scope);
+}
+
+void processMemberScopeBeforeDeletion(TypeIndex tpIdx, Scope* scope){
+
+    if(!g_LSPDatas.contains(g_currentlyEvaluatedScript)){ return; }
+    g_LSPDatas[g_currentlyEvaluatedScript]->addMemberScope(tpIdx, scope);
+}
 
 void registerDefinition(const std::string& scriptPath, const std::string& defiLabel, const std::string& defiLine, \
                         const std::pair<size_t, size_t>& defiTokenPos, size_t defiTokenLen){
@@ -329,7 +330,7 @@ void registerDefinition(const std::string& scriptPath, const std::string& defiLa
     //
     Definition currentDefi = Definition{
 
-        .script         = scriptPath,
+        .script         = fs::absolute(scriptPath).string(),
         .label          = defiLabel,
         // .definitionLine = defiLine,
         .definitionLine = fullDefiLine,
@@ -339,7 +340,23 @@ void registerDefinition(const std::string& scriptPath, const std::string& defiLa
     };
 
     //
-    auto [begin, end] = g_definitions.equal_range(defiLabel);
+    std::multimap<std::string, Definition>* registerDefinitionAt = nullptr;
+    
+    //
+    if(g_currentlyEvaluatedScript == g_definitionToplevels.back()){
+
+        //
+        registerDefinitionAt = &g_definitions;
+    }
+    else{
+
+        //
+        RETURNING_ASSERT(g_LSPDatas.contains(g_currentlyEvaluatedScript), "LSPDatas beeinhalten aktuell ausgeführtes Skript nicht",);
+        registerDefinitionAt = &g_LSPDatas[g_currentlyEvaluatedScript]->definitions;
+    }
+    
+    //
+    auto [begin, end] = registerDefinitionAt->equal_range(defiLabel);
     for(auto it = begin; it != end; ++it){
 
         const auto& label = it->first;
@@ -349,7 +366,7 @@ void registerDefinition(const std::string& scriptPath, const std::string& defiLa
     }
 
     //
-    g_definitions.emplace(defiLabel, currentDefi);
+    registerDefinitionAt->emplace(defiLabel, currentDefi);
 }
 
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
@@ -418,6 +435,22 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
 
     // Aufruf des Alberich-Interpreters
     auto results = executeProgram(scriptPath, g_distroScope);
+
+    //
+    for(auto& [script, lspdata] : g_LSPDatas){
+        
+        // LOG << script->scriptPath << endln;
+
+        // for(auto& [key, val] : lspdata->variables){
+        //     LOG << key.first << endln;
+        // }
+
+        saveLSPData(*lspdata, script->scriptPath);
+        delete lspdata;
+    }
+
+    //
+    g_LSPDatas.clear();
 
     //
     delete g_distroScope;

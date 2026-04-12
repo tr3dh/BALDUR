@@ -19,9 +19,6 @@ std::string subwordAt(const std::string& text, uint32_t line, uint32_t col, uint
 std::string uriToPath(const std::string_view& uri);
 std::string pathToUri(const std::string& path);
 
-struct Definition;
-extern std::multimap<std::string, Definition> g_definitions;
-
 struct Definition{
 
     std::string script, label, definitionLine;
@@ -29,6 +26,17 @@ struct Definition{
 
     auto operator<=>(const Definition&) const = default;
 };
+
+inline std::string getLocationString(const Definition& defi){
+
+	return defi.script + ":" + std::to_string(defi.defiTokenRow) + ":" + std::to_string(defi.defiTokenCol);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Definition& def)
+{
+    os << "Definition for " << def.label << ", " << getLocationString(def);
+    return os;
+}
 
 extern std::string g_lspEncoderKey;
 
@@ -251,6 +259,25 @@ inline void fromByteSequence(std::multimap<Key, Val>& member, ByteSequence& seq)
 
         member.emplace(key, val);
     }
+}
+
+template <typename K, typename V, typename C, typename A>
+std::ostream& operator<<(std::ostream& os, const std::multimap<K, V, C, A>& mm)
+{
+    os << "{";
+    bool first = true;
+
+    for (const auto& [key, value] : mm)
+    {
+        if (!first)
+            os << "," << "\n";
+        first = false;
+
+        os << key << ": " << value;
+    }
+
+    os << "}";
+    return os;
 }
 
 void defaultSetupLexicalInstances();

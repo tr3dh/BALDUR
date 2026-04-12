@@ -1,0 +1,12 @@
+int g_Flag
+
+struct locals{
+
+    double[x,y,z]
+}
+
+decl testFunction(){
+  
+    int expInt = 10;
+    double expDb = 5.2;
+}
