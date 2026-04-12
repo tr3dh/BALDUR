@@ -129,17 +129,17 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 							"^", "%", "~", ".", ":", "?", "@", "#", "\\"
 						}
 					},
-					// .semanticTokensProvider = lsp::SemanticTokensOptions{
-                    //     .legend = lsp::SemanticTokensLegend{
-                    //         // Reihenfolge = Index! keyword=0, type=1, variable=2, function=3
-                    //         .tokenTypes   = { "keyword", "type", "variable", "function" },
-                    //         .tokenModifiers = {}
-                    //     },
-                    //     .full = true
-                    // },
 					.hoverProvider = true,
 					.definitionProvider = true,
 					.referencesProvider = true,
+					.semanticTokensProvider = lsp::SemanticTokensOptions{
+                        .legend = lsp::SemanticTokensLegend{
+                            // Reihenfolge : keyword=0, type=1, variable=2, function=3
+                            .tokenTypes   = { "keyword", "type", "enumMember", "function", "variable", "operator" },
+                            .tokenModifiers = {}
+                        },
+                        .full = true
+                    },
 				},
 				.serverInfo = lsp::InitializeResultServerInfo{
 					.name    = "Language Server",
@@ -643,6 +643,118 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 					// if(returnTargetDefi){ return lsp::requests::TextDocument_References::Result{loc}; }
 
 					return lsp::requests::TextDocument_References::Result{locations};
+				}
+			);
+		}
+	)
+
+	.add<lsp::requests::TextDocument_SemanticTokens_Full>(
+		[state](lsp::requests::TextDocument_SemanticTokens_Full::Params&& params)
+		{
+			return std::async(std::launch::deferred,
+				[state, params = std::move(params)]()
+				{
+					const std::string path = uriToPath(params.textDocument.uri.toString());
+					const LSPData data = provideLSPCache(path);
+					const auto& text = state->documents[path];
+
+					//
+					std::cerr << "dyn Syntaxhighlighting Abfrage" << std::endl;
+
+					// Token Typ Indizes, müssen unbedingt mit Angabe die beim Aktivieren des Providers gemacht worden ist übereinstimmen 
+					constexpr uint32_t T_KEYWORD  = 0;
+					constexpr uint32_t T_TYPE     = 1;
+					constexpr uint32_t T_ENUM     = 2;
+					constexpr uint32_t T_FUNCTION = 3;
+					constexpr uint32_t T_VARIABLE = 4;
+					constexpr uint32_t T_OPERATOR = 5;
+
+					struct RawToken {
+						uint32_t line, col, len, type;
+					};
+
+					std::vector<RawToken> tokens;
+
+					// Lambdafunc die alle Vorkommen eines Wortes im Text findet
+					auto findAll = [&](const std::string& word, uint32_t tokenType) {
+
+						size_t pos = 0;
+
+						while ((pos = text.find(word, pos)) != std::string::npos) {
+
+							// check ob wort vollständig ist
+							bool leftOk  = pos == 0 || !std::isalnum(text[pos-1]) && text[pos-1] != '_';
+							bool rightOk = pos + word.size() >= text.size()
+										|| !std::isalnum(text[pos + word.size()]) && text[pos + word.size()] != '_';
+
+							if (leftOk && rightOk) {
+
+								// Zeile und Spalte berechnen
+								uint32_t line = 0, col = 0;
+
+								for (size_t i = 0; i < pos; i++) {
+									if (text[i] == '\n') { line++; col = 0; }
+									else col++;
+								}
+								tokens.push_back({ line, col, (uint32_t)word.size(), tokenType });
+							}
+							pos += word.size();
+						}
+					};
+
+					// Herausfiltern der Tokenvorkommen
+					for (const auto& kw : state->keywords)       		findAll(kw, T_KEYWORD);
+					for (const auto& t  : state->typeKeywords)   		findAll(t,  T_TYPE);
+					for (const auto& [key, _]  : data.constKeywords)   	findAll(key.first,  T_ENUM);
+					for (const auto& [key, _] : data.functions)  		findAll(key.first, T_FUNCTION);
+					for (const auto& [key, _] : data.variables)  		findAll(key.first, T_VARIABLE);
+					for (const auto& [key, _] : data.staticVariables)  	findAll(key.first, T_VARIABLE);
+					for (const auto& [key, _] : data.memberVariables)  	findAll(key.first, T_VARIABLE);
+					for (const auto& op : data.operators)        		findAll(op, T_OPERATOR);
+
+					// Sortiert nach Position und innerhalb der Position nach type
+					// >> kleinerer Type wird immer nach vorne sortiert
+					std::sort(tokens.begin(), tokens.end(), [](const RawToken& a, const RawToken& b) {
+						if (a.line != b.line) return a.line < b.line;
+						if (a.col  != b.col)  return a.col  < b.col;
+						return a.type < b.type; // niedrigerer Typ-Index gewinnt
+					});
+
+					// Duplikate an gleicher Position entfernen
+					// durch sortierung fallen die Tokens mit häherem Type bei kollision immer raus
+					tokens.erase(
+						std::unique(tokens.begin(), tokens.end(), [](const RawToken& a, const RawToken& b) {
+							return a.line == b.line && a.col == b.col;
+						}),
+						tokens.end()
+					);
+					
+					// Delta-Encoding, relative Positionen für LSP Return angeben
+					std::vector<uint32_t> encoded;
+					encoded.reserve(tokens.size() * 5);
+
+					//
+					uint32_t prevLine = 0, prevCol = 0;
+					for (const auto& tok : tokens) {
+
+						uint32_t deltaLine = tok.line - prevLine;
+						uint32_t deltaCol  = deltaLine == 0 ? tok.col - prevCol : tok.col;
+
+						encoded.push_back(deltaLine);
+						encoded.push_back(deltaCol);
+						encoded.push_back(tok.len);
+						encoded.push_back(tok.type);
+						encoded.push_back(0); // modifier
+
+						prevLine = tok.line;
+						prevCol  = tok.col;
+					}
+
+					lsp::Array<uint32_t> lspData(encoded.begin(), encoded.end());
+
+					return lsp::requests::TextDocument_SemanticTokens_Full::Result(
+						lsp::SemanticTokens{ .data = lspData }
+					);
 				}
 			);
 		}
