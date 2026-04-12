@@ -675,6 +675,50 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 					std::vector<RawToken> tokens;
 
+					// Bereiche die ignoriert werden sollen (Kommentarzeilen und Strings)
+					std::vector<std::pair<size_t, size_t>> ignoredRanges;
+
+					size_t i = 0;
+					while(i < text.size()){
+						
+						// Zeilenkommentar
+						if(i + 1 < text.size() && text[i] == '/' && text[i+1] == '/'){
+
+							size_t start = i;
+
+							while(i < text.size() && text[i] != '\n') i++;
+							ignoredRanges.push_back({start, i});
+						}
+
+						// String
+						else if(text[i] == '"'){
+
+							size_t start = i++;
+
+							while(i < text.size() && text[i] != '"'){
+
+								if(text[i] == '\\') i++; // escape überspringen
+								i++;
+							}
+
+							ignoredRanges.push_back({start, i + 1});
+							i++;
+						}
+						else{
+							i++;
+						}
+					}
+
+					auto isIgnored = [&](size_t pos) -> bool {
+
+						for(const auto& [start, end] : ignoredRanges){
+
+							if(pos >= start && pos < end) return true;
+						}
+						
+						return false;
+					};
+
 					// Lambdafunc die alle Vorkommen eines Wortes im Text findet
 					auto findAll = [&](const std::string& word, uint32_t tokenType) {
 
@@ -687,7 +731,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 							bool rightOk = pos + word.size() >= text.size()
 										|| !std::isalnum(text[pos + word.size()]) && text[pos + word.size()] != '_';
 
-							if (leftOk && rightOk) {
+							if (leftOk && rightOk && !isIgnored(pos)) {
 
 								// Zeile und Spalte berechnen
 								uint32_t line = 0, col = 0;
