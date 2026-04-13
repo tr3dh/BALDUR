@@ -128,9 +128,6 @@
     //
     "editor.wordWrap": "off",
 
-    "editor.semanticHighlighting.enabled": true,
-    "editor.semanticHighlighting.mode": "full",
-
     // Vim Emulation Configs
     "vim.easymotion": true,
     "vim.incsearch": true,
