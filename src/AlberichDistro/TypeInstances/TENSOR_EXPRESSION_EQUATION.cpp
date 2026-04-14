@@ -175,6 +175,17 @@ bool TensorExpressionEquation::rearangeOnceFor(const TensorExpression& expr){
                 
                 break;
             }
+            case(TensorExpressionOperator::Contract):{
+                
+                TensorExpression tmp = std::move(lhs.children[notExprChildIdx]);
+                tmp.inverseAssign();
+                if(secondChildContainsExpr){ tmp.transposeAssign(); } 
+
+                rhs.contractAssign(tmp, lhs.contractNIndices, lhs.contractReversed);
+                lhs = std::move(lhs.children[exprChildIdx]);
+                
+                break;
+            }
             default:{
 
                 //
