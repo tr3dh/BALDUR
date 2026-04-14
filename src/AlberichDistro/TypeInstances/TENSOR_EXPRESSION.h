@@ -47,6 +47,9 @@ enum class TensorExpressionOperator{
     DyadicProduct,
     CrossingDoubleContraction,
     MirroringDoubleContraction,
+
+    // Veralgemeinertes Skalarprodukt || Contraction
+    Contract,
     
     Negation,
     Inversion,
@@ -110,6 +113,7 @@ struct TensorExpression{
 
     bool isConstant = false;
     bool isArgTmpl = false;
+    bool contractReversed = false;
 
     int contractNIndices = 0;
     int tensorOrder = -1;
@@ -152,6 +156,9 @@ struct TensorExpression{
     void dyadProductAssign(const TensorExpression& other);
     void mirroringDoubleContractionAssign(const TensorExpression& other);
     void crossingDoubleContractionAssign(const TensorExpression& other);
+
+    void contractAssign(const TensorExpression& other, int order, bool reversed);
+
     void transposeAssign();
     void inverseAssign();
     void zerosAssign();

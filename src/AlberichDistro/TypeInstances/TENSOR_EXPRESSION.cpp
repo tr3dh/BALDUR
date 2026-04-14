@@ -111,12 +111,33 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
 
     //
     if (lhs.Relation != rhs.Relation){ return lhs.Relation < rhs.Relation; }
+
     if (lhs.Operator != rhs.Operator){ return lhs.Operator < rhs.Operator; }
+
+
+
+    // In den else if Bedingungen die folgen ist damit klar dass beide Nodes Contract Operationen sind 
+    if(lhs.Relation != TkType::Operator || lhs.Operator != TensorExpressionOperator::Contract || rhs.Operator != TensorExpressionOperator::Contract){}
+
+    // Wenn Anzahl kontraktierter Indizes umgleich ist und keine Anzahl -1 ist, also beliebige Anzahlen repräsentiert
+    else if(lhs.contractNIndices != rhs.contractNIndices){
+
+        // Kontext für Sortierungsentscheidung
+        // . größere Kontraktionsstufen werden weiter nach vorn sortiert
+        // . Grund >> je größer die Kontraktionsstufe ist desto kleiner die Stufe des Operationsresultats,
+        //         >> Konsistenz mit anderweitiger Stufensortierung
+        // . Zudem ist Kontraktion für -1 eine autoevaluierende Funtkion, die damit alle anderen Kontraktionsstufen entsprechen kann
+        // . Damit spezifizieren konkrete Kontraktionsstufen die -1, Register werden primär nach Spezifizierung überladen
+
+        return lhs.contractNIndices > rhs.contractNIndices;
+    }
+    else if(lhs.contractReversed != rhs.contractReversed){ return lhs.contractReversed < rhs.contractReversed; }
 
     if(lhs.isConstant && rhs.isConstant && lhs.value != rhs.value){ return lhs.value > rhs.value; }
     else if(lhs.isConstant && !rhs.isConstant && rhs.Relation == TkType::Argument){ return true; }
     else if(!lhs.isConstant && lhs.Relation == TkType::Argument && rhs.isConstant){ return false; }
 
+    // Hier sehr früh und damit teuer (an dieser Stelle kommen mehr Abgleiche an, als an späterer)
     if((!lhsIsTemplate && !rhsIsTemplate && lhs.label != rhs.label)){
         return lhs.label < rhs.label;
     }
@@ -174,15 +195,15 @@ bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
     // _ERROR << lhs.toString() << " < " << rhs.toString() << " kann nicht aufgelöst werden" << endln;
 
     //
-    if(lhs.label != rhs.label){
-
-        return lhs.label < rhs.label;
-    }
-
-    //
     if(lhs.containsDimensions() && rhs.containsDimensions()){
         
         return lhs.dimensions < rhs.dimensions;
+    }
+
+    //
+    if(lhs.label != rhs.label){
+
+        return lhs.label < rhs.label;
     }
 
     //
@@ -597,7 +618,14 @@ TensorExpression TensorExpression::rebuild() const{
     RETURNING_ASSERT(children.size() > 0, "Rebuild für Nicht Arg node mit 0 childs nicht möglich : " + toString(), {});
     res = children[0].rebuild();
 
-    if(Relation == TkType::Operator && operatorMemberFunctions.contains(Operator)){
+    if(Relation == TkType::Operator && Operator == TensorExpressionOperator::Contract){
+
+        for (size_t i = 1; i < children.size(); i++) {
+
+            res.contractAssign(children[i].rebuild(), contractNIndices, contractReversed);
+        }
+    }
+    else if(Relation == TkType::Operator && operatorMemberFunctions.contains(Operator)){
 
         for (size_t i = 1; i < children.size(); i++) {
 
@@ -1411,6 +1439,93 @@ void TensorExpression::crossingDoubleContractionAssign(const TensorExpression& o
     }
 }
 
+void TensorExpression::contractAssign(const TensorExpression& other, int order, bool reversed){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Contract;
+
+    // ASSERTS
+    RETURNING_ASSERT(order != 1, "Aufgrund Konventions-Ambivalenz für einmalige Kontraktion sollte hierfür die Standard-Implementierung des DotProdukts genutzt werden",);
+    RETURNING_ASSERT((tensorOrder > 1 || tensorOrder == -1) && (other.tensorOrder > 1 || other.tensorOrder == -1), "Tensoren mit Stufe kleiner 1 and ... beteiligt",);
+
+    //
+    bool copySelf = false;
+
+    // Wenn Gepackte Konvention eingestellt ist ODER Operation eine andere ist als die vorhandene (Ungleiche Operation
+    // oder Anzahl kontrahierter Indizes) -> Node wird in eigene Abhängigkeiten verschoben
+    if(!unwrapOperands || (Relation != TkType::Operator ||
+        (Relation == TkType::Operator && (Operator != operation || contractNIndices != order || contractReversed != reversed)))){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = operation;
+        tensorOrder = children.begin()->tensorOrder;
+        dimensions = children.begin()->dimensions;
+        contractNIndices = order;
+        contractReversed = reversed;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+
+    // Anpassen TensorOrder
+    const TensorExpression& otherMember = children.back();
+
+    // Die -1 als übergebe Order dient dem Check und Eintrag wie viele Stufen kontraktiert werden können
+    // Es ist also eine Art maximale Autokontraktion, die beim Rebuild dann aber mit der gespeicherten Stufe
+    // aufgerufen wird. Für ein DotProdukt das permanent nach der maximalen Kontraktion sucht, also auch im Rebuild
+    // dient das ContractingDotProduct
+
+    // Templates die die -1 als Konktraktionsstufe gesetzt haben fallen durch die nächsten Checks durch und behalten die
+    // automatische Kontraktiosstufenermittlung
+
+    // Aufgrund des movIntoSelf ist tensorOrder eh -1 wenn erster Operand -1 als tensorOrder hat
+    if(otherMember.tensorOrder == -1){
+
+        tensorOrder = -1;
+    }
+
+    // >> Tensororder ist hier auf jeden Fall -1 wenn einer der Operanden die -1 als Ordnung hat
+    // Wenn Dimensionen von einem Operanden nicht berücksicht werden berücksichtigt das Ergebnis sie auch nicht
+    if(tensorOrder > -1 && !(containsDimensions() && other.containsDimensions())){
+
+        dimensions.clear();
+
+        //
+        if(contractNIndices == -1) { contractNIndices = std::min(tensorOrder, otherMember.tensorOrder); }
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 2 * contractNIndices;
+    }
+
+    // Regeln und Logik falls beide Operanden die Dimensionen berücksichtigen
+    else if(tensorOrder > -1){
+
+        if(contractNIndices == -1) { contractNIndices = std::min(tensorOrder, otherMember.tensorOrder); }
+
+        if(!contractReversed){
+
+            RETURNING_ASSERT(std::equal(dimensions.end() - contractNIndices, dimensions.end(), otherMember.dimensions.begin()), "Dimensions don't match",);
+            
+            dimensions.erase(dimensions.end() - contractNIndices, dimensions.end());
+            dimensions.insert(dimensions.end(), otherMember.dimensions.begin() + contractNIndices, otherMember.dimensions.end());
+        }
+        else{
+
+            RETURNING_ASSERT(std::equal(dimensions.end() - contractNIndices, dimensions.end(), std::reverse_iterator(otherMember.dimensions.begin() + contractNIndices)),
+                "Dimensions don't match",);
+
+            dimensions.erase(dimensions.end() - contractNIndices, dimensions.end());
+            dimensions.insert(dimensions.end(), otherMember.dimensions.begin() + contractNIndices, otherMember.dimensions.end());
+        }
+
+        //
+        tensorOrder = tensorOrder + otherMember.tensorOrder - 2 * contractNIndices;
+    }
+}
+
 void TensorExpression::transposeAssign(){
 
     //
@@ -1758,16 +1873,26 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     if(Relation != other.Relation){ return false; }
+
     if(Operator != other.Operator){ return false; }
+
+    // In den else if Bedingungen die folgen ist damit klar dass beide Nodes Contract Operationen sind 
+    if(Relation != TkType::Operator || Operator != TensorExpressionOperator::Contract || other.Operator != TensorExpressionOperator::Contract){}
+
+    // Wenn Anzahl kontraktierter Indizes umgleich ist und keine Anzahl -1 ist, also beliebige Anzahlen repräsentiert
+    else if(contractNIndices != other.contractNIndices && contractNIndices != -1 && other.contractNIndices != -1){ return false; }
+    else if(contractReversed != other.contractReversed){ return false; }
+
     if(isConstant && other.isConstant && !isConstantTemplate() && !other.isConstantTemplate() && (value != other.value)){ return false; }
     if(isConstant && other.isConstantTemplate() || isConstantTemplate() && other.isConstant){ return true; }
 
-    if(label != other.label){ return false; }
     if(tensorOrder != -1 && other.tensorOrder != -1 && tensorOrder != other.tensorOrder){ return false; }
-
     if(containsDimensions() && other.containsDimensions() && dimensions != other.dimensions){ return false; }
 
     if(children.size() != other.children.size()){ return false; }
+
+    // Erst möglichst spät da Stringabgleich am teuersten ist (bessere Lösung wären IDs)
+    if(label != other.label){ return false; }
     
     // Fallback für Nodes die keine Childs haben bislang aber identisch waren (relation, label, dimensions, etc. gleich)
     if(children.size() == 0 && other.children.size() == 0){ return true; }
@@ -1904,6 +2029,13 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     static substitutionMap subsMap = {};
 
     //
+    if(tensorExpressionDiffs.contains(std::make_pair(*this, other))){
+
+        *this = tensorExpressionDiffs[std::make_pair(*this, other)];
+        return;
+    }
+
+    //
     bool IsRepresentableByTemplate = false;
     auto it = tensorExpressionDiffTemplates.begin();
 
@@ -1978,11 +2110,7 @@ void TensorExpression::diffAssign(const TensorExpression& other){
     }
 
     //
-    if(tensorExpressionDiffs.contains(std::make_pair(*this, other))){
-
-        *this = tensorExpressionDiffs[std::make_pair(*this, other)];
-    }
-    else if(IsRepresentableByTemplate){
+    if(IsRepresentableByTemplate){
 
         // Aufstellen einer Substitutionstabelle mit <template label : Ersetzungs TensorExpression>
         // Kopie des Template Ausdrucks, in diesem findet die Ersetzung statt
@@ -2062,32 +2190,70 @@ void TensorExpression::diffAssign(const TensorExpression& other){
         //  || Operator == TensorExpressionOperator::DyadicProduct ||
         //         Operator == TensorExpressionOperator::CrossProduct || Operator == TensorExpressionOperator::MirroringDoubleContraction ||
         //         Operator == TensorExpressionOperator::CrossingDoubleContraction
-        else if(operatorMemberFunctions.contains(Operator)){
-
-            TensorExpression self = *this;
-            std::vector<TensorExpression> tmpChilds = self.children;
+        else if(Operator == TensorExpressionOperator::Contract){
 
             TensorExpression result;
             bool firstTerm = true;
 
-            for (size_t i = 0; i < tmpChilds.size(); i++) {
+            for (size_t i = 0; i < children.size(); i++) {
 
                 // Start mit dem ersten Kind
-                TensorExpression term = tmpChilds[0];
+                TensorExpression term = children[0];
 
                 if (i == 0) {
                     term.diffAssign(other);
                 }
 
                 // Die restlichen Kinder anhängen
-                for (size_t j = 1; j < tmpChilds.size(); j++) {
+                for (size_t j = 1; j < children.size(); j++) {
 
                     if (j == i) {
-                        TensorExpression tmp = tmpChilds[j];
+                        TensorExpression tmp = children[j];
+                        tmp.diffAssign(other);
+                        term.contractAssign(tmp, contractNIndices, contractReversed);
+                    } else {
+                        term.contractAssign(children[j], contractNIndices, contractReversed);;
+                    }
+                }
+
+                if (firstTerm) {
+                    result = std::move(term);
+                    firstTerm = false;
+                } else {
+                    result.addAssign(term);
+                }
+            }
+
+            *this = std::move(result);
+        }
+        // aus diff(dotProduct(a, b, c, ...), x) wird
+        // >> sum(dotProduct(diff(a,x), b, c), dotProduct(a, diff(b, x), c), ...)
+        //  || Operator == TensorExpressionOperator::DyadicProduct ||
+        //         Operator == TensorExpressionOperator::CrossProduct || Operator == TensorExpressionOperator::MirroringDoubleContraction ||
+        //         Operator == TensorExpressionOperator::CrossingDoubleContraction
+        else if(operatorMemberFunctions.contains(Operator)){
+
+            TensorExpression result;
+            bool firstTerm = true;
+
+            for (size_t i = 0; i < children.size(); i++) {
+
+                // Start mit dem ersten Kind
+                TensorExpression term = children[0];
+
+                if (i == 0) {
+                    term.diffAssign(other);
+                }
+
+                // Die restlichen Kinder anhängen
+                for (size_t j = 1; j < children.size(); j++) {
+
+                    if (j == i) {
+                        TensorExpression tmp = children[j];
                         tmp.diffAssign(other);
                         (term.*operatorMemberFunctions[Operator])(tmp);
                     } else {
-                        (term.*operatorMemberFunctions[Operator])(tmpChilds[j]);
+                        (term.*operatorMemberFunctions[Operator])(children[j]);
                     }
                 }
 
@@ -2299,6 +2465,27 @@ std::string TensorExpression::toString(size_t depth) const{
 
             res += std::string(magic_enum::enum_name(Operator)) + "(" + children.begin()->toString(depth+1) + ")";
         }
+    }
+    // durch Contract verknüpfte Child nodes
+    else if(Relation == TkType::Operator && Operator == TensorExpressionOperator::Contract && children.size() > 1){
+
+        //
+        std::string ops = std::format("{}{}{}{}{}", "" /* "{" */ , contractReversed ? ".." : ":", "", contractNIndices, "" /* "}" */);
+        
+        //
+        // res += "(";
+        res += depth > 0 ? "(" : "";
+        for(size_t childIdx = 0; childIdx < children.size(); childIdx++){
+
+            // print der Verknüfpung über Operator 
+            if(childIdx > 0){ res += " " + ops + " "; }
+
+            // print der node
+            res += children[childIdx].toString(depth+1);
+        }
+        res += depth > 0 ? ")" : " ";
+        // res += ")";
+        res += depth > 0 ? "" : "";        
     }
     // durch Operator verknüpfte Child nodes
     else if(Relation == TkType::Operator && Operator != TensorExpressionOperator::None && children.size() > 1 &&
@@ -3060,6 +3247,54 @@ namespace types{
                 member0.crossingDoubleContractionAssign(member1);
         },
         {});
+
+        registerFunction("__contractAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, INT::typeIndex, BOOL::typeIndex},
+            [__functionLabel__ = "__contractAssign__", __numArgs__ = 4](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1); GET_ARG(INT, 2); GET_ARG(BOOL, 3);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+                int& member2 = arg2->getMember();
+                bool& member3 = arg3->getMember();
+
+                member0.contractAssign(member1, member2, member3);
+        },
+        {});
+
+        registerFunction("contract", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex, INT::typeIndex, BOOL::typeIndex},
+            [__functionLabel__ = "contract", __numArgs__ = 4](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1); GET_ARG(INT, 2); GET_ARG(BOOL, 3);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+                int& member2 = arg2->getMember();
+                bool& member3 = arg3->getMember();
+
+                // Effizienter Kopiervorgang auf EvalRes Ebene
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                TensorExpression& retMember = ret0->getMember();
+
+                retMember.contractAssign(member1, member2, member3);
+        },
+        {TENSOR_EXPRESSION::typeIndex});
 
         //
         registerFunction("__inverseAssign__", {TENSOR_EXPRESSION::typeIndex},

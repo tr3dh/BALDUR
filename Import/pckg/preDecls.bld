@@ -123,6 +123,14 @@ decl __mulAssign__(int n, args prms){
     return prms
 }
 
+// Einige freigeschaltete Typen registrieren nur __smaller__(..., ...)
+// >> Implementierung allgemein gültigen __bigger__ Wrappers für Überladung des '>' Operators
+//    falls die entsprechende Typespezifische Funktion nicht registriert wurde
+decl __bigger__(void ref lhs, void ref rhs){
+
+    return [__smaller__(rhs, lhs)]
+}
+
 // erzeugt einen algebraischen Tensorausdruck mit uniformen Dimensionen
 decl tUniExpr(string ref label, int order, int uniDimension){
 
