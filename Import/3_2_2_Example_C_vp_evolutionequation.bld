@@ -11,28 +11,56 @@
 // - Ohne Interpreter DEBUG build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
 // - Mit Interpreter NDEBUG build: $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
 // - Ohne Interpreter NDEBUG build: $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
-
+// 
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/3_2_2_Example_C_vp_evolutionequation.bld
 // $ ./build/Baldur execute Import/3_2_2_Example_C_vp_evolutionequation.bld
+//
+// Benchmark :
+//
+// Ausführung dieses Skript mit Angabe verschiedener Stufen für die TSM
+//
+// Verwendete Hardware :
+// - RAM : 32 GB
+// - Prozessor : Intel i-7 13th Gen
+//
+// | Stufe | Evaluierzeit | größter Vereinfachter Ausruck | größte exportierte Tangente | längstes Julia Tangentenskript |
+// |-------|--------------|-------------------------------|-----------------------------|--------------------------------|
+// |   0   |    0.02 s    |              60 Nodes         |              50 Nodes       |              40 Zeilen         |
+// |   1   |    0.02 s    |             800 Nodes         |             250 Nodes       |             130 Zeilen         |
+// |   2   |    0.25 s    |           5 500 Nodes         |           1 400 Nodes       |             500 Zeilen         |
+// |   3   |    3    s    |          65 000 Nodes         |           8 600 Nodes       |           2 400 Zeilen         |
+// |   4   |   40    s    |         680 000 Nodes         |          60 000 Nodes       |          13 000 Zeilen         |
+// |   5   |   11    min  |       8 000 000 Nodes         |         450 000 Nodes       |          85 000 Zeilen         |
+// |   6   |    3.5  h    |     110 000 000 Nodes         |       3 600 000 Nodes       |         635 000 Zeilen         |
+// |-------|--------------|-------------------------------|-----------------------------|--------------------------------|
+
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__MainProc__), __script__ + " should be executed directly")
 
 // Includes
 fetch backend ["tensor"]
+
+//
+requires bool uniform g_unwrapOperands
+requires bool uniform g_compareTemplateDependencies
+requires bool uniform g_suppressAssertionWarnings
+requires bool uniform g_terminateAfterAssertionFailed
 
 // Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
 bool g_emplaceTemplatesUnwrapped = false
 setUnwrapOperands(g_emplaceTemplatesUnwrapped)
 
 // Flag für das Setzen erweiterter Simplifizierungsregeln
-// bool g_emplaceExtendedSimplifications = true
+// Wird nach dem Ermitteln der Spannungstangenten zurückgesetzt
+bool g_emplaceExtendedSimplifications = true
 
-// Includes
+//
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
 int [orderTSM, dimension] = 2, 3
-bool seperateFluctuations = true
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
@@ -41,13 +69,22 @@ decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
 // disableDiffTemplateDefaults()
 setGenerateJLDebugCall(false)
 
+int nVoigtComps(-1)
+
+decl tVoigtCompsUniTensor(string ref label, int order){
+
+    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
+    return [ <- tUniExpr(label, order, nVoigtComps)]
+}
+
 //
 decl evaluateExample(int orderTSM, int dimension){
-
+    
     // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
     // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
     // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten
 
+    //
     tExpr expDiff
     for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
     setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
@@ -55,11 +92,16 @@ decl evaluateExample(int orderTSM, int dimension){
     setDiffTemplate(exp(tmplScalar, orderTSM, false), tmplB, expDiff)
 
     //
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplA ^ i, tmplB, i * ((tmplA ^ (i - 1)) . diff(tmplA, tmplB))) }
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplScalar ^ i, tmplB, i * (tmplScalar ^ (i-1)) * diff(tmplScalar, tmplB)) }
+
+    //
     tExpr ref result
     string tResultLabel
     tIdn tIDNResult
 
-    int nVoigtComps = getNumOfVoigtComponents(dimension)
+    //
+    nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
     tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \
@@ -77,6 +119,10 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [sigmaY0, sigmaYTild] = tExpr("sigmaY", 0), tExpr("sigmaYTild", 0)
     tExpr [sigmaY] = sigmaY0 + sigmaYTild
 
+    // // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
+    // removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
+    // setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
+
     //
     tExpr devSigma = tExpr("devSigma", 1, args(nVoigtComps))
     devSigma = S . E . (epsilon - epsilonvp)
@@ -85,25 +131,25 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr epsilonvp_dot = inverse(eta) * macaulay((frobenius(devSigma) - sigmaY)) * inverse(frobenius(devSigma)) * (devSigma)
 
     // // anderer Ansatz
-    // [tExpr epsilonvp_TSM, args tangents] = taylorSeries(epsilonvp, Xi, orderTSM, false, true)
+    // [tExpr epsilonvp_TSM, args Tangent] = taylorSeries(epsilonvp, Xi, orderTSM, false, true)
 
     //
-    tExpr s_epsilonvp_TSM, args s_tangents
+    tExpr s_epsilonvp_TSM, args s_Tangent
 
     tExpr tangent = epsilonvp->asExternalNode("epsilonvp_0")
-    // s_tangents->emplace(<+tangent)
+    // s_Tangent->emplace(<+tangent)
     s_epsilonvp_TSM += tangent
 
     //
     for(int order = 1, order < orderTSM + 1, order++){
         
         //
-        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
+        static{ tExpr [tmpE, tangentE, tmpY, tangentY] }
 
         //
         tangentE = diff(epsilonvp, D, order)->asExternalNode("epsilonvp_E_" + string(order))
         tangentY = diff(epsilonvp, sigmaYTild, order)->asExternalNode("epsilonvp_Y_" + string(order))
-        // s_tangents->emplace(<+tangentE, <+tangetY)
+        // s_Tangent->emplace(<+tangentE, <+tangentY)
 
         //
         for((tmpE = (1.0/factorial(order)) * tangentE, int i = 0), i < order, i++){ tmpE := D }
@@ -135,68 +181,6 @@ decl evaluateExample(int orderTSM, int dimension){
     //
     // slog(tangent)
 
-    // Tangente in Julia Skript schreiben
-    result << tangent
-    tResultLabel = "sigma_0"
-    log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
-
-    //
-    tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
-
-    // Ermitteln der Tangenten
-    for(int order = 1, order < orderTSM + 1, order++){
-
-        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
-
-        // Tangente i mal ableiten und D mit null substituieren
-        tangentE = diff(sigma_TSM, D, order)
-        tangentE->replace(D, zeros(D))
-        tangentE->replace(sigmaYTild, tExpr(0))
-        wrpSimplify(tangentE)
-
-        logSeparator()
-        slog("Tangente sigma_E_" + string(order))
-        // slog(tangentE)
-
-        // Tangente i mal ableiten und sigmaYTild mit null substituieren
-        tangentY = diff(sigma_TSM, sigmaYTild, order)
-        tangentY->replace(D, zeros(D))
-        tangentY->replace(sigmaYTild, tExpr(0))
-        wrpSimplify(tangentY)
-
-        logSeparator()
-        slog("Tangente sigma_Y_" + string(order))
-        // slog(tangentY)
-        
-        //
-        logSeparator()
-
-        // Tangente in Julia Skript schreiben
-        result << tmpTangentE
-        tResultLabel = "sigma_E_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
-
-        //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
-
-        // Tangente in Julia Skript schreiben
-        result << tmpTangentY
-        tResultLabel = "sigma_Y_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
-
-        //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
-
-        // DREF vor Schleifenabbruch
-        if(order == orderTSM){ dref result }
-    }
-
     //
     devSigma->replace(epsilonvp, s_epsilonvp_TSM)
 
@@ -214,18 +198,102 @@ decl evaluateExample(int orderTSM, int dimension){
     // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
 
     //
+    slog("Gewählter Ansatz für sigma")
+    slog(sigma_TSM)
+    logSeparator()
+
+    //
     slog("Gewählter Ansatz für epsilonvp")
     slog(s_epsilonvp_TSM)
     logSeparator()
 
-    slog("Evolutiongleichung")
+    slog("Evolutionsgleichung")
     slog(epsilonvp_dot)
     logSeparator()
 
-    slog("erweiterte Evolutiongleichung")
+    slog("erweiterte Evolutionsgleichung")
     slog(epsilonvp_dot_TSM)
     logSeparator()
 
+    // Tangente in Julia Skript schreiben
+    result << tangent
+    tResultLabel = "sigma_0"
+    log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+    //
+    tIDNResult = toWrappedIDN(result)
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+    // Ermitteln der Tangenten
+    for(int order = 1, order < orderTSM + 1, order++){
+
+        static{
+
+            tExpr [tmpTangentE, tmpTangentY]
+            tExpr [tangentE, tangentY] <+ sigma_TSM, sigma_TSM
+        }
+
+        // Tangente i mal ableiten und D mit null substituieren
+        tangentE \diff= D
+        wrpSimplify(tangentE)
+        // slog(tangentE)
+
+        tmpTangentE <+ tangentE
+        tmpTangentE->replace(D, zeros(D))
+        tmpTangentE->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentE)
+
+        logSeparator()
+        slog("Tangente sigma_E_" + string(order))
+        slog(tmpTangentE)
+
+        // Tangente i mal ableiten und sigmaYTild mit null substituieren
+        tangentY \diff= sigmaYTild
+        wrpSimplify(tangentY)
+        // slog(tangentY)
+
+        tmpTangentY <+ tangentY
+        tmpTangentY->replace(D, zeros(D))
+        tmpTangentY->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentY)
+
+        logSeparator()
+        slog("Tangente sigma_Y_" + string(order))
+        slog(tmpTangentY)
+        
+        //
+        logSeparator()
+
+        // Tangente in Julia Skript schreiben
+        result << tmpTangentE
+        tResultLabel = "sigma_E_" + string(order)
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // Tangente in Julia Skript schreiben
+        result << tmpTangentY
+        tResultLabel = "sigma_Y_" + string(order)
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Import/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // DREF vor Schleifenabbruch
+        if(order == orderTSM){ dref result }
+    }
+
+    // Die erweiterten Simplifizierungstemplates zahlen sich in erster Linie für
+    // die Spannungstangenten aus
+    if(g_emplaceExtendedSimplifications){ removeExtendedSimplifications() }
+
+    //
     slog("Tangente epsilonvp_0")
 
     // Tangente i mal ableiten und D mit null substituieren
@@ -241,7 +309,7 @@ decl evaluateExample(int orderTSM, int dimension){
     // Tangente in Julia Skript schreiben
     result << tangent
     tResultLabel = "epsilonvp_0"
-    log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+    log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
     //
     tIDNResult = toWrappedIDN(result)
@@ -251,23 +319,33 @@ decl evaluateExample(int orderTSM, int dimension){
     // Ermitteln der Tangenten
     for(int order = 1, order < orderTSM + 1, order++){
 
-        static{ tExpr [tmpE, tangentE, tmpY, tangetY] }
+        static{
+
+            tExpr [tmpTangentE, tmpTangentY]
+            tExpr [tangentE, tangentY] <+ epsilonvp_dot_TSM, epsilonvp_dot_TSM
+        }
 
         // Tangente i mal ableiten und D mit null substituieren
-        tangentE = diff(epsilonvp_dot_TSM, D, order)
-        tangentE->replace(D, zeros(D))
-        tangentE->replace(sigmaYTild, tExpr(0))
+        tangentE \diff= D
         wrpSimplify(tangentE)
+
+        tmpTangentE <+ tangentE
+        tmpTangentE->replace(D, zeros(D))
+        tmpTangentE->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentE)
 
         logSeparator()
         slog("Tangente epsilonvp_E_" + string(order))
         // slog(tangentE)
 
         // Tangente i mal ableiten und sigmaYTild mit null substituieren
-        tangentY = diff(epsilonvp_dot_TSM, sigmaYTild, order)
-        tangentY->replace(D, zeros(D))
-        tangentY->replace(sigmaYTild, tExpr(0))
+        tangentY \diff= sigmaYTild
         wrpSimplify(tangentY)
+
+        tmpTangentY <+ tangentY
+        tmpTangentY->replace(D, zeros(D))
+        tmpTangentY->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentY)
 
         logSeparator()
         slog("Tangente epsilonvp_Y_" + string(order))
@@ -277,9 +355,9 @@ decl evaluateExample(int orderTSM, int dimension){
         logSeparator()
 
         // Tangente in Julia Skript schreiben
-        result << tangentE
+        result << tmpTangentE
         tResultLabel = "epsilonvp_E_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
         //
         tIDNResult = toWrappedIDN(result)
@@ -287,9 +365,9 @@ decl evaluateExample(int orderTSM, int dimension){
             examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
 
         // Tangente in Julia Skript schreiben
-        result << tangentY
+        result << tmpTangentY
         tResultLabel = "epsilonvp_Y_" + string(order)
-        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
         //
         tIDNResult = toWrappedIDN(result)
@@ -311,17 +389,23 @@ decl evaluateExample(int orderTSM, int dimension){
 decl main(){
 
     // // Check Registers
+    // isRvalue(...), isLValue(...), isReference(...), isInstance(...)
+    // logRes(...)
     // logRegisteredBackends()
     // logTypeRegister()
     // logNullRefs()
     // logFunctionRegister()
+    // logStaticFunctionRegister()
+    // logMemberFunctionRegister()
+    // logScope()
+    // logRootScope()
     // logPresetDiffs()
     // logDiffTemplates()
     // logSimplifications()
     
     //
     logSeparator()
-    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    log("[", timeStamp(), "] Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
     logSeparator()
 
     // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.
@@ -347,7 +431,7 @@ decl main(){
     callOnExtendedStack("evaluateExample", 1500, args(orderTSM, dimension))
 
     logSeparator()
-    slog("Ausführungszeit des Beispiels : ", now() - startTime, "s")
+    slog("Ausfuehrungszeit des Beispiels : ", now() - startTime, "s")
     logSeparator()
 
     return 0
