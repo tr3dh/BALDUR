@@ -897,6 +897,79 @@ void IndexNotatedTensorExpression::crossingDoubleContractionAssign(const IndexNo
     // reEvaluateIndices();
 }
 
+//
+void IndexNotatedTensorExpression::contractAssign(const IndexNotatedTensorExpression& other, int order, bool reversed){
+
+    //
+    static IndexNotationOperator scalarOperation = IndexNotationOperator::Multiplication;
+    static TensorExpressionOperator operation = TensorExpressionOperator::Contract;
+
+    // ASSERTS
+    RETURNING_ASSERT(tensorOrder > 1 && other.tensorOrder > 1, "Für Kontraktion werden Tensoren mit jeweils Tensorstufe > 1 benötigt",);
+    RETURNING_ASSERT(order > 1, "Nicht aufgelöste beliebige Kontraktion kann nciht in Indexnotation umgewandelt werden",);
+
+    //
+    bool copySelf = false;
+
+    //
+    if(Relation == TkType::Argument){ fillIndices(); }
+
+    // Wenn gepackt wird, der erste Operand kein Operator, keine scalareOperation
+    if(!unwrapOperands || Relation != TkType::Operator || Operator != scalarOperation){
+
+        // mov
+        if(this == &other){ copySelf = true; }
+        moveSelfIntoFirstChild();
+
+        // node erneut Aufsetzen
+        Relation = TkType::Operator;
+        Operator = scalarOperation;
+        notatedIndices = children.begin()->notatedIndices;
+        tensorOrder = children.begin()->tensorOrder;
+    }
+
+    //
+    children.emplace_back(copySelf ? children.back() : other);
+    if(children.back().Relation == TkType::Argument){ children.back().fillIndices(); }
+
+    //
+    const std::vector<NotationIndex>& operand0Indices = children.size() > 2 ? this->getSortedIndices() : children.begin()->getSortedIndices();
+    const std::vector<NotationIndex>& operand1Indices = children.back().getSortedIndices();
+
+    // Eigentliche Logik
+
+    if(reversed){
+
+        // Contract Reversed (..., i, j) -> (j, i, ...)
+        children.back().replaceIndices(
+            std::vector<NotationIndex>(operand1Indices.rend() - order, operand1Indices.rend()),     // die ersten n Indizes (reversed) von Operand 1 werden ersetzt
+            std::vector<NotationIndex>(operand0Indices.end() - order, operand0Indices.end()));          // mit den letzten n Indizes (forward) von Operand 0
+    }
+    else{
+
+        // Contract Forward (..., i, j) -> (i, j, ...)
+        children.back().replaceIndices(
+            std::vector<NotationIndex>(operand1Indices.begin(), operand1Indices.begin() + order),       // die ersten n Indizes (forward) von Operand 1 werden ersetzt
+            std::vector<NotationIndex>(operand0Indices.end() - order, operand0Indices.end()));          // mit den letzten n Indizes (forward) von Operand 0
+    }
+
+    // unwrap (nur für assoziative Operatoren)
+    if(unwrapOperands && children.back().Relation == TkType::Operator && children.back().Operator == scalarOperation){
+
+        // sichere Kopie
+        std::vector<IndexNotatedTensorExpression> tempChildren = children.back().children;
+        children.pop_back();
+        children.insert(children.end(), std::make_move_iterator(tempChildren.begin()), std::make_move_iterator(tempChildren.end()));
+    }
+
+    // Tensor Order muss nicht angepasst werde
+    notatedIndices = getUniqueChildIndices();
+    tensorOrder = notatedIndices.size();
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
 void IndexNotatedTensorExpression::transposeAssign(){
 
     //
@@ -2064,7 +2137,16 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
 
             res = convertToIndexNotation(expr.children[0]);
 
-            if(operatorFunctions.contains(expr.Operator)){
+            if(expr.Operator == TensorExpressionOperator::Contract){
+
+                RETURNING_ASSERT(expr.children.size() > 1, "...", res);
+
+                for(size_t idx = 1; idx < expr.children.size(); idx++){
+
+                    res.contractAssign(convertToIndexNotation(expr.children[idx], depth + 1), expr.contractNIndices, expr.contractReversed);
+                }
+            }
+            else if(operatorFunctions.contains(expr.Operator)){
 
                 RETURNING_ASSERT(expr.children.size() > 1, "...", res);
 
@@ -2396,6 +2478,47 @@ namespace types{
                 member0.crossingDoubleContractionAssign(member1);
         },
         {});
+
+        registerFunction("__contractAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INT::typeIndex, BOOL::typeIndex},
+            [__functionLabel__ = "__contractAssign__", __numArgs__ = 4](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 1);
+                GET_ARG(INT, 2); GET_ARG(BOOL, 3);
+
+                IndexNotatedTensorExpression& member0 = arg0->getMember();
+                IndexNotatedTensorExpression& member1 = arg1->getMember();
+
+                member0.contractAssign(member1, arg2->getMember(), arg3->getMember());
+        },
+        {});
+
+        registerFunction("contract", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, INT::typeIndex, BOOL::typeIndex},
+            [__functionLabel__ = "contract", __numArgs__ = 4](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 0); GET_ARG(INDEX_NOTATED_TENSOR_EXPRESSION, 1);
+                GET_ARG(INT, 2); GET_ARG(BOOL, 3);
+
+                IndexNotatedTensorExpression& member0 = arg0->getMember();
+                IndexNotatedTensorExpression& member1 = arg1->getMember();
+
+                returns[0].constructRValueByObject(inputs[0]->getData()->clone().release());
+
+                GET_RETURN(INDEX_NOTATED_TENSOR_EXPRESSION, 0);
+                ret0->getMember().contractAssign(member1, arg2->getMember(), arg3->getMember());
+        },
+        {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
 
         //
         registerFunction("__inverseAssign__", {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex},

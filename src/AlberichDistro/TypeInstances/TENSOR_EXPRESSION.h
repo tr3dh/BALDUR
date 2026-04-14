@@ -307,6 +307,8 @@ struct IndexNotatedTensorExpression{
     void transposeAssign();
     void inverseAssign();
 
+    void contractAssign(const IndexNotatedTensorExpression& other, int order, bool reversed);
+
     void diffAssign(const IndexNotatedTensorExpression& other);
 
     void traceAssign(int contractIndices);
