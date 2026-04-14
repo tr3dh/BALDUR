@@ -159,17 +159,17 @@ decl main(){
     // Return Adresse, Variablen aus lokalen Scopes, etc. für jeden rekursiven Funktionsaufruf
     // im Stack abspeichern muss und den Speicher solange nicht wieder freigeben kann bis der
     // Return stattgefunden hat. Damit wächst der benötigte Speicher im Stack bis zur maximalen
-    // Rekursionstiefe mit an. Aus diesen Grund reicht der Standardstack für Tensorausdrücke mit
+    // Rekursionstiefe mit an. Aus diesem Grund reicht der Standardstack für Tensorausdrücke mit
     // hoher Komplexität häufig nicht mehr aus.
     // Selbst simple, kaum rechenintensive Operationen wie 'wrap', 'unwrap', 'replace', 'rebuild', etc.
     // führen bei Tensorausdrücken mit hoher Komplexität (Check über 'mb->getNumOfNodes()')
     // zum Overflow des 2MB Interpreter Stacks.
     // Zum Umgehen des Problems kann der Interpreter mit der entsprechenden Linkerflag kompiliert
-    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer pthread
-    // erzeugt werden (laufzeitfähig), der einen stack der gewünschten Größe allokiert.
-    // Dazu dient die im folgenden aufgerufene Funktion.
+    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer nativer WinThread
+    // erzeugt werden (laufzeitfähig), der einen Stack der gewünschten Größe bereitstellt.
+    // Dazu dient die im Folgenden aufgerufene Funktion.
     // Die Funktion nimmt das Funktionslabel, die Stackgröße in MB und die Funktionsinputs gepackt als
-    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen pthread mit einem Stack der übergebenen
+    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen WinThread mit einem Stack der übergebenen
     // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
     // und der Thread wieder freigegeben.
     callOnExtendedStack("evaluateExample", 200, args(orderTSM, dimension))

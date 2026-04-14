@@ -49,6 +49,9 @@
 // Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
 // ---------------------------------------------------------------------------
 
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
+
 //
 fetch backend ["core", "tensor"]
 
@@ -111,8 +114,8 @@ int g_unwrapComplexityThreshold = 200000000
 //
 decl wrpSimplify(tExpr ref expr){
 
-    //
-    slog("simplifiziere", expr->getNumOfNodes(), "Nodes")
+    // //
+    // slog("simplifiziere", expr->getNumOfNodes(), "Nodes")
 
     //
     if(expr->getNumOfNodes() > g_unwrapComplexityThreshold){

@@ -49,11 +49,11 @@
 // Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
 // ---------------------------------------------------------------------------
 
-//
-fetch backend ["core", "tensor"]
-
 // Requires / Asserts für uniforms, args, aufruf, etc.
 assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
+
+//
+fetch backend ["core", "tensor"]
 
 // Assert uniforms
 // ...
@@ -114,10 +114,19 @@ decl __mulAssign__(args ref prms, int n){
     }
 }
 
+// Vervielfältigung von Args über *= / *
+decl __mulAssign__(int n, args prms){
+
+    // Recast benötigt
+
+    __mulAssign__(prms, n)
+    return prms
+}
+
 // erzeugt einen algebraischen Tensorausdruck mit uniformen Dimensionen
 decl tUniExpr(string ref label, int order, int uniDimension){
 
-    return [ <- tExpr(label, order, args(uniDimension) * order)]
+    return [<- tExpr(label, order, args(uniDimension) * order)]
 }
 
 //
