@@ -116,7 +116,7 @@ int main(void)
 
     //
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_WINDOW_HIGHDPI | FLAG_WINDOW_HIDDEN | FLAG_WINDOW_RESIZABLE);
-    InitWindow(600,600, "\t Adaptive, Lightweight Finite Element Tool (ALF)");
+    InitWindow(600,600, "\t Baldur IDLE");
 
     HWND hwnd = (HWND)CORE.handle;
     ASSERT(hwnd != NULL, "Windows window handle des Raylib fensters ist ungültig");
@@ -588,8 +588,8 @@ int main(void)
 
                     LinkRow("GitHub Repository", githubRepositoryUrl.c_str());
                     LinkRow("Releases", (githubRepositoryUrl + "/releases").c_str());
-                    LinkRow("Find out more", (githubRepositoryUrl+ "/blob/main/README.md").c_str());
-                    LinkRow("Find out even more (read Thesis)", (githubRepositoryUrl+"/blob/main/Recc/Thesis/Masterarbeit.pdf").c_str());
+                    LinkRow("Find out more", (githubRepositoryUrl + "/blob/main/README.md").c_str());
+                    LinkRow("Find out even more (read Thesis)", (githubRepositoryUrl+"/blob/main/Recc/Thesis/Masterarbeit_Rother_2026_public.pdf").c_str());
 
                     ImGui::EndTable();
                 }

@@ -10,7 +10,12 @@ std::vector<const char*> libaryNames = {
     "Dear ImGui",
     "rlImGui",
     "ImPlot",
-    "ImGuiFileBrowser"
+    "ImGuiFileBrowser",
+    "lsp-framework",
+    "LLVM",
+    "angle",
+    "Alberich",
+    "ByteSequence"
 };
 
 std::vector<const char*> libaryLicenses = {
@@ -23,7 +28,12 @@ std::vector<const char*> libaryLicenses = {
     "MIT",
     "MIT",
     "MIT",
-    "MIT"
+    "MIT",
+    "MIT",
+    "Apacke 2.0 with exeptions",
+    "ANGLE",
+    "MIT",
+    "MIT",
 };
 
 std::vector<const char*> libaryUrls = {
@@ -36,5 +46,10 @@ std::vector<const char*> libaryUrls = {
     "https://github.com/ocornut/imgui",
     "https://github.com/raylib-extras/rlImGui",
     "https://github.com/epezent/implot",
-    "https://github.com/AirGuanZ/imgui-filebrowser"
+    "https://github.com/AirGuanZ/imgui-filebrowser",
+    "https://github.com/leon-bckl/lsp-framework",
+    "https://github.com/llvm/llvm-project",
+    "https://github.com/google/angle",
+    "https://github.com/tr3dh/ALBERICH",
+    "https://github.com/tr3dh/ByteSequence",
 };

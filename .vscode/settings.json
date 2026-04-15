@@ -164,7 +164,15 @@
         "<C-z>": false,
         "<C-y>": false,
 },
+
+"[markdown]": {
+    "cSpell.enabled": true,
+    "ltex.enabled": true,
+    "latex-workshop.enabled": true
+},
+
 "cSpell.enabled": false,
 "ltex.enabled": false,
-"latex-workshop.enabled": false
+"latex-workshop.enabled": false,
+"cmake.sourceDirectory": "C:/Uni/IKM/BALDUR/thirdParty/angleRaylib/src"
 }
