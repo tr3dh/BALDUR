@@ -222,45 +222,6 @@ struct LspState {
     }
 };
 
-// Serealisierung der ByteSequence für beliebige std::pair
-template<typename first, typename second>
-inline void toByteSequence(const std::pair<first, second>& member, ByteSequence& seq) {
-
-    seq.insertMultiple(member.first, member.second);
-}
-
-template<typename first, typename second>
-inline void fromByteSequence(std::pair<first, second>& member, ByteSequence& seq) {
-
-    seq.extractMultipleReversed(member.first, member.second);
-}
-
-// Serealisierung der ByteSequence für beliebige std::pair
-template<typename Key, typename Val>
-inline void toByteSequence(const std::multimap<Key, Val>& member, ByteSequence& seq) {
-
-    for(const auto& [key, val] : member){
-
-        seq.insertMultiple(key, val);
-    }
-
-    seq.insertMultiple(member.size());
-}
-
-template<typename Key, typename Val>
-inline void fromByteSequence(std::multimap<Key, Val>& member, ByteSequence& seq) {
-
-    size_t size = seq.get<size_t>();
-
-    for(size_t i = 0; i < size; i++){
-
-        Key key; Val val;
-        seq.extractMultipleReversed(key, val);        
-
-        member.emplace(key, val);
-    }
-}
-
 template <typename K, typename V, typename C, typename A>
 std::ostream& operator<<(std::ostream& os, const std::multimap<K, V, C, A>& mm)
 {

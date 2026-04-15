@@ -7,10 +7,10 @@
 // Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter DEBUG build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
-// - Ohne Interpreter DEBUG build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
-// - Mit Interpreter NDEBUG build: $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
-// - Ohne Interpreter NDEBUG build: $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - build DEBUG    : $ make launch TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - run DEBUG      : $ make exec TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - build NDEBUG   : $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
+// - run NDEBUG     : $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Import/3_2_2_Example_C_vp_evolutionequation.bld
 // 
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Import/3_2_2_Example_C_vp_evolutionequation.bld
@@ -46,6 +46,9 @@ requires bool uniform g_unwrapOperands
 requires bool uniform g_compareTemplateDependencies
 requires bool uniform g_suppressAssertionWarnings
 requires bool uniform g_terminateAfterAssertionFailed
+
+// Einstellung
+__assign__(g_terminateAfterAssertionFailed, true)
 
 // Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
 bool g_emplaceTemplatesUnwrapped = false

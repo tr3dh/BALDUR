@@ -589,7 +589,7 @@ int main(void)
                     LinkRow("GitHub Repository", githubRepositoryUrl.c_str());
                     LinkRow("Releases", (githubRepositoryUrl + "/releases").c_str());
                     LinkRow("Find out more", (githubRepositoryUrl+ "/blob/main/README.md").c_str());
-                    LinkRow("Find out even more (read Thesis)", (githubRepositoryUrl+"/blob/main/Recc/Thesis/Studienarbeit.pdf").c_str());
+                    LinkRow("Find out even more (read Thesis)", (githubRepositoryUrl+"/blob/main/Recc/Thesis/Masterarbeit.pdf").c_str());
 
                     ImGui::EndTable();
                 }
