@@ -1,0 +1,328 @@
+// ---------------------------------------------------------------------------
+//
+//   ███████╗████████╗██████╗     ███████╗██╗   ██╗███╗   ██╗ ██████╗███████╗
+//   ██╔════╝╚══██╔══╝██╔══██╗    ██╔════╝██║   ██║████╗  ██║██╔════╝██╔════╝
+//   ███████╗   ██║   ██║  ██║    █████╗  ██║   ██║██╔██╗ ██║██║     ███████╗
+//   ╚════██║   ██║   ██║  ██║    ██╔══╝  ██║   ██║██║╚██╗██║██║     ╚════██║
+//   ███████║   ██║   ██████╔╝    ██║     ╚██████╔╝██║ ╚████║╚██████╗███████║
+//   ╚══════╝   ╚═╝   ╚═════╝     ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝╚══════╝                                                                       
+//                                                                                                                                         
+// ---------------------------------------------------------------------------
+// MIT License
+// ---------------------------------------------------------------------------
+// Copyright (c) 2025-2026 Tim Rother, Dr. Hendrik Geisler
+//
+// All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+// ---------------------------------------------------------------------------
+// !! HINWEIS
+// ---------------------------------------------------------------------------
+// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
+// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
+// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
+// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
+// Dokumentation, Einführung oder Anleitung.
+// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
+// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
+// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert,
+// denen die Ableitungen und Vereinfachungen in Folge unterliegen.
+// Wir übernehmen ausdrücklich keine Haftung oder Verantwortung für die Gültigkeit und
+// Richtigkeit der hier implementierten Inhalte!
+// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten die
+// Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
+// ---------------------------------------------------------------------------
+
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
+
+//
+fetch backend ["core", "tensor"]
+
+decl getNumOfVoigtComponents(int dimension){
+
+    double dimensionDb = double(dimension)
+    return [int(dimensionDb * (dimensionDb + 1) / 2)]
+}
+
+//
+decl factorial(int ref member){
+    
+    if(member <= 1){ return 1 }
+    return [member * factorial(member - 1)]
+}
+
+//
+decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
+
+    return { taylorSeries(function, x, seriesOrder, true, false) }
+}
+
+//
+decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplaceDiffs, bool returnTangents){
+
+    //
+    tExpr res
+    
+    args tangents
+
+    //
+    for(int order = 0, order < seriesOrder + 1, order++){
+        
+        //
+        static{ tExpr [tmp, tangent] }
+
+        //
+        tangent = { if(emplaceDiffs){ return { diff(function, x, order) } }; \
+            else { return { diff(function, x, order)->asExternalNode(function->getLabel() + string(order)) } }}
+
+        //
+        tangents->emplace(<+tangent)
+        tmp = (1.0/factorial(order)) * tangent
+        
+        // momentane Lösung statt exponential Funktion
+        for(int i = 0, i < order, i++){ tmp := x }
+
+        // Hier wird x durch konkreten Wert x0 ersetzt
+        res += wrpSimplified(tmp)
+    }
+
+    wrpSimplify(res)
+
+    return { if(returnTangents){ return [res, tangents] }; else{ return [res] } }
+}
+
+//
+int g_unwrapComplexityThreshold = 200000000
+
+//
+decl wrpSimplify(tExpr ref expr){
+
+    // //
+    // slog("simplifiziere", expr->getNumOfNodes(), "Nodes")
+
+    //
+    if(expr->getNumOfNodes() > g_unwrapComplexityThreshold){
+
+        //
+        slog("Simplifizierung geschieht aufgrund des zu komplexen Ausdrucks ohne vorherige Anpassung der Packungsstruktur")
+        slog("Komplexität des Ausdrucks", expr->getNumOfNodes())
+
+        simplify(expr)
+        return {}
+    }
+
+    // Wenn unwrapOperands bereits auf false gesetzt ist unterscheidet ist wrpSimplify gleichbedeutend mit simplify
+    if(!getUnwrapOperands()){
+        
+        simplify(expr)
+        return {}
+    }
+    
+    // Flag muss geändert werden damit rebuild beim simplify nicht wieder alles entpackt
+    setUnwrapOperands(false)
+
+    //
+    expr = wrap(expr)
+    simplify(expr)
+
+    //
+    setUnwrapOperands(true)
+
+    expr = unwrap(expr)
+    simplify(expr)
+}
+
+decl wrpSimplified(tExpr expr){
+
+    wrpSimplify(expr)
+    return [<-expr]
+}
+
+decl toWrappedIDN(tExpr ref expr){
+
+    bool tmp = getUnwrapOperands()
+
+    setUnwrapOperands(false)
+    tIdn res = toIDN(wrap(expr))
+
+    setUnwrapOperands(tmp)
+
+    return [<-res]
+}
+
+decl toUnwrappedIDN(tExpr ref expr){
+
+    bool tmp = getUnwrapOperands()
+
+    setUnwrapOperands(true)
+    tIdn res = toIDN(unwrap(expr))
+
+    setUnwrapOperands(tmp)
+
+    return [<-res]
+}
+
+//
+decl requireDiffs(int ref order, args tangents, tExpr ref dExpr){
+    
+    //
+    for(int i = 0, i < tangents->size(), i++){
+
+        static{ tExpr ref expr }
+        expr << tangents->get(i)
+
+        requireDiffs(order, expr, dExpr)
+
+        if(i == tangents->size() - 1){ dref expr }
+    }
+}
+
+//
+decl removeRequiredDiffs(int ref order, args ref tangents, tExpr ref dExpr){
+
+    //
+    for(int i = 0, i < tangents->size(), i++){
+
+        static{ tExpr ref expr }
+        expr << tangents->get(i)
+
+        removeRequiredDiffs(order, expr, dExpr)
+
+        if(i == tangents->size() - 1){ dref expr }
+    }
+}
+
+//
+decl requireDiffs(int ref order, tExpr ref expr, tExpr ref dExpr){
+    
+    return [requireDiffs(order, expr, dExpr, expr->getLabel(), dExpr->getLabel())]
+}
+
+//
+decl removeRequiredDiffs(int ref order, tExpr ref expr, tExpr ref dExpr){
+
+    return [removeRequiredDiffs(order, expr, dExpr, expr->getLabel(), dExpr->getLabel())]
+}
+
+//
+decl requireDiffs(int ref order, tExpr ref expr, tExpr ref dExpr, string ref exprLabel, string ref dExprLabel){
+
+    // taylorReihen enthalten ableitungen 1 bis orderTSM
+    for(int i = 1, i < order + 1, i++){
+
+        static{
+            string [prevTExprLabel, currentTExprLabel] = exprLabel, " "
+            tExpr [prevDiff, currentDiff] = expr, tExpr()
+        }
+
+        // prevDiff muss hier geupdated werden, da gesetzte Ableitungsregel aus dem letzten durchlauf
+        // berücksichtig werden soll
+        currentTExprLabel = "d" + exprLabel + string(i) + "_d" + dExprLabel + string(i)
+        prevDiff, currentDiff = diff(expr, dExpr, i-1), diff(expr, dExpr, i),
+
+        //
+        setDiff(prevDiff->asExternalNode(prevTExprLabel), dExpr, currentDiff->asExternalNode(currentTExprLabel))
+        
+        //
+        prevTExprLabel = currentTExprLabel
+    }
+}
+
+//
+decl removeRequiredDiffs(int ref order, tExpr ref expr, tExpr ref dExpr, string ref exprLabel, string ref dExprLabel){
+
+    // taylorReihen enthalten ableitungen 1 bis orderTSM
+    for(int i = 1, i < order + 1, i++){
+
+        static{
+            string [prevTExprLabel, currentTExprLabel] = exprLabel, " "
+            tExpr [prevDiff, currentDiff] = expr, tExpr()
+        }
+
+        // prevDiff muss hier geupdated werden, da gesetzte Ableitungsregel aus dem letzten durchlauf
+        // berücksichtig werden soll
+        currentTExprLabel = "d" + exprLabel + string(i) + "_d" + dExprLabel + string(i)
+        prevDiff, currentDiff = diff(expr, dExpr, i-1), diff(expr, dExpr, i),
+
+        //
+        removeEmplacedDiff(prevDiff->asExternalNode(prevTExprLabel), dExpr)
+        
+        //
+        prevTExprLabel = currentTExprLabel
+    }
+}
+
+decl __expAssign__(tExpr ref lhs, int ref rhs){
+
+    bool lhsIsScalar = lhs->getOrder() == 0
+
+    if(rhs < 1 && !lhsIsScalar){
+
+        lhs <- identity(lhs)
+        return {}
+    }
+    else if(rhs < 1){
+
+        lhs <- tExpr(1)
+        return {}
+    }
+
+    //
+    tExpr res <+ lhs
+
+    //
+    for(int i = 0, i < rhs - 1, i++){
+
+        if(lhsIsScalar){ res *= lhs } 
+        else{ res .= lhs }
+    }
+
+    lhs <- res
+}
+
+decl exp(tExpr ref x, int ref order){ return [exp(x, order, true)] }
+
+decl exp(tExpr ref x, int ref order, bool simplifyResult){
+
+    //
+    tExpr res 
+
+    //
+    for(int i = 0, i < order + 1, i++){
+
+        res += (1.0/factorial(i)) * (x ^ i) 
+    }
+
+    if(simplifyResult){ wrpSimplify(res) }
+    return res
+}
+
+decl smplfDiff(tExpr ref expr, tExpr ref dExpr, int amount){
+
+    tExpr tmp <+ expr
+
+    for(int i = 0, i < amount + 1, i++){
+
+        tmp \diff= dExpr
+        wrpSimplify(tmp)
+    }
+
+    return tmp
+}

@@ -39,8 +39,8 @@ __OUT/
 .LSP_CACHE/
 
 #
-Import/juliaScripts/*
-Import/!juliaScripts/.gitignore
+Examples/juliaScripts/*
+Examples/!juliaScripts/.gitignore
 
 __LPECONFIG.JSON
 

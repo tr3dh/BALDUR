@@ -25,7 +25,7 @@ copyTmp:
 	find build -type f \( -name '*.exe' -o -name '*.dll' -o -name '*.a' \) -exec cp --parents {} tmp/ \;
 
 	cp -r Recc tmp/
-	cp -r Import tmp/
+	cp -r Examples tmp/
 	cp -r Documentation tmp/
 	cp -r Batch tmp/
 	cp -f .VERSION tmp/

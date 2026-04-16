@@ -1,0 +1,183 @@
+// ---------------------------------------------------------------------------
+//                              Example 3.2.2 A
+// ---------------------------------------------------------------------------
+// Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
+// "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
+// von Hedrik Geisler, 2025
+// Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
+//
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_A_ve_evolutionequation.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_A_ve_evolutionequation.bld
+//
+// Für Release
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_A_ve_evolutionequation.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_A_ve_evolutionequation.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/3_2_2_Example_A_ve_evolutionequation.bld
+
+//
+fetch backend ["tensor"]
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// bool g_emplaceExtendedSimplifications = true
+
+// Includes
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+//
+string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.2", "Modelling of the evolution equation of viscoelasticity"
+int [orderTSM, dimension] = 5, 2
+
+//
+decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }
+
+decl printArgs(int a, args b, int c){
+    slog(b)
+}
+
+//
+decl evaluateExample(int orderTSM, int dimension){
+
+    // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
+    // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
+    // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten 
+    tExpr expDiff
+    for(i = 0, i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
+    setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
+
+    //
+    tExpr ref result
+    string tResultLabel
+    tIdn tIDNResult
+
+    int nVoigtComps = getNumOfVoigtComponents(dimension)
+
+    //
+    tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \
+                                                tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
+
+    void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [sigma, E] = (tExpr("sigma", 1, args(nVoigtComps)), E0 + Xi)
+    tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [epsilonv] = tExpr("epsilonv", 1, args(nVoigtComps))
+    tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
+
+    // Evolutionsgleichung der internen Variable
+    tExpr epsilonv_dot = (inverse(eta) * S) . E . (epsilon - epsilonv)
+    
+    // Approximation der internen Variable durch Taylorreihe
+    [tExpr epsilonv_TSM, args tangents] = taylorSeries(epsilonv, Xi, orderTSM, false, true)
+
+    // Dieser Ausdruck wird eigentlich benötigt es handelt es um die Gleichung mit der
+    // die erweiterte Evolutionsgleichung der internen Variable gleichgesetzt wird um die Tangenten zu ermitteln
+    requireDiffs(orderTSM, tangents, t)
+    tExpr epsilonv_TSM_dot = diff(epsilonv_TSM, t)
+    wrpSimplify(epsilonv_TSM_dot)
+    removeRequiredDiffs(orderTSM, tangents, t)
+
+    // Einsetzen der Approximation der internen Variable in Evolutionsgleichung
+    tExpr epsilonv_dot_TSM <+ epsilonv_dot
+    epsilonv_dot_TSM->replace(epsilonv, epsilonv_TSM)
+    wrpSimplify(epsilonv_dot_TSM)
+
+    // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
+    // Ableitung der Approximation der internen Variable
+    // Dadurch ergibt sich die Gleichung (3.75) [Geisler]
+    //
+    // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
+    // 
+    // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
+
+    //
+    // slog("Setze", epsilonv_TSM_dot, "gleich mit", epsilonv_dot_TSM)
+
+    // Ermitteln der Tangenten
+    for(int order = 0, order < orderTSM + 1, order++){
+
+        static{
+
+            // res container
+            tExpr tangent
+            result << tangent
+        }
+
+        // Tangente i mal ableiten und Xi mit null substituieren
+        tangent = diff(epsilonv_dot_TSM, Xi, order)
+        tangent->replace(Xi, zeros(Xi))
+
+        // Tangente abschließend simplifizieren
+        wrpSimplify(tangent)
+
+        // Tangente in Julia Skript schreiben
+        tResultLabel = "epsilonv_dot_" + string(order)
+        
+        //
+        log("Writing Tangents '", tResultLabel, "' wrapped IDN Representation to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString(tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // DREF vor Schleifenabbruch
+        if(order == orderTSM){ dref result }
+    }
+
+    //
+    logSeparator()
+
+    //
+    slog("Example evaluated")
+}
+
+//
+decl main(){
+
+    // // Check Registers
+    // logRegisteredBackends()
+    // logTypeRegister()
+    // logNullRefs()
+    // logFunctionRegister()
+    // logPresetDiffs()
+    // logDiffTemplates()
+    // logSimplifications()
+    
+    //
+    logSeparator()
+    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
+
+    // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.
+    // Rekursive Aufrufe verbrauchen sehr schnell Stack-Speicher, da sich das Programm die
+    // Return Adresse, Variablen aus lokalen Scopes, etc. für jeden rekursiven Funktionsaufruf
+    // im Stack abspeichern muss und den Speicher solange nicht wieder freigeben kann bis der
+    // Return stattgefunden hat. Damit wächst der benötigte Speicher im Stack bis zur maximalen
+    // Rekursionstiefe mit an. Aus diesem Grund reicht der Standardstack für Tensorausdrücke mit
+    // hoher Komplexität häufig nicht mehr aus.
+    // Selbst simple, kaum rechenintensive Operationen wie 'wrap', 'unwrap', 'replace', 'rebuild', etc.
+    // führen bei Tensorausdrücken mit hoher Komplexität (Check über 'mb->getNumOfNodes()')
+    // zum Overflow des 2MB Interpreter Stacks.
+    // Zum Umgehen des Problems kann der Interpreter mit der entsprechenden Linkerflag kompiliert
+    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer nativer WinThread
+    // erzeugt werden (laufzeitfähig), der einen Stack der gewünschten Größe bereitstellt.
+    // Dazu dient die im Folgenden aufgerufene Funktion.
+    // Die Funktion nimmt das Funktionslabel, die Stackgröße in MB und die Funktionsinputs gepackt als
+    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen WinThread mit einem Stack der übergebenen
+    // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
+    // und der Thread wieder freigegeben. 
+    callOnExtendedStack("evaluateExample", 200, args(orderTSM, dimension))
+
+    return 0
+}
+
+// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
+if(calledAs(__MainProc__)){
+
+    return [main()]
+}

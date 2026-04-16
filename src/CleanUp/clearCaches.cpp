@@ -17,8 +17,8 @@ void clearCache(const std::string& modelPath) {
 
 void clearCaches(){
 
-    // Löscht alle .RESULTCACHE Dateien rekursiv aus Import
-    runWinCommand("cmd.exe /C for /R ..\\Import %f in (*.RESULTCACHE) do @del /F /Q \"%f\"");
+    // Löscht alle .RESULTCACHE Dateien rekursiv aus Examples
+    runWinCommand("cmd.exe /C for /R ..\\Examples %f in (*.RESULTCACHE) do @del /F /Q \"%f\"");
 }
 
 void clearBin() {

@@ -1,0 +1,362 @@
+// ---------------------------------------------------------------------------
+//
+//    ███████╗████████╗██████╗     ██████╗ ███████╗ ██████╗██╗     ███████╗
+//    ██╔════╝╚══██╔══╝██╔══██╗    ██╔══██╗██╔════╝██╔════╝██║     ██╔════╝
+//    ███████╗   ██║   ██║  ██║    ██║  ██║█████╗  ██║     ██║     ███████╗
+//    ╚════██║   ██║   ██║  ██║    ██║  ██║██╔══╝  ██║     ██║     ╚════██║
+//    ███████║   ██║   ██████╔╝    ██████╔╝███████╗╚██████╗███████╗███████║
+//    ╚══════╝   ╚═╝   ╚═════╝     ╚═════╝ ╚══════╝ ╚═════╝╚══════╝╚══════╝
+//                                                                                                                                         
+// ---------------------------------------------------------------------------
+// MIT License
+// ---------------------------------------------------------------------------
+// Copyright (c) 2025-2026 Tim Rother, Dr. Hendrik Geisler
+//
+// All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+// ---------------------------------------------------------------------------
+// !! HINWEIS
+// ---------------------------------------------------------------------------
+// Diese Datei ist ein optionaler Include der Skriptsprache Baldur.
+// Sie ist Teil einer Umgebung, die der grundlegenden Einrichtung der
+// Sprachbeispiele dient und keinesfalls zu verwechseln ist mit einer
+// umfassenden Standardbibliothek, einer zwingendbenötigten Skriptbasis,
+// Dokumentation, Einführung oder Anleitung.
+// Dieses Skript setzt bereits Backendoptionen und -parameter, die die
+// Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
+// Zudem werden Ableitungs- und Vereinfachungsregeln implementiert,
+// denen die Ableitungen und Vereinfachungen in Folge unterliegen.
+// Wir übernehmen ausdrücklich keine Haftung oder Verantwortung für die Gultigkeit und
+// Richtigkeit der hier implementierten Inhalte!
+// Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten die
+// Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
+// ---------------------------------------------------------------------------
+
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__Include__), __script__ + " is an Include and shouldnt be executed directly")
+
+//
+fetch backend ["core", "tensor"]
+
+// Assert uniforms
+// ...
+
+// Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
+// DISABLE_AUTOMATIC_DREF()
+
+//
+requires bool uniform g_unwrapOperands                          // Einstellen der Konvention
+requires bool uniform g_compareTemplateDependencies             // Einstellen erweiterter Konsistenzableich
+requires bool uniform g_suppressAssertionWarnings               // Einstellen Unterdrückung von Assertions
+requires bool uniform g_terminateAfterAssertionFailed           // Einstellen Abbruch des Programms nach erster fehlgeschlagener Assertion
+
+requires int uniform g_recommedSubstitutionFromComplexity       // Einstellen ab wann Substitution in Jl-Skript Generierung angetestet wird 
+requires int uniform g_forceSubstitutionFromComplexity          // Einstellen ab wann Substitution in JL-Skript Generierung forciert wird
+                                                                // und Generierung terminiert wenn Grenzwert nicht eingehalten werden kann
+
+requires bool uniform g_automaticDrefEnabled                    // steuert automatische Dereferenzierung
+
+// Konstanten
+registerConst("PI",                  3.1415926535897930)                    // Kreiszahl PI
+registerConst("EULER",               2.7182818284590450)                    // Eulersche Zahl e
+registerConst("PLANCK",              6.62607015*10.0^(-34.0))               // Planksches Wirkungsquantum h [J . s]
+registerConst("HBAR",                PLANCK / (2.0 * 3.1415926535897930))   // reduziertes Planksches Wirkungsquantum [J . s]
+registerConst("SPEED_OF_LIGHT",      2.99792458*10.0^(8.0))                 // Lichtgeschwindigkeit c [m/s]
+registerConst("GRAVITATIONAL_CONST", 6.67430*10.0^(-11.0))                  // Gravitationskonstante G [m^3/kg/s^2]
+registerConst("BOLTZMANN",           1.380649*10.0^(-23.0))                 // Boltzmann-Konstante k_B [J/K]
+registerConst("AVOGADRO",            6.02214076*10.0^(23.0))                // Avogadro-Konstante N_A [1/mol]
+registerConst("GAS_CONST",           8.3144626180)                          // Universelle Gaskonstante R [J/mol/K]
+registerConst("ELEMENTARY_CHARGE",   1.602176634*10.0^(-19.0))              // Elementarladung e [C]
+registerConst("ELECTRON_MASS",       9.1093837015*10.0^(-31.0))             // Elektronenmasse m_e [kg]
+registerConst("PROTON_MASS",         1.67262192369*10.0^(-27.0))            // Protonenmasse m_p [kg]
+registerConst("NEUTRON_MASS",        1.67492749804*10.0^(-27.0))            // Neutronenmasse m_n [kg]
+registerConst("EPSILON_0",           8.8541878128*10.0^(-12.0))             // elektrische Feldkonstante ε₀ [F/m]
+registerConst("MU_0",                1.25663706212*10.0^(-6.0))             // magnetische Feldkonstante μ₀ [H/m]
+registerConst("FINE_STRUCTURE",      7.2973525693*10.0^(-3.0))              // Feinstrukturkonstante α (dimensionlos)
+registerConst("GRAVITY_EARTH",       9.80665)                               // Normale Erdbeschleunigung g [m/s²]
+
+// const keywords
+registerConst("triggerAssert", false)
+registerConst("passAssert", true)
+registerConst("contractForward", false)
+registerConst("contractReversed", true)
+
+// Arg handling
+decl sum(args prms){ return [prms->chainByOperator("+=")] }
+decl product(args prms){ return [prms->chainByOperator("*=")] }
+
+// Printformatierung
+int separatorWidth = 90
+string [space, separatorSequence] = " ", "="
+string separator = separatorWidth * separatorSequence
+
+//
+decl logSpace(){ log(space) }
+decl logSeparator(){ log(separator) }
+
+// Standardmatritzen für Tensorausdrücke der Stufe <order>
+decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
+decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
+decl tExprZeros(int order){ return [tExpr("zeros", order)] }
+decl tIdnZeros(int order){ return [tIDN("zeros", order)] }
+decl tExprOnes(int order){ return [tExpr("ones", order)] }
+decl tIdnOnes(int order){ return [tIDN("ones", order)] }
+decl tExprEps(int order){ return [tExpr("eps", order)] }
+decl tIdnEps(int order){ return [tIDN("eps", order)] }
+
+// Vervielfältigung von Args über *= / *
+decl __mulAssign__(args ref prms, int n){
+
+    args prmsCpy <+ prms
+
+    for(int i = 0, i < n - 1, i ++){
+
+        prms -> unpackingEmplace(prmsCpy)
+    }
+}
+
+// Vervielfältigung von Args über *= / *
+decl __mulAssign__(int ref n, args ref prms){
+
+    int cachedN = n
+
+    recast("args",  n) <+ prms
+    __mulAssign__(n, cachedN)
+}
+
+// Einige freigeschaltete Typen registrieren nur __smaller__(..., ...)
+// >> Implementierung allgemein gültigen __bigger__ Wrappers für Überladung des '>' Operators
+//    falls die entsprechende Typespezifische Funktion nicht registriert wurde
+decl __bigger__(void ref lhs, void ref rhs){
+
+    return [__smaller__(rhs, lhs)]
+}
+
+decl __detach__(void ref var){
+    
+    return [recast("void",  var)]
+}
+
+// erzeugt einen algebraischen Tensorausdruck mit uniformen Dimensionen
+decl tUniExpr(string ref label, int order, int uniDimension){
+
+    return [<- tExpr(label, order, args(uniDimension) * order)]
+}
+
+//
+decl cofactor(tExpr ref lhs){ return [det(lhs) * transpose(inverse(lhs))] }
+
+// !! Funktionsdeklaration überschreibt vom Interpreter standardmäßig definierte Funktion 'frobenius',
+//    die einfache Containerbildung betreibt und die konkrete Ermittlung der Frobenius Norm einer gewissen
+//    an das Julia Skript auslagern 
+decl frobenius(tExpr ref lhs){
+
+    if(lhs->getOrder() == 0){ return lhs }
+    else if(lhs->getOrder() == 1){ return [sqrt(lhs . lhs)]}
+    return [sqrt(trace(transpose(lhs) . lhs))]
+}
+
+// Template Deklarationen für Ableitungs und Vereinfachungs Templates
+
+// Konstantentemplates
+tExpr [CnstTmpl]                                = tExprCnstTmpl()
+tExpr [CnstTmplA, CnstTmplB]                    = tExprCnstTmpl("CnstTmplA"), tExprCnstTmpl("CnstTmplB")
+
+// Argtemplates
+tExpr [ScalarArgTmplA, ScalarArgTmplB]          = tExprArgTmpl("ScalarArgTmplA", 0), tExprArgTmpl("ScalarArgTmplB", 0)
+tExpr [ArgTmplA, ArgTmplB]                      = tExprArgTmpl("ArgTmplA"), tExprArgTmpl("ArgTmplB")
+
+// Instanztemplates
+tExpr [zerosInstanceTemplate]                   = tExprInstTmpl("zeros")
+tExpr [onesInstanceTemplate]                    = tExprInstTmpl("ones")
+tExpr [identityInstanceTemplate]                = tExprInstTmpl("Identity")
+tExpr [epsInstanceTemplate]                     = tExprInstTmpl("eps")
+
+// std Templates für Tensoren konkreter Stufe
+tExpr [tmplScalar, otherTmplScalar]             = tExprTmpl("tmplScalar", 0), tExprTmpl("otherTmplScalar", 0)
+tExpr [tmplVector]                              = tExprTmpl("tmplVec", 1)
+tExpr [tmplMatrix]                              = tExprTmpl("tmplMat", 2)
+tExpr [tmplTensor]                              = tExprTmpl("tmplTensor", -1)
+
+// std Templates für beliebig stufige Tensoren
+tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
+
+// Simplifizierungen
+
+// Vereinfachungen von Skalaren Standardmatritzen zu Konstanten
+setEqual(zeros(tmplScalar), tExpr(0))
+setEqual(identity(tmplScalar), tExpr(1))
+setEqual(ones(tmplScalar), tExpr(1))
+setEqual(tExpr("eps", 0), tExpr(1))
+
+// Operationesvereinfachung für Konstanten
+setEqual(tmplA * 1, tmplA)
+setEqual(1 * tmplA, tmplA)
+setEqual(tmplA * 0, zeros(tmplA))
+setEqual(0 * tmplA, zeros(tmplA))
+setEqual(tmplScalar + 0, tmplScalar)
+setEqual(0 + tmplScalar, tmplScalar)
+setEqual(tmplScalar - 0, tmplScalar)
+setEqual(0 - tmplScalar, (-1) * tmplScalar)
+
+// Vereinfachung von Standard Operationen
+setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
+setEqual(ArgTmplA + CnstTmplA * ArgTmplA, (CnstTmplA + 1) * ArgTmplA)
+setEqual(CnstTmplA * ArgTmplA + CnstTmplB * ArgTmplA, (CnstTmplA + CnstTmplB) * ArgTmplA)
+setEqual(ArgTmplA - ArgTmplA, zeros(ArgTmplA))
+setEqual(ArgTmplA - CnstTmplA * ArgTmplA, (CnstTmplA - 1) * ArgTmplA)
+setEqual(CnstTmplA * ArgTmplA - CnstTmplB * ArgTmplA, (CnstTmplA - CnstTmplB) * ArgTmplA)
+
+decl emplaceExtendedSimplifications(){
+    
+    setEqual((tmplA + tmplB) + tmplB, tmplA + 2 * tmplB)
+    setEqual((tmplB + tmplA) + tmplB, tmplA + 2 * tmplB)
+    setEqual((tmplA + tmplScalar * tmplB) + tmplB, tmplA + (tmplScalar + 1) * tmplB)
+    setEqual((tmplA + tmplB) + tmplScalar * tmplB, tmplA + (tmplScalar + 1) * tmplB)
+    setEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB, tmplA + (tmplScalar + otherTmplScalar) * tmplB)
+
+    setEqual(CnstTmplA * (CnstTmplB * tmplB), (CnstTmplA * CnstTmplB) * tmplB)
+}
+
+decl removeExtendedSimplifications(){
+    
+    removeEqual((tmplA + tmplB) + tmplB)
+    removeEqual((tmplB + tmplA) + tmplB)
+    removeEqual((tmplA + tmplScalar * tmplB) + tmplB)
+    removeEqual((tmplA + tmplB) + tmplScalar * tmplB)
+    removeEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB)
+
+    removeEqual(CnstTmplA * (CnstTmplB * tmplB))
+}
+
+// Diese Simplifizierungen sind vergleichsweise teuer, simplifizieren aber stark
+// Zudem sind sie ausschließlich für die Vereinfachung von gepackten Ausdrücken ausgelegt
+if(!variableExists("g_emplaceExtendedSimplifications")){}
+else if(typename(g_emplaceExtendedSimplifications) != "bool"){}
+else if(g_emplaceExtendedSimplifications == true){
+
+    emplaceExtendedSimplifications()
+}
+
+// Nullmatrix Vereinfachungen
+setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
+setEqual(tmplA + zerosInstanceTemplate, tmplA)                                          // (trivial)
+setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
+setEqual(tmplA - zerosInstanceTemplate, tmplA)
+setEqual(zerosInstanceTemplate * tmplScalar, zeros(zerosInstanceTemplate))               // *
+setEqual(tmplScalar * zerosInstanceTemplate, zeros(zerosInstanceTemplate))               // (trivial)
+setEqual(zerosInstanceTemplate * CnstTmpl, zerosInstanceTemplate)                       // *
+setEqual(CnstTmpl * zerosInstanceTemplate, zerosInstanceTemplate)
+setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
+setEqual(tmplA . zerosInstanceTemplate, zeros(tmplA . zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate .n tmplA, zeros(zerosInstanceTemplate .n tmplA))         // .n
+setEqual(tmplA .n zerosInstanceTemplate, zeros(tmplA .n zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate .. tmplA, zeros(zerosInstanceTemplate .. tmplA))         // ..
+setEqual(tmplA .. zerosInstanceTemplate, zeros(tmplA .. zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate : tmplA, zeros(zerosInstanceTemplate : tmplA))           // :
+setEqual(tmplA : zerosInstanceTemplate, zeros(tmplA : zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate \x tmplA, zeros(zerosInstanceTemplate \x tmplA))         // \x
+setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
+setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
+setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplate))
+
+// Einheitsmatrix Vereinfachungen
+
+// Diese Ausdrücke erfordert teilweise zusätzliche Konsistenzchecks bei der Repräsentierungsüberprüfung
+// Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
+// dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
+// 'setCompareTemplateDependencies(true)'
+setEqual(identity(tmplA) . tmplA, tmplA)                                                                                            // .
+setEqual(tmplA . identity(tmplA), tmplA)
+setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
+setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityInstanceTemplate \(x) identityInstanceTemplate))     // \(x)
+
+// Vereinfachungen für Container
+setEqual(tmplA . inverse(tmplA), identity(tmplA))
+setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+setEqual(inverse(inverse(tmplA)), tmplA)
+setEqual(transpose(transpose(tmplA)), tmplA)
+setEqual(sqrt(tmplScalar) * sqrt(tmplScalar), tmplScalar)
+
+// Aufsetzen des Default Verhaltens bei der Ableitung von Tensorausdrücken
+
+//
+bool diffTemplateDefaultsEnabled = false
+
+decl enableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(true)] }
+decl disableDiffTemplateDefaults(){ return [setDiffTemplateDefaults(false)] }
+
+// Allgemeine Regelung, die Interpreterinterne überschreibt
+decl setDiffTemplateDefaults(bool val){
+
+    if(val == diffTemplateDefaultsEnabled){ return {} }
+
+    if(diffTemplateDefaultsEnabled => val){
+
+        // Diff Template Emplace von d tmplA / d tmplA und d ArgTmplA / d ArgTmplA
+        // nicht redundant >> wenn templates sortiert und in register geschrieben werden wird
+        // Reihenfolge ohne emplace d ArgTmplA / d ArgTmplA template wie folgt aufgestellt:
+        // . diff(argTmplA, tmplB) = ...
+        // . diff(tmplA, tmplA) = ...
+        // Beim Abgleich von diff(inst, inst) wird zuerst d argTmplA / d tmplB als matching template gefunden
+        // Deshalb muss das d ArgTmplA / d ArgTmplA berücksichtigt werden, dieses wird noch vor d argTmplA / d tmplB
+        // sortiert und wird für Fälle in denen Instanzen nach sich selbst abgeleitet werden zuerst als matching template
+        // gefunden
+        setDiffTemplate(tmplA, tmplA, identity(tmplA \(x) tmplA))
+        setDiffTemplate(ArgTmplA, tmplB, zeros(ArgTmplA \(x) tmplB))
+        setDiffTemplate(ArgTmplA, ArgTmplA, identity(ArgTmplA \(x) ArgTmplA))
+    }
+    else{
+
+        removeEmplacedDiffTemplate(tmplA, tmplA)
+        removeEmplacedDiffTemplate(ArgTmplA, tmplB)
+        removeEmplacedDiffTemplate(ArgTmplA, ArgTmplA)
+    }
+}
+
+//
+enableDiffTemplateDefaults()
+
+// Konkretisierte Ableitungsregeln
+
+// Ableitungen von standard Instanzen (trivial aber kann beschleunigung verursachen)
+setDiffTemplate(zerosInstanceTemplate, tmplA, zeros(zerosInstanceTemplate \(x) tmplA))
+setDiffTemplate(onesInstanceTemplate, tmplA, zeros(onesInstanceTemplate \(x) tmplA))
+setDiffTemplate(identityInstanceTemplate, tmplA, zeros(identityInstanceTemplate \(x) tmplA))
+setDiffTemplate(epsInstanceTemplate, tmplA, zeros(epsInstanceTemplate \(x) tmplA))
+setDiffTemplate(CnstTmpl, tmplA, zeros(tmplA))
+
+// Skalar Multiplikation mit Konstante
+setDiffTemplate(CnstTmpl * tmplA, tmplB, CnstTmpl * diff(tmplA, tmplB))
+setDiffTemplate(tmplA * CnstTmpl, tmplB, CnstTmpl * diff(tmplA, tmplB))
+
+// Ableitung von Containern
+setDiffTemplate(inverse(tmplScalar), tmplB, (-1) * inverse(tmplScalar * tmplScalar) * diff(tmplScalar, tmplB))
+setDiffTemplate(inverse(tmplA), tmplB, ((-1) * inverse(tmplA)) . diff(tmplA, tmplB) . inverse(tmplA))
+setDiffTemplate(transpose(tmplA), tmplB, transpose(diff(tmplA, tmplB)))
+setDiffTemplate(det(tmplA), tmplB, det(tmplA) * trace(inverse(tmplA) . diff(tmplA, tmplB)))
+setDiffTemplate(trace(tmplA), tmplB, identity(tmplA) : (diff(tmplA, tmplB)))
+setDiffTemplate(macaulay(tmplScalar), tmplB, (signum(tmplScalar) + 1) * 0.5 * diff(tmplScalar, tmplB))
+setDiffTemplate(signum(tmplA), tmplB, zeros(tmplA \(x) tmplB))
+setDiffTemplate(sqrt(tmplScalar), tmplB, 0.5 * inverse(sqrt(tmplScalar)) * diff(tmplScalar, tmplB))
+
+// // redundant wenn frobenius norm über bekannte Operationen definiert wird wie sqrt(trace(transpose(...) . ...))
+// setDiffTemplate(frobenius(tmplVector), tmplB, (tmplVector * inverse(frobenius(tmplVector))) . diff(tmplVector, tmplB))
+// setDiffTemplate(frobenius(tmplMatrix), tmplB, (tmplMatrix * inverse(frobenius(tmplMatrix))) .. diff(tmplMatrix, tmplB))

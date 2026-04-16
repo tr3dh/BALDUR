@@ -217,7 +217,7 @@ int main(void)
 
     //
     CodeEditor editor;
-    // editor.openScript("Import/exp.bld");
+    // editor.openScript("Examples/exp.bld");
 
     Terminal terminal;
 

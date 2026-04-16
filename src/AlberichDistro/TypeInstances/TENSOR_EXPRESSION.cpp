@@ -496,7 +496,7 @@ TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn
     TensorExpression(labelIn, tensorOrderIn){
 
     //
-    RETURNING_ASSERT(tensorOrder == dimensionsIn.size(), "build von " + toString() + " failed",);
+    RETURNING_ASSERT(tensorOrder == dimensionsIn.size() || dimensions.empty(), "build von " + toString() + " failed",);
 
     //
     dimensions = dimensionsIn;

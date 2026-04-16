@@ -334,7 +334,7 @@ doxygen:
 	$(PACMAN) $(MINGW_PREFIX)-graphviz
 	$(PACMAN) $(MINGW_PREFIX)-qt5-base
 
-# Doxy generieren über $ doxygen .Doxygen/Doxyfile.Import
+# Doxy generieren über $ doxygen .Doxygen/Doxyfile.Examples
 
 # html anschauen über 
 

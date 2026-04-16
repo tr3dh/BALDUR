@@ -141,7 +141,7 @@ typedef struct tagBITMAPINFOHEADER {
   LONG  biXPelsPerMeter;
   LONG  biYPelsPerMeter;
   DWORD biClrUsed;
-  DWORD biClrImportant;
+  DWORD biClrExamplesant;
 } BITMAPINFOHEADER, *PBITMAPINFOHEADER;
 
 #include <objbase.h>

@@ -41,7 +41,7 @@ flush:
 	rm build/*.ini
 
 clearCaches:
-	find Import -type f -name '*.RESULTCACHE' -delete
+	find Examples -type f -name '*.RESULTCACHE' -delete
 
 launch: all exec
 

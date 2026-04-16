@@ -1,0 +1,104 @@
+// ---------------------------------------------------------------------------
+//                 Example 0.0.2 Vector3 - exploring Baldurs OOP
+// ---------------------------------------------------------------------------
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_2_Vector3.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_2_Vector3.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/0_0_2_Vector3.bld
+
+// Includes
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+//
+string [examplePrefix, exampleChapter, exampleTitle] = "0", "0.0.2", "Vector3 - exploring Baldurs OOP"
+
+struct Vector3{
+    
+    static{
+    
+        int constructedEntities = 0
+    }
+    
+    // Attribs
+    double[x,y,z]
+
+    //
+    decl mul(double ref db){ combineInplaceByOperator(args([x,y,z]), args(db), "*=", "colmajor") }
+    decl print(){ slog(this -> getAttribs()) }
+}
+
+// Konstruktor
+decl Vector3(double ref [xIn, yIn, zIn]){
+    
+    Vector3 >> constructedEntities ++
+
+    Vector3 vec
+    vec -> [x,y,z] = xIn, yIn, zIn
+    
+    // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
+    // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
+    // ohne, dass es zu einem Kopiervorgang kommt
+    return [ <- vec ]
+}
+
+// Konstruktor
+decl Vector3(int ref [xIn, yIn, zIn]){
+    
+    // move Semanktik >> konstruierter Vector wird in Rückgabe Ergebnis verschoben
+    // und kann von dort aus per Zuweisung weiter in eine Variable geschoben werden
+    // ohne, dass es zu einem Kopiervorgang kommt
+    return [<-Vector3(double(xIn), double(yIn), double(zIn))]
+}
+
+decl __addAssign__(Vector3 ref [a, b]){ a->[x,y,z] += b->[x,y,z] }
+decl __subAssign__(Vector3 ref [a, b]){ a->[x,y,z] -= b->[x,y,z] }
+decl __mulAssign__(Vector3 ref [vec], double ref [db]){ vec->mul(db) }
+decl __mulAssign__(Vector3 ref [vec], int ref [db]){ vec->mul(double(db)) }
+
+decl __equal__(Vector3 ref [a, b]){ return [nIf(a->[x,y,z] == b->[x,y,z])] }
+decl __negate__(Vector3 ref a){ return [Vector3(-(a->[x,y,z]))] }
+
+decl dot(Vector3 ref [a,b]){ return [sum(a->[x,y,z] * b->[x,y,z])] }
+decl cross(Vector3 ref [a,b]){ return [Vector3(a->[y,z,x] * b->[z,x,y] - a->[z,x,y] * b->[y,z,x])] }
+decl abs(Vector3 ref [a]){ return [sqrt(sum(a->[x,y,z] * a->[x,y,z]))] }
+decl normalized(Vector3 [a]){ a->mul(1.0/abs(a)); return a }
+
+decl evaluateExample(){
+
+    void [a, b] = Vector3(1.0, 2.0, 3.0), Vector3(4,5,6)
+
+    slog((a - b) - (- b + a))
+    slog(normalized(cross(a, b)))
+
+    slog("Es wurden", Vector3 >> constructedEntities, "Vector3 instanzen konstruiert")
+}
+
+//
+decl main(){
+
+    // Check Registers
+
+    // logTypeRegister()
+    // logNullRefs()
+    // logFunctionRegister()
+    // logDiffTemplates(); logSeparator()
+    // logSimplifications(); logSeparator()
+
+    //
+    logSeparator()
+    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
+
+    //
+    evaluateExample()
+
+    return 0
+}
+
+// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
+if(calledAs(__MainProc__)){
+
+    return [main()]
+}

@@ -3,12 +3,11 @@
 🌐 <a href="./README.md">English</a> | <a href="./README.de.md">Deutsch</a>
 </p>
 
-
 # Basic Albebraic Language for Deriving Unified Tensor Representation (BALDUR)
 
 <img align="left" style="width:360px" src="Recc/textures/Baldur_Logo_whiteBG.svg">
 
-Baldur ist eine minimalistische Interpretersprache, die das symbolische Arbeiten mit algebraischen und index-notierten Tensorausdrücken nativ unterstützt. Das Programm implementiert dabei ein C++ Tensoralgebrabackend und schaltet dieses über eine mit der Intepreterschmiede [Alberich](https://github.com/tr3dh/ALBERICH) erzeugten Sprachdistribution frei. Die Skriptsprache Baldur wurde im Rahmen einer [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) für das Institut für Kontinuumsmechanik (IKM) der Leibniz Universität Hannover (LUH) entwickelt.
+Baldur ist eine minimalistische Interpretersprache, die das symbolische Arbeiten mit algebraischen und index-notierten Tensorausdrücken nativ unterstützt. Das Programm implementiert dabei ein C++ Tensoralgebrabackend und schaltet dieses über eine mit der Intepreterschmiede [Alberich](https://github.com/tr3dh/ALBERICH) erzeugte Sprachdistribution frei. Die Skriptsprache Baldur wurde im Rahmen einer [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) für das Institut für Kontinuumsmechanik (IKM) der Leibniz Universität Hannover (LUH) entwickelt.
 
 # 🧬 Entwicklung
 
@@ -32,12 +31,12 @@ Baldur ist eine minimalistische Interpretersprache, die das symbolische Arbeiten
 - minimalistischer Editor (kein Language Support)
 - Source Code
 
-Die Builds können über die [Releases](https://github.com/tr3dh/ALF/releases) heruntergeladen werden.
+Die Builds können über die [Releases](https://github.com/tr3dh/BALDUR/releases) heruntergeladen werden.
 Die VSCode Extension ist zusätzlich im VSCode Marketplace verfügbar.
 
 # 🛠️ Sprachcharakteristiken
 
-Die primäre Anwendung Baldurs ist die symbolische Tensorrechnung mit umfangreichen Tensorausdrücken. Das Backend kann bei adäquater Nutzung mit sehr umfangreichen Ausdrücken innerhalb moderater Laufzeiten rechnen (getestet bis 110 mio Nodes, läuft 3.5 h). Aufgrund der algebraischen Eingaben orientiert sich die Sprachsyntax stark an der gebräuchlichen Tensoralgebra-Schreibweise. Das freigeschaltete Backend ist darauf ausgelegt dem Nutzer maximale Kontrolle einzurichten. Damit können anwendungsfallspezifische, sehr tiefgreifende Optimierungen vorgenommen werden. Der Nutzer kann beispielsweise die AST-Konvention der gebauten Ausdrücke steuern, sowie umfangreiche Regelwerke für Ableitungen und Vereinfachungen hinterlegen. Eine Plug-and-Play Lösung kann über die Includes [pckg](Import/pckg/) eingerichtet werden. Zudem nutzt Baldur bzw. Alberich implizite und explizite, alternative Semantikkonzepte, die entweder Low-Level- oder High-Level-Kontrolle über die verwendeten Laufzeitressourcen bieten. So kann der Nutzer je nach Bedarf und Anwendungsfall die Speicherverwaltung und Objekthandhabung manuell einrichten oder dem Interpreter überlassen. Zudem implemnentiert Baldur eine dynamisch konfigurierbare Überladungskonfiguration. Dabei können der verwendete Operatorensatz, die Operatorenhierarchie und die Operatorenüberladung dynamisch über die `__LPECONFIG.JSON` konfiguriert werden. Neben den genannten Sprachcharakteristiken implementiert die Grundsprache weitere interessante Syntaxkonzepte wie Simultanverknüpfungen, input-verschaltende if-Konventionen, eine vollständig rekursionfähige Syntax und mehr. Weitere Information über die dort implementierten Syntaxkonzepte können im GitHub Repository der Interpreterschmiede [Alberich](https://github.com/tr3dh/ALBERICH) und der hinterlegten [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) eingesehen werden.
+Die primäre Anwendung Baldurs ist die symbolische Tensorrechnung mit umfangreichen Tensorausdrücken. Das Backend kann bei adäquater Nutzung mit sehr umfangreichen Ausdrücken innerhalb moderater Laufzeiten rechnen (getestet bis 110 mio Nodes, läuft 3.5 h). Aufgrund der algebraischen Eingaben orientiert sich die Sprachsyntax stark an der gebräuchlichen Tensoralgebra-Schreibweise. Das freigeschaltete Backend ist darauf ausgelegt dem Nutzer maximale Kontrolle einzurichten. Damit können anwendungsfallspezifische, sehr tiefgreifende Optimierungen vorgenommen werden. Der Nutzer kann beispielsweise die AST-Konvention der gebauten Ausdrücke steuern, sowie umfangreiche Regelwerke für Ableitungen und Vereinfachungen hinterlegen. Eine Plug-and-Play Lösung kann über die Includes [pckg](Examples/pckg/) eingerichtet werden. Zudem nutzt Baldur bzw. Alberich implizite und explizite, alternative Semantikkonzepte, die entweder Low-Level- oder High-Level-Kontrolle über die verwendeten Laufzeitressourcen bieten. So kann der Nutzer je nach Bedarf und Anwendungsfall die Speicherverwaltung und Objekthandhabung manuell einrichten oder dem Interpreter überlassen. Zudem implemnentiert Baldur eine dynamisch konfigurierbare Überladungskonfiguration. Dabei können der verwendete Operatorensatz, die Operatorenhierarchie und die Operatorenüberladung über die `__LPECONFIG.JSON` konfiguriert werden. Neben den genannten Sprachcharakteristiken implementiert die Grundsprache weitere interessante Syntaxkonzepte wie Simultanverknüpfungen, input-verschaltende if-Konventionen, eine vollständig rekursionfähige Syntax und mehr. Weitere Information über die dort implementierten Syntaxkonzepte können im GitHub Repository der Interpreterschmiede [Alberich](https://github.com/tr3dh/ALBERICH) und der hinterlegten [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) eingesehen werden.
 
 # ✒️ Language Surpport
 
@@ -50,7 +49,7 @@ Der Language Support der Sprache Baldur kommt mit folgenden Providern:
 
 # 🚀 Erste Schritte
 
-Die mitgelieferte [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) bietet anhand von anschaulichen Beispielen und Referenzen der Grundsprache Alberich und der Distribution Baldur einen unkomplizierten Einstieg. Die [Sprachbeispiele](Import/) stellen ebenfalls eine geeignete Einarbeitungsgrundlage dar. Der Language Support kann ebenfalls herangezogen werden, um implementierte Funktionen, Operatoren, Variablen und mehr zu untersuchen.
+Die mitgelieferte [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) bietet anhand von anschaulichen Beispielen und Referenzen der Grundsprache Alberich und der Distribution Baldur einen unkomplizierten Einstieg. Die [Sprachbeispiele](Examples/) stellen ebenfalls eine geeignete Einarbeitungsgrundlage dar. Der Language Support kann ebenfalls herangezogen werden, um implementierte Funktionen, Operatoren, Variablen und mehr zu untersuchen.
 
 # 🪖 vorgesehener Ablauf
 
@@ -76,7 +75,7 @@ tIdn idnExpr = toIDN(expr)
 
 // Export zu Julia-Skript
 string jlScript = idnExpr->toJuliaString("evalExpr")
-jlScript->writeToFile("../Import/juliaScripts/expr.jl")
+jlScript->writeToFile("../Examples/juliaScripts/expr.jl")
 
 slog(jlScript)
 // Ausgabe : '
