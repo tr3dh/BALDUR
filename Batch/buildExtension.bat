@@ -23,3 +23,5 @@ del "*.vsix"
 
 echo code --install-extension "%VSIX_NAME%" > "..\..\__OUT\VSCodeExtension\installExtension.bat"
 echo code --uninstall-extension tr3dh.baldur > "..\..\__OUT\VSCodeExtension\uninstallExtension.bat"
+
+powershell -NoProfile -Command "Compress-Archive -Path '..\..\__OUT\VSCodeExtension\*' -DestinationPath '..\..\__OUT\VSCodeExtension.zip' -Force"
