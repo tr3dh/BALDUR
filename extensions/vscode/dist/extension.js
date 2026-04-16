@@ -3474,7 +3474,7 @@ var require_main2 = __commonJS({
       var FoldingRangeKind;
       (function(FoldingRangeKind2) {
         FoldingRangeKind2.Comment = "comment";
-        FoldingRangeKind2.Exampless = "imports";
+        FoldingRangeKind2.Imports = "imports";
         FoldingRangeKind2.Region = "region";
       })(FoldingRangeKind || (exports3.FoldingRangeKind = FoldingRangeKind = {}));
       var FoldingRange;
@@ -4327,7 +4327,7 @@ var require_main2 = __commonJS({
         CodeActionKind2.RefactorInline = "refactor.inline";
         CodeActionKind2.RefactorRewrite = "refactor.rewrite";
         CodeActionKind2.Source = "source";
-        CodeActionKind2.SourceOrganizeExampless = "source.organizeExampless";
+        CodeActionKind2.SourceOrganizeImports = "source.organizeImports";
         CodeActionKind2.SourceFixAll = "source.fixAll";
       })(CodeActionKind || (exports3.CodeActionKind = CodeActionKind = {}));
       var CodeActionTriggerKind;
@@ -8233,7 +8233,7 @@ var require_protocolConverter = __commonJS({
       kindMapping.set(ls.CodeActionKind.RefactorInline, code.CodeActionKind.RefactorInline);
       kindMapping.set(ls.CodeActionKind.RefactorRewrite, code.CodeActionKind.RefactorRewrite);
       kindMapping.set(ls.CodeActionKind.Source, code.CodeActionKind.Source);
-      kindMapping.set(ls.CodeActionKind.SourceOrganizeExampless, code.CodeActionKind.SourceOrganizeExampless);
+      kindMapping.set(ls.CodeActionKind.SourceOrganizeImports, code.CodeActionKind.SourceOrganizeImports);
       function asCodeActionKind(item) {
         if (item === void 0 || item === null) {
           return void 0;
@@ -8414,8 +8414,8 @@ ${JSON.stringify(change, void 0, 4)}`);
           switch (kind) {
             case ls.FoldingRangeKind.Comment:
               return code.FoldingRangeKind.Comment;
-            case ls.FoldingRangeKind.Exampless:
-              return code.FoldingRangeKind.Exampless;
+            case ls.FoldingRangeKind.Imports:
+              return code.FoldingRangeKind.Imports;
             case ls.FoldingRangeKind.Region:
               return code.FoldingRangeKind.Region;
           }
@@ -12691,7 +12691,7 @@ var require_codeAction = __commonJS({
               vscode_languageserver_protocol_1.CodeActionKind.RefactorInline,
               vscode_languageserver_protocol_1.CodeActionKind.RefactorRewrite,
               vscode_languageserver_protocol_1.CodeActionKind.Source,
-              vscode_languageserver_protocol_1.CodeActionKind.SourceOrganizeExampless
+              vscode_languageserver_protocol_1.CodeActionKind.SourceOrganizeImports
             ]
           }
         };
@@ -13680,7 +13680,7 @@ var require_foldingRange = __commonJS({
         capability.dynamicRegistration = true;
         capability.rangeLimit = 5e3;
         capability.lineFoldingOnly = true;
-        capability.foldingRangeKind = { valueSet: [vscode_languageserver_protocol_1.FoldingRangeKind.Comment, vscode_languageserver_protocol_1.FoldingRangeKind.Exampless, vscode_languageserver_protocol_1.FoldingRangeKind.Region] };
+        capability.foldingRangeKind = { valueSet: [vscode_languageserver_protocol_1.FoldingRangeKind.Comment, vscode_languageserver_protocol_1.FoldingRangeKind.Imports, vscode_languageserver_protocol_1.FoldingRangeKind.Region] };
         capability.foldingRange = { collapsedText: false };
         (0, features_1.ensure)((0, features_1.ensure)(capabilities, "workspace"), "foldingRange").refreshSupport = true;
       }
