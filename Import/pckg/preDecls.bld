@@ -149,6 +149,11 @@ decl __bigger__(void ref lhs, void ref rhs){
     return [__smaller__(rhs, lhs)]
 }
 
+decl __detach__(void ref var){
+    
+    return [recast("void",  var)]
+}
+
 // erzeugt einen algebraischen Tensorausdruck mit uniformen Dimensionen
 decl tUniExpr(string ref label, int order, int uniDimension){
 

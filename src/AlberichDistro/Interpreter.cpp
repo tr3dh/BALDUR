@@ -110,7 +110,7 @@ void defaultSetupLexicalInstances(){
         "~", "'", "°", "$",                             // Ops für Index Notation
         "^~", "^'", "^°",                               // Ops für Index Notation
         "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
-        "dref", "invl", "delete",
+        "dref", "invl", "delete", "detach",
     };
 
     //
@@ -133,6 +133,7 @@ void defaultSetupLexicalInstances(){
         {"dref", "__dereference__"},
         {"invl", "__invalidate__"},
         {"delete", "__delete__"},
+        {"detach", "__detach__"},
     };
 
     // Map der Form Operator | Funktionslabel
@@ -369,17 +370,9 @@ void registerDefinition(const std::string& scriptPath, const std::string& defiLa
     registerDefinitionAt->emplace(defiLabel, currentDefi);
 }
 
-IObject* createVoid(){
-
-    return g_TypeRegister.constructRegisteredType(types::_VOID::typeIndex);
-}
-
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
 
     // Handler Setups
-
-    //
-    g_createVoid = createVoid;
 
     // ByteSequence Assertion Handler
     G_BYTESEQ_ASSERT_HANDLER = triggerAssertHandler;
