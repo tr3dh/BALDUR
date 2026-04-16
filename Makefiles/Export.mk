@@ -26,7 +26,7 @@ copyTmp:
 
 	cp -r Recc tmp/
 	cp -r Examples tmp/
-	cp -r Documentation tmp/
+#	cp -r Documentation tmp/
 	cp -r Batch tmp/
 	cp -f .VERSION tmp/
 	cp -f LICENSE tmp/

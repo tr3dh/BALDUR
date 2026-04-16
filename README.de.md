@@ -7,6 +7,7 @@
 
 <img align="left" style="width:360px" src="Recc/textures/Baldur_Logo_whiteBG.svg">
 
+
 Baldur ist eine minimalistische Interpretersprache, die das symbolische Arbeiten mit algebraischen und index-notierten Tensorausdrücken nativ unterstützt. Das Programm implementiert dabei ein C++ Tensoralgebrabackend und schaltet dieses über eine mit der Intepreterschmiede [Alberich](https://github.com/tr3dh/ALBERICH) erzeugte Sprachdistribution frei. Die Skriptsprache Baldur wurde im Rahmen einer [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) für das Institut für Kontinuumsmechanik (IKM) der Leibniz Universität Hannover (LUH) entwickelt.
 
 # 🧬 Entwicklung
