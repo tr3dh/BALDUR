@@ -63,7 +63,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
-int [orderTSM, dimension] = 3, 3
+int [orderTSM, dimension] = 2, 3
 
 //
 decl exp(tExpr ref expr){ return [<-exp(expr, orderTSM)] }

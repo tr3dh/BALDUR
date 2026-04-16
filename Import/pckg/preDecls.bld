@@ -43,7 +43,7 @@
 // Funktionsweise der Sprache und des Backends maßgeblich beeinflussen.
 // Zudem werden Ableitungs- und Vereinfachungsregeln implementiert,
 // denen die Ableitungen und Vereinfachungen in Folge unterliegen.
-// Wir übernehmen ausdrücklich keine Haftung oder Verantwortung für die Gültigkeit und
+// Wir übernehmen ausdrücklich keine Haftung oder Verantwortung für die Gultigkeit und
 // Richtigkeit der hier implementierten Inhalte!
 // Vor der Weiterverwendung der Ergebnisse des Programms Baldur, sollten die
 // Ergebnisse eigenständig auf ihre Plausibilität und Richtigkeit überprüft werden!
@@ -61,24 +61,42 @@ fetch backend ["core", "tensor"]
 // Im DEBUG Mode ist automatische Dereferenzierung aktiv im NDEBUG wird sie aus performance Gründen deaktiviert 
 // DISABLE_AUTOMATIC_DREF()
 
+//
+requires bool uniform g_unwrapOperands                          // Einstellen der Konvention
+requires bool uniform g_compareTemplateDependencies             // Einstellen erweiterter Konsistenzableich
+requires bool uniform g_suppressAssertionWarnings               // Einstellen Unterdrückung von Assertions
+requires bool uniform g_terminateAfterAssertionFailed           // Einstellen Abbruch des Programms nach erster fehlgeschlagener Assertion
+
+requires int uniform g_recommedSubstitutionFromComplexity       // Einstellen ab wann Substitution in Jl-Skript Generierung angetestet wird 
+requires int uniform g_forceSubstitutionFromComplexity          // Einstellen ab wann Substitution in JL-Skript Generierung forciert wird
+                                                                // und Generierung terminiert wenn Grenzwert nicht eingehalten werden kann
+
+requires bool uniform g_automaticDrefEnabled                    // steuert automatische Dereferenzierung
+
 // Konstanten
-double PI                  = 3.1415926535897930                 // π (Kreiszahl, dimensionlos)
-double EULER               = 2.7182818284590450                 // e (Euler'sche Zahl, dimensionlos)
-double PLANCK              = 6.62607015*10.0^(-34.0)            // Plancksches Wirkungsquantum h [J·s]
-double HBAR                = PLANCK / (2.0*3.1415926535897930)  // reduziertes Plancksches Wirkungsquantum ħ [J·s]
-double SPEED_OF_LIGHT      = 2.99792458*10.0^(8.0)              // Lichtgeschwindigkeit c [m/s]
-double GRAVITATIONAL_CONST = 6.67430*10.0^(-11.0)               // Gravitationskonstante G [m^3/kg/s^2]
-double BOLTZMANN           = 1.380649*10.0^(-23.0)              // Boltzmann-Konstante k_B [J/K]
-double AVOGADRO            = 6.02214076*10.0^(23.0)             // Avogadro-Konstante N_A [1/mol]
-double GAS_CONST           = 8.3144626180                       // Universelle Gaskonstante R [J/mol/K]
-double ELEMENTARY_CHARGE   = 1.602176634*10.0^(-19.0)           // Elementarladung e [C]
-double ELECTRON_MASS       = 9.1093837015*10.0^(-31.0)          // Elektronenmasse m_e [kg]
-double PROTON_MASS         = 1.67262192369*10.0^(-27.0)         // Protonenmasse m_p [kg]
-double NEUTRON_MASS        = 1.67492749804*10.0^(-27.0)         // Neutronenmasse m_n [kg]
-double EPSILON_0           = 8.8541878128*10.0^(-12.0)          // elektrische Feldkonstante ε₀ [F/m]
-double MU_0                = 1.25663706212*10.0^(-6.0)          // magnetische Feldkonstante μ₀ [H/m]
-double FINE_STRUCTURE      = 7.2973525693*10.0^(-3.0)           // Feinstrukturkonstante α (dimensionlos)
-double GRAVITY_EARTH       = 9.80665                            // Normale Erdbeschleunigung g [m/s²]
+registerConst("PI",                  3.1415926535897930)                    // Kreiszahl PI
+registerConst("EULER",               2.7182818284590450)                    // Eulersche Zahl e
+registerConst("PLANCK",              6.62607015*10.0^(-34.0))               // Planksches Wirkungsquantum h [J . s]
+registerConst("HBAR",                PLANCK / (2.0 * 3.1415926535897930))   // reduziertes Planksches Wirkungsquantum [J . s]
+registerConst("SPEED_OF_LIGHT",      2.99792458*10.0^(8.0))                 // Lichtgeschwindigkeit c [m/s]
+registerConst("GRAVITATIONAL_CONST", 6.67430*10.0^(-11.0))                  // Gravitationskonstante G [m^3/kg/s^2]
+registerConst("BOLTZMANN",           1.380649*10.0^(-23.0))                 // Boltzmann-Konstante k_B [J/K]
+registerConst("AVOGADRO",            6.02214076*10.0^(23.0))                // Avogadro-Konstante N_A [1/mol]
+registerConst("GAS_CONST",           8.3144626180)                          // Universelle Gaskonstante R [J/mol/K]
+registerConst("ELEMENTARY_CHARGE",   1.602176634*10.0^(-19.0))              // Elementarladung e [C]
+registerConst("ELECTRON_MASS",       9.1093837015*10.0^(-31.0))             // Elektronenmasse m_e [kg]
+registerConst("PROTON_MASS",         1.67262192369*10.0^(-27.0))            // Protonenmasse m_p [kg]
+registerConst("NEUTRON_MASS",        1.67492749804*10.0^(-27.0))            // Neutronenmasse m_n [kg]
+registerConst("EPSILON_0",           8.8541878128*10.0^(-12.0))             // elektrische Feldkonstante ε₀ [F/m]
+registerConst("MU_0",                1.25663706212*10.0^(-6.0))             // magnetische Feldkonstante μ₀ [H/m]
+registerConst("FINE_STRUCTURE",      7.2973525693*10.0^(-3.0))              // Feinstrukturkonstante α (dimensionlos)
+registerConst("GRAVITY_EARTH",       9.80665)                               // Normale Erdbeschleunigung g [m/s²]
+
+// const keywords
+registerConst("triggerAssert", false)
+registerConst("passAssert", true)
+registerConst("contractForward", false)
+registerConst("contractReversed", true)
 
 // Arg handling
 decl sum(args prms){ return [prms->chainByOperator("+=")] }
@@ -115,12 +133,12 @@ decl __mulAssign__(args ref prms, int n){
 }
 
 // Vervielfältigung von Args über *= / *
-decl __mulAssign__(int n, args prms){
+decl __mulAssign__(int ref n, args ref prms){
 
-    // Recast benötigt
+    int cachedN = n
 
-    __mulAssign__(prms, n)
-    return prms
+    recast("args",  n) <+ prms
+    __mulAssign__(n, cachedN)
 }
 
 // Einige freigeschaltete Typen registrieren nur __smaller__(..., ...)

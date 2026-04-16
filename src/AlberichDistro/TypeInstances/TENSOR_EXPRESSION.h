@@ -233,6 +233,15 @@ void moveSelfIntoFirstChild(TensorExpression& node);
 
 bool operator<(const TensorExpression& lhs, const TensorExpression& rhs);
 
+// Einstellung ab wann julia Skript Generierung Substitution versucht und ab wann die Substitution erzwungen wird
+// und die Generierung terminimiert, wenn das Limit nicht eingehalten werden kann
+
+// g_recommedSubstitutionFromComplexity
+extern int g_recommedSubstitutionFromComplexity;
+
+// g_forceSubstitutionFromComplexity
+extern int g_forceSubstitutionFromComplexity;
+
 //
 struct IndexNotatedTensorExpression{
 

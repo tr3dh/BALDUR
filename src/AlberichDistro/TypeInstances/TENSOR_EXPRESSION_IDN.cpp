@@ -1397,8 +1397,8 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
     return res;
 }
 
-int maxExprComplexity = 25;
-int criticalMaxExprComplexity = 30;
+int g_recommedSubstitutionFromComplexity = 25;
+int g_forceSubstitutionFromComplexity = 30;
 
 std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString() const{
 
@@ -1533,7 +1533,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     }
 
     //
-    if(Relation == TkType::Operator && getNumOfNodes() > criticalMaxExprComplexity){
+    if(Relation == TkType::Operator && getNumOfNodes() > g_forceSubstitutionFromComplexity){
 
         int numOfNodes = getNumOfNodes();
 
@@ -1573,9 +1573,9 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             /* "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + */ \
             (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode("res").generateTensorSequenceTullioString(1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res + "\n\n\treturn res";
     }
-    else if((Relation == TkType::Operator && getNumOfNodes() > maxExprComplexity) || forceSubstitution){
+    else if((Relation == TkType::Operator && getNumOfNodes() > g_recommedSubstitutionFromComplexity) || forceSubstitution){
 
-        RETURNING_ASSERT(getNumOfNodes() <= criticalMaxExprComplexity, "...", "");
+        RETURNING_ASSERT(getNumOfNodes() <= g_forceSubstitutionFromComplexity, "...", "");
 
         std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
         int complexity = getNumOfNodes();

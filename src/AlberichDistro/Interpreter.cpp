@@ -369,9 +369,17 @@ void registerDefinition(const std::string& scriptPath, const std::string& defiLa
     registerDefinitionAt->emplace(defiLabel, currentDefi);
 }
 
+IObject* createVoid(){
+
+    return g_TypeRegister.constructRegisteredType(types::_VOID::typeIndex);
+}
+
 std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& scriptPath){
 
     // Handler Setups
+
+    //
+    g_createVoid = createVoid;
 
     // ByteSequence Assertion Handler
     G_BYTESEQ_ASSERT_HANDLER = triggerAssertHandler;
@@ -432,6 +440,12 @@ std::vector<std::unique_ptr<IObject>> executeDistroProgram(const std::string& sc
     g_distroScope->constructAndReturnVariable("g_terminateAfterAssertionFailed")->constructByObject(new types::BOOL(&g_terminateAfterAssertionFailed));
     g_distroScope->constructAndReturnVariable("g_unwrapOperands")->constructByObject(new types::BOOL(&unwrapOperands));
     g_distroScope->constructAndReturnVariable("g_compareTemplateDependencies")->constructByObject(new types::BOOL(&g_compareTemplateDependencies));
+
+    // Einstellwerte für Julia Skript Generierung
+    g_distroScope->constructAndReturnVariable("g_recommedSubstitutionFromComplexity")->constructByObject(new types::INT(&g_recommedSubstitutionFromComplexity));
+    g_distroScope->constructAndReturnVariable("g_forceSubstitutionFromComplexity")->constructByObject(new types::INT(&g_forceSubstitutionFromComplexity));
+
+    g_distroScope->constructAndReturnVariable("g_automaticDrefEnabled")->constructByObject(new types::BOOL(&g_automaticDerefEnabled));
 
     // Aufruf des Alberich-Interpreters
     auto results = executeProgram(scriptPath, g_distroScope);
