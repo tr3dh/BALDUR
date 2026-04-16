@@ -32,7 +32,6 @@ Baldur is a minimalist interpreter language that natively supports symbolic mani
 - Source code
 
 The builds can be downloaded from the [Releases](https://github.com/tr3dh/BALDUR/releases).
-The VSCode Extension is also available in VSCode 
 
 # 🛠️ Language Features
 

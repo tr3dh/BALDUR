@@ -32,7 +32,6 @@ Baldur ist eine minimalistische Interpretersprache, die das symbolische Arbeiten
 - Source Code
 
 Die Builds können über die [Releases](https://github.com/tr3dh/BALDUR/releases) heruntergeladen werden.
-Die VSCode Extension ist zusätzlich im VSCode Marketplace verfügbar.
 
 # 🛠️ Sprachcharakteristiken
 
