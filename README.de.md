@@ -3,10 +3,9 @@
 🌐 <a href="./README.md">English</a> | <a href="./README.de.md">Deutsch</a>
 </p>
 
-# Basic Albebraic Language for Deriving Unified Tensor Representation (BALDUR)
+# Basic Albebraic Language for Deriving Unified Tensor Representations (BALDUR)
 
-<img align="left" style="width:360px" src="Recc/textures/Baldur_Logo_whiteBG.svg">
-
+<img align="left" style="width:360px" src="Recc/textures/Baldur_Logo_whiteBG.png">
 
 Baldur ist eine minimalistische Interpretersprache, die das symbolische Arbeiten mit algebraischen und index-notierten Tensorausdrücken nativ unterstützt. Das Programm implementiert dabei ein C++ Tensoralgebrabackend und schaltet dieses über eine mit der Intepreterschmiede [Alberich](https://github.com/tr3dh/ALBERICH) erzeugte Sprachdistribution frei. Die Skriptsprache Baldur wurde im Rahmen einer [Masterarbeit](Recc/Thesis/Masterthesis_Rother_2026_public.pdf) für das Institut für Kontinuumsmechanik (IKM) der Leibniz Universität Hannover (LUH) entwickelt.
 
