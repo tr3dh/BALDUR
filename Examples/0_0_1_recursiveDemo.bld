@@ -72,7 +72,15 @@ decl main(){
     logSeparator()
 
     //
-    runRecursiveDemo()
+    double startTime = now()
+
+    //
+    callOnExtendedStack("runRecursiveDemo", 1500, args())
+
+    //
+    logSeparator()
+    slog("Ausfuehrungszeit des Beispiels : ", now() - startTime, "s")
+    logSeparator()
 
     return 0
 }
