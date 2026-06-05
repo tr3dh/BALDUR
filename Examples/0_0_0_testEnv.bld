@@ -16,19 +16,8 @@ decl main(int [a,b,c]){
     testFunction()
 }
 
-struct tExpr{}
-
-tExpr prevTExpr
-
-fetch backend "tensor"
-
 //
 if(calledAs(__MainProc__)){
     
-    tExpr m("A", 2)
-    slog(m)
-
-    slog(prevTExpr)
-
     call(string main => "main", args(1,2,3))
 }
