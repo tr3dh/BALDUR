@@ -1,0 +1,528 @@
+// ---------------------------------------------------------------------------
+//                              Example 3.2.2 C - inkl CrossTerms
+// ---------------------------------------------------------------------------
+// Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
+// "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
+// von Hedrik Geisler, 2025
+// Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
+//
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - build DEBUG    : $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_C_vp_evolutionequation_withCrossTerms.bld
+// - run DEBUG      : $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_C_vp_evolutionequation_withCrossTerms.bld
+// - build NDEBUG   : $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_C_vp_evolutionequation_withCrossTerms.bld
+// - run NDEBUG     : $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/3_2_2_Example_C_vp_evolutionequation_withCrossTerms.bld
+// 
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/3_2_2_Example_C_vp_evolutionequation_withCrossTerms.bld
+// $ ./build/Baldur execute Examples/3_2_2_Example_C_vp_evolutionequation_withCrossTerms.bld
+
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__MainProc__), __script__ + " should be executed directly")
+
+// Includes
+fetch backend ["tensor"]
+
+//
+requires bool uniform g_unwrapOperands
+requires bool uniform g_compareTemplateDependencies
+requires bool uniform g_suppressAssertionWarnings
+requires bool uniform g_terminateAfterAssertionFailed
+
+// Einstellung
+__assign__(g_terminateAfterAssertionFailed, true)
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// Wird nach dem Ermitteln der Spannungstangenten zurückgesetzt
+bool g_emplaceExtendedSimplifications = true
+
+//
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+//
+string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
+int [orderTSM, dimension] = 3, 2
+
+//
+decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
+
+//
+// disableDiffTemplateDefaults()
+setGenerateJLDebugCall(false)
+
+int nVoigtComps(-1)
+
+decl tVoigtCompsUniTensor(string ref label, int order){
+
+    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
+    return [ <- tUniExpr(label, order, nVoigtComps)]
+}
+
+//
+decl evaluateExample(int orderTSM, int dimension){
+    
+    // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
+    // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
+    // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten
+
+    // Aufstellen der fallspezifischen Ableitungsregel
+    tExpr expDiff
+    for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
+    setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
+    for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplScalar ^ i, tmplB) }
+    setDiffTemplate(exp(tmplScalar, orderTSM, false), tmplB, expDiff)
+
+    //
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplA ^ i, tmplB, i * ((tmplA ^ (i - 1)) . diff(tmplA, tmplB))) }
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplScalar ^ i, tmplB, i * (tmplScalar ^ (i-1)) * diff(tmplScalar, tmplB)) }
+
+    // Konstruktion der Container für Vereinheitlichung des Ablaufs über Beispiele hinweg 
+    tExpr ref result
+    string tResultLabel
+    tIdn tIDNResult
+
+    //
+    nVoigtComps = getNumOfVoigtComponents(dimension)
+
+    //
+    tExpr [epsilon, u, deltaEpsilon, deltaU] = tExpr("epsilon", 1, args(nVoigtComps)), tExpr("u", 1, args(nVoigtComps)), \
+                                                tExpr("deltaEpsilon", 1, args(nVoigtComps)), tExpr("deltaU", 1, args(nVoigtComps))
+
+    //
+    void [E0, D, Xi] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps)), tExpr("Xi", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [E] = E0 + D
+    tExpr [eta, S] = tExpr("eta", 0), tExpr("S", 2, args(nVoigtComps, nVoigtComps))
+    tExpr [epsilonvp] = tExpr("epsilonvp", 1, args(nVoigtComps))
+    tExpr [t, s] = tExpr("t", 0), tExpr("s", 0)
+
+    //
+    tExpr [sigma] = E . (epsilon - epsilonvp)
+    tExpr [sigmaY0, sigmaYTild] = tExpr("sigmaY", 0), tExpr("sigmaYTild", 0)
+    tExpr [sigmaY] = sigmaY0 + sigmaYTild
+
+    // // Für übersichtlichere Behandlung wird die Ausgeschriebene Form der Heaviside Funktion durch das Symbol H ersetzt
+    // removeEmplacedDiffTemplate(macaulay(tmplScalar), tmplB)
+    // setDiffTemplate(macaulay(tmplScalar), tmplB, tExpr("H", 0) * diff(tmplScalar, tmplB))
+
+    //
+    tExpr devSigma = tExpr("devSigma", 1, args(nVoigtComps))
+    devSigma = S . E . (epsilon - epsilonvp)
+
+    // Evolutionsgleichung der internen Variable
+    tExpr epsilonvp_dot = inverse(eta) * macaulay((frobenius(devSigma) - sigmaY)) * inverse(frobenius(devSigma)) * (devSigma)
+
+    // // anderer Ansatz
+    // [tExpr epsilonvp_TSM, args Tangent] = taylorSeries(epsilonvp, Xi, orderTSM, false, true)
+
+    //
+    tExpr s_epsilonvp_TSM, args s_Tangent
+
+    tExpr tangent = epsilonvp->asExternalNode("epsilonvp_0")
+    // s_Tangent->emplace(<+tangent)
+    s_epsilonvp_TSM += tangent
+
+    // Aufstellen des Ansatzes für die Taylorreihenentwicklung der internen Variable epsilon_vp
+    // mit epsilon_vp_dot = epsilon_vp_0 + epsilon_vp_E_1 + epsilon_vp_Y_1 + 1/2 * epsilon_vp_E_2 + 1/2 * epsilon_vp_Y_2 + ...
+    for(int order = 1, order < orderTSM + 1, order++){
+        
+        //
+        static{
+            tExpr [tmpE, tangentE, tmpY, tangentY, tmpCross, tangentCross]
+        }
+
+        //
+        tangentE = diff(epsilonvp, D, order)->asExternalNode("epsilonvp_E_" + string(order))
+        tangentY = diff(epsilonvp, sigmaYTild, order)->asExternalNode("epsilonvp_Y_" + string(order))
+        // s_Tangent->emplace(<+tangentE, <+tangentY)
+
+        //
+        for((tmpE = (1.0/factorial(order)) * tangentE, int i = 0), i < order, i++){ tmpE := D }
+        for((tmpY = (1.0/factorial(order)) * tangentY, int i = 0), i < order, i++){ tmpY *= sigmaYTild }
+
+        // Hier wird x durch konkreten Wert x0 ersetzt
+        s_epsilonvp_TSM += wrpSimplified(tmpE)
+        s_epsilonvp_TSM += wrpSimplified(tmpY)
+
+        //
+        numCrossTerms = order - 1
+
+        //
+        for(int i = 1, i < order, i++){
+
+            tangentCross = diff(diff(epsilonvp, D, i), sigmaYTild, order - i)->asExternalNode("epsilonvp_" + [i * "E"] + [[order - i] * "Y"] + "_" + string(order))
+            tmpCross = 1.0 / [factorial(i) * factorial(order - i)] * tangentCross
+
+            for(int j = 0, j < i, j++){ tmpCross := D }
+            for(int k = 0, k < order - i, k++){ tmpCross *= sigmaYTild }
+
+            s_epsilonvp_TSM += wrpSimplified(tmpCross)
+        }
+    }
+
+    // Vereinfachung nach Taylorreihenentwicklung
+    wrpSimplify(s_epsilonvp_TSM)
+
+    // Einsetzen des Taylorreihenansatzes in Evolutionsgleichung ergibt erweiterte Evolutionsgleichung
+    tExpr epsilonvp_dot_TSM <+ epsilonvp_dot
+    epsilonvp_dot_TSM->replace(epsilonvp, s_epsilonvp_TSM)
+    wrpSimplify(epsilonvp_dot_TSM)
+
+    // Die erweiterte Evolutionsgleichung 'epsilonv_TSM_dot_t' wird gleichgesetzt mit der zeitlichen
+    // Ableitung der Approximation der internen Variable
+    // Dadurch ergibt sich die Gleichung (3.75) [Geisler]
+    //
+    // epsilonv_dot(0) + epsilonv_dot(1) : Xi + ... = eta^-1 S (E0 + Xi) (epsilonv - epsilonv0 - epsilonv1 : Xi - ...)
+    // 
+    // Die i-te Tangente auf der linken Seite kann damit isoliert werden, indem die Gleichung i mal abgeleitet wird und für Xi 0 eingesetzt 
+
+    //
+    slog("Gewählter Ansatz für sigma")
+    slog(sigma -> getReplaced(epsilonvp, s_epsilonvp_TSM))
+    logSeparator()
+
+    //
+    slog("Gewählter Ansatz für epsilonvp")
+    slog(s_epsilonvp_TSM)
+    logSeparator()
+
+    slog("Evolutionsgleichung")
+    slog(epsilonvp_dot)
+    logSeparator()
+
+    slog("erweiterte Evolutionsgleichung")
+    slog(epsilonvp_dot_TSM)
+    logSeparator()
+
+    // Spannungstangenten ermitteln
+    tExpr sigma_TSM <+ sigma
+    sigma_TSM->replace(epsilonvp, s_epsilonvp_TSM)
+
+    slog("Tangente sigma_0")
+    logSeparator()
+
+    // Tangente i mal ableiten und D mit null substituieren
+    tangent = sigma_TSM
+    tangent->replace(D, zeros(D))
+    tangent->replace(sigmaYTild, tExpr(0))
+    wrpSimplify(tangent)
+
+    // Tangente in Julia Skript schreiben
+    result << tangent
+    tResultLabel = "sigma_0"
+    log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+    //
+    tIDNResult = toWrappedIDN(result)
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+    // Ermitteln der Tangenten
+    for(int order = 1, order < orderTSM + 1, order++){
+
+        static{
+
+            tExpr [tmpTangentE, tmpTangentY]
+            tExpr [tangentE, tangentY] <+ sigma_TSM, sigma_TSM
+            args crossTangents
+        }
+
+        // Tangente i mal ableiten und D mit null substituieren
+        tangentE \diff= D
+        wrpSimplify(tangentE)
+        // slog(tangentE)
+
+        tmpTangentE <+ tangentE
+        tmpTangentE->replace(D, zeros(D))
+        tmpTangentE->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentE)
+
+        logSeparator()
+        slog("Tangente sigma_E_" + string(order))
+        slog(tmpTangentE)
+
+        // Tangente i mal ableiten und sigmaYTild mit null substituieren
+        tangentY \diff= sigmaYTild
+        wrpSimplify(tangentY)
+        // slog(tangentY)
+
+        tmpTangentY <+ tangentY
+        tmpTangentY->replace(D, zeros(D))
+        tmpTangentY->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentY)
+
+        logSeparator()
+        slog("Tangente sigma_Y_" + string(order))
+        slog(tmpTangentY)
+        
+        //
+        logSeparator()
+
+        // Tangente in Julia Skript schreiben
+        result << tmpTangentE
+        tResultLabel = "sigma_E_" + string(order)
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // Tangente in Julia Skript schreiben
+        result << tmpTangentY
+        tResultLabel = "sigma_Y_" + string(order)
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // Kreuztherme bestimmen
+        // Kreuztherme aus vorheriger Ordnung in crossTangest cachen, Startpunkt bei Ordnung 1 (bei Ordnung 2 tauchen zuerst Kreuztherme auf)
+        if(order == 1){ crossTangents -> emplace(<+ tangentY); }
+        else if(order > 1){
+
+            // letzen Kreuztherm nach E ableiten und einfügen, alle weiteren vor Ort nach sigmaY ableiten
+            
+            if(order > 2){
+
+                crossTangents -> emplace(<+ [crossTangents -> get(crossTangents -> size() - 1)])
+                crossTangents -> get(crossTangents -> size() - 1) \diff= sigmaYTild
+            }
+
+            //
+            for(int i = 0, i < crossTangents -> size(), i++){
+
+                crossTangents -> get(i) \diff= D
+                wrpSimplify(crossTangents -> get(i))
+            }
+
+            // Kreuztherme durchgehen und abspeichern
+            for(int i = 0, i < crossTangents->size(), i++){
+
+                static{ tExpr tmpCrossTangent }
+
+                tmpCrossTangent <+ [crossTangents -> get(i)]
+                tmpCrossTangent->replace(D, zeros(D))
+                tmpCrossTangent->replace(sigmaYTild, tExpr(0))
+                wrpSimplify(tmpCrossTangent)
+
+                // Tangente in Julia Skript schreiben
+                result << tmpCrossTangent
+                tResultLabel = "sigma_" + ((crossTangents->size() - i) * "E") + ((i + 1) * "Y") + string(order)
+                log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+                //
+                tIDNResult = toWrappedIDN(result)
+                tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+                    examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+                if(i == crossTangents->size() - 1){ dref result }
+            }
+        }        
+
+        // DREF vor Schleifenabbruch
+        if(order == orderTSM){ dref result }
+    }
+
+    // Die erweiterten Simplifizierungstemplates zahlen sich in erster Linie für
+    // die Spannungstangenten aus
+    if(g_emplaceExtendedSimplifications){ removeExtendedSimplifications() }
+
+    //
+    slog("Tangente epsilonvp_0")
+
+    // Tangente i mal ableiten und D mit null substituieren
+    tangent <+ epsilonvp_dot_TSM
+    tangent->replace(D, zeros(D))
+    tangent->replace(sigmaYTild, zeros(sigmaYTild))
+    wrpSimplify(tangent)
+
+    //
+    // slog(tangent)
+    logSeparator()
+
+    // Tangente in Julia Skript schreiben
+    result << tangent
+    tResultLabel = "epsilonvp_0"
+    log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+    //
+    tIDNResult = toWrappedIDN(result)
+    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+    // Ermitteln der Tangenten
+    for(int order = 1, order < orderTSM + 1, order++){
+
+        static{
+
+            tExpr [tmpTangentE, tmpTangentY]
+            tExpr [tangentE, tangentY] <+ epsilonvp_dot_TSM, epsilonvp_dot_TSM
+            args crossTangents
+        }
+
+        // Tangente i mal ableiten und D mit null substituieren
+        tangentE \diff= D
+        wrpSimplify(tangentE)
+
+        tmpTangentE <+ tangentE
+        tmpTangentE->replace(D, zeros(D))
+        tmpTangentE->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentE)
+
+        logSeparator()
+        slog("Tangente epsilonvp_E_" + string(order))
+        // slog(tangentE)
+
+        // Tangente i mal ableiten und sigmaYTild mit null substituieren
+        tangentY \diff= sigmaYTild
+        wrpSimplify(tangentY)
+
+        tmpTangentY <+ tangentY
+        tmpTangentY->replace(D, zeros(D))
+        tmpTangentY->replace(sigmaYTild, tExpr(0))
+        wrpSimplify(tmpTangentY)
+
+        logSeparator()
+        slog("Tangente epsilonvp_Y_" + string(order))
+        // slog(tangentY)
+        
+        //
+        logSeparator()
+
+        // Tangente in Julia Skript schreiben
+        result << tmpTangentE
+        tResultLabel = "epsilonvp_E_" + string(order)
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // Tangente in Julia Skript schreiben
+        result << tmpTangentY
+        tResultLabel = "epsilonvp_Y_" + string(order)
+        log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+        //
+        tIDNResult = toWrappedIDN(result)
+        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+        // Kreuztherme bestimmen
+        // Kreuztherme aus vorheriger Ordnung in crossTangest cachen, Startpunkt bei Ordnung 1 (bei Ordnung 2 tauchen zuerst Kreuztherme auf)
+        if(order == 1){ crossTangents -> emplace(<+ tangentY); }
+        else if(order > 1){ 
+
+            // letzen Kreuztherm nach E ableiten und einfügen, alle weiteren vor Ort nach sigmaY ableiten
+            
+            if(order > 2){
+
+                crossTangents -> emplace(<+ [crossTangents -> get(crossTangents -> size() - 1)])
+                crossTangents -> get(crossTangents -> size() - 1) \diff= sigmaYTild
+            }
+
+            //
+            for(int i = 0, i < crossTangents -> size(), i++){
+
+                crossTangents -> get(i) \diff= D
+                wrpSimplify(crossTangents -> get(i))
+            }
+
+            // Kreuztherme durchgehen und abspeichern
+            for(int i = 0, i < crossTangents->size(), i++){
+
+                static{ tExpr tmpCrossTangent }
+
+                tmpCrossTangent <+ [crossTangents -> get(i)]
+                tmpCrossTangent->replace(D, zeros(D))
+                tmpCrossTangent->replace(sigmaYTild, tExpr(0))
+                wrpSimplify(tmpCrossTangent)
+
+                // Tangente in Julia Skript schreiben
+                result << tmpCrossTangent
+                tResultLabel = "epsilonvp_" + ((crossTangents->size() - i) * "E") + ((i + 1) * "Y") + string(order)
+                log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
+
+                //
+                tIDNResult = toWrappedIDN(result)
+                tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
+                    examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+
+                if(i == crossTangents->size() - 1){ dref result }
+            }
+        }
+
+        // DREF vor Schleifenabbruch
+        if(order == orderTSM){ dref result }
+    }
+
+    //
+    logSeparator()
+
+    //
+    slog("Example evaluated")
+}
+
+//
+decl main(){
+
+    // // Check Registers
+    // isRvalue(...), isLValue(...), isReference(...), isInstance(...)
+    // logRes(...)
+    // logRegisteredBackends()
+    // logTypeRegister()
+    // logNullRefs()
+    // logFunctionRegister()
+    // logStaticFunctionRegister()
+    // logMemberFunctionRegister()
+    // logScope()
+    // logRootScope()
+    // logPresetDiffs()
+    // logDiffTemplates()
+    // logSimplifications()
+    
+    //
+    logSeparator()
+    log("[", timeStamp(), "] Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
+
+    // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.
+    // Rekursive Aufrufe verbrauchen sehr schnell Stack-Speicher, da sich das Programm die
+    // Return Adresse, Variablen aus lokalen Scopes, etc. für jeden rekursiven Funktionsaufruf
+    // im Stack abspeichern muss und den Speicher solange nicht wieder freigeben kann bis der
+    // Return stattgefunden hat. Damit wächst der benötigte Speicher im Stack bis zur maximalen
+    // Rekursionstiefe mit an. Aus diesem Grund reicht der Standardstack für Tensorausdrücke mit
+    // hoher Komplexität häufig nicht mehr aus.
+    // Selbst simple, kaum rechenintensive Operationen wie 'wrap', 'unwrap', 'replace', 'rebuild', etc.
+    // führen bei Tensorausdrücken mit hoher Komplexität (Check über 'mb->getNumOfNodes()')
+    // zum Overflow des 2MB Interpreter Stacks.
+    // Zum Umgehen des Problems kann der Interpreter mit der entsprechenden Linkerflag kompiliert
+    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer nativer WinThread
+    // erzeugt werden (laufzeitfähig), der einen Stack der gewünschten Größe bereitstellt.
+    // Dazu dient die im Folgenden aufgerufene Funktion.
+    // Die Funktion nimmt das Funktionslabel, die Stackgröße in MB und die Funktionsinputs gepackt als
+    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen WinThread mit einem Stack der übergebenen
+    // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
+    // und der Thread wieder freigegeben.
+
+    double startTime = now()
+    callOnExtendedStack("evaluateExample", 1500, args(orderTSM, dimension))
+
+    logSeparator()
+    slog("Ausfuehrungszeit des Beispiels : ", now() - startTime, "s")
+    logSeparator()
+
+    return 0
+}
+
+// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
+if(calledAs(__MainProc__)){
+
+    return [main()]
+}

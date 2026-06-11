@@ -68,10 +68,27 @@ decl factorial(int ref member){
     return [member * factorial(member - 1)]
 }
 
-//
+// Taylorreihenfunktion, die Ableitungen als externe Nodes mit '_{order}' einsetzt
+decl emplcXtNodesTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
+    return [ <- taylorSeries(function, x, seriesOrder, false, false) ]
+}
+
+// Taylorreihenfunktion, die Ableitungen anstellt
+decl emplcDiffsTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
+    return [ <- taylorSeries(function, x, seriesOrder, true, false) ]
+}
+
+// Wrapped taylorSeries so, dass automatisch Ableitungen und keine externen Nodes genutzt werden
+// und keine Tangenten zurückgegeben werden
 decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
 
-    return { taylorSeries(function, x, seriesOrder, true, false) }
+    return [ <- taylorSeries(function, x, seriesOrder, true, false) ]
+}
+
+// Wrapped taylorSeries so, dass automatisch keine Tangenten zurückgegeben werden
+decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplaceDiffs){
+
+    return [<- taylorSeries(function, x, seriesOrder, emplaceDiffs)]
 }
 
 //

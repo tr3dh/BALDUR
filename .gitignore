@@ -40,7 +40,7 @@ __OUT/
 
 #
 Examples/juliaScripts/*
-Examples/!juliaScripts/.gitignore
+!Examples/juliaScripts/.gitignore
 
 __LPECONFIG.JSON
 

@@ -1,0 +1,41 @@
+// ---------------------------------------------------------------------------
+//    Example 0.0.3 - Arbeiten mit der dynamischen Überladungskonfiguration
+// ---------------------------------------------------------------------------
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_3_DynOverloadConfig.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_3_DynOverloadConfig.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/0_0_3_DynOverloadConfig.bld
+
+fetch backend "tensor"
+
+registerConst("contractForward", false)
+registerConst("contractReversed", true)
+
+decl __tripleContractAssign__(tExpr ref rhs, tExpr ref lhs){
+
+    __contractAssign__(rhs, lhs, 3, contractForward)
+}
+
+// Überladung durch Einträge in '__LPECONFIG.JSON'
+// * Funktion als Überladung der Operatoren '...' (FOLD) und '...=' (INFIX) eintragen
+// * Operatoren zusätzlich in Operatorenhierarchie (LEXICON) eintragen
+//
+// {
+//     "LEXICON": [..., "...=", "...", ...] 
+//     "PREFIX": {
+//          ...
+//     },
+//     "INFIX": {
+//          ...
+//         "...=":"__tripleContractAssign__"
+//     },
+//     "FOLD": {
+//          ...
+//         "...":"__tripleContractAssign__"
+//     }
+// }
+
+tExpr [A("A", 4), B("B", 5)]
+slog(A ... B)

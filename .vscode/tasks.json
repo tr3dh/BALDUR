@@ -67,6 +67,22 @@
             "problemMatcher": []
         },
         {
+            "label": "Users Git Bash",
+            "type": "shell",
+            "command": "${env:USERPROFILE}\\AppData\\Local\\Programs\\Git\\bin\\bash.exe",
+            "args": ["-l"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Toggle Vim",
             "type": "process",
             "command": "${command:toggleVim}",

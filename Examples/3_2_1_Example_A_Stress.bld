@@ -17,145 +17,87 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Examples/3_2_1_Example_A_Stress.bld
 
-fetch backend ["tensor"]
-
-// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
-bool g_emplaceTemplatesUnwrapped = false
-setUnwrapOperands(g_emplaceTemplatesUnwrapped)
-
-// Flag für das Setzen erweiterter Simplifizierungsregeln
-// bool g_emplaceExtendedSimplifications = true
-
 // Includes
+fetch backend ["tensor"]
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
 int [orderTSM, dimension] = 5, 2
 
-//
-// setUnwrapOperands(false)
-// disableDiffTemplateDefaults()
+int nVoigtComps = getNumOfVoigtComponents(dimension)
+
+decl tVoigtCompsUniTensor(string ref label, int order){
+
+    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
+    return [ <- tUniExpr(label, order, nVoigtComps)]
+}
 
 //
-decl evaluateExample(int orderTSM, int dimension){
+decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
+
+//
+decl evaluateExample(){
 
     //
+    slog("* Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
+
+    // Container zur Vereinheitlichung der Beispiele
     tExpr ref result
     string tResultLabel
-    int nVoigtComps = getNumOfVoigtComponents(dimension)
 
     //
-    epsilon = tExpr("epsilon", 1, args(nVoigtComps))
-
-    // Anteile des E Tensors
-    void [E0, D] = tExpr("E0", 2, args(nVoigtComps, nVoigtComps)), tExpr("D", 2, args(nVoigtComps, nVoigtComps))
-    void [ETSM] = E0 + D
-
-    // Anteile der Spannung
-    void [sigma0, sigmaFl] = (E0 . epsilon, D . epsilon)
-    void [sigmaTSM] = sigma0 + sigmaFl
+    epsilon, epsilonv = tVoigtCompsUniTensor("epsilon", 1), tVoigtCompsUniTensor("epsilonv", 1)
+    ETSM = [E0 => tVoigtCompsUniTensor("E0", 2)] + [D => tVoigtCompsUniTensor("D", 2)]
 
     //
-    setEqual(diff(sigmaTSM, D) .n D, D .n epsilon)
-    
-    // Modell für viskoelastische Dehnung
-    void epsilonv = tExpr("epsilonv", 1, args(nVoigtComps))
-    // void sigmav = E . (epsilon - epsilonv)
-
-    // taylorReihen enthalten ableitungen 1 bis orderTSM
-    requireDiffs(orderTSM ^ 2, epsilonv, D, "epsilonv", "D")
-
-    // interne Variable wird über Taylorreihe entwickelt
-    void epsilonv_t = taylorSeries(epsilonv, D, orderTSM)
-    void sigma_t = ETSM . (epsilon - epsilonv_t)
-    void sigmaTSM_t = taylorSeries(sigma_t, D, orderTSM)
+    epsilonvTSM = emplcXtNodesTaylorSeries(epsilonv, D, orderTSM)
+    sigma = ETSM . (epsilon - epsilonvTSM)
+    sigmaTSM = emplcDiffsTaylorSeries(sigma, D, orderTSM)
 
     //
-    result << sigmaTSM_t
-    tResultLabel = "sigmaTSM_t"
-
-    // unter Umständen muss der Ausdruck hier nochmal gewrapped werden damit eine Übereinstimmung mit den gängigen Simplify Templates angewendet werden kann
-    // Diese Vereinfachungen / Vereinfachungstemplates können nicht für eine beliebige anzahl an operanden definiert werden. Deshalb empfiehlt es sich sie nur für konkret zwei
-    // Operanden zu definieren und wenn nötig die Ausdrucksstruktur in diese Form zu bringen
+    result << sigmaTSM
+    tResultLabel = "sigmaTSM"
 
     //
     wrpSimplify(result)
 
     //
-    slog("Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
-    logSeparator()
-
-    //
-    slog("Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
-    // logSeparator()
-
-    //
-    // slog(result)
-    logSeparator()
+    slog("* Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
 
     //
     void tIDNResult = toIDN(result)
-    slog("Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
-    // logSeparator()
+    slog("* Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
 
     //
-    // slog(tIDNResult)
-    logSeparator()
-
-    //
-    slog("Writing Wrapped IDN to jl File ...")
+    slog("* Writing Tangents", tResultLabel, "Index Notation to jl File ...")
 
     //
     tIDNResult = toWrappedIDN(result)
     tIDNResult->toJuliaString(tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
-
-    // //
-    // slog("Writing unwrapped IDN to jl File ...")
-
-    // //
-    // tIDNResult = toUnwrappedIDN(result)
-    // tIDNResult->toJuliaString(tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-    //     examplePrefix + "_autodiff_unwrapped" + tResultLabel + ".jl")
+        examplePrefix + "_" +  tResultLabel + ".jl")
 
     //
-    result << sigma_t
-    tResultLabel = "sigma_t"
-
-    //
-    tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString(tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_autodiff_wrapped" + tResultLabel + ".jl")
-
-    //
-    slog("Example evaluated")
+    slog("* Example evaluated")
 }
 
 //
 decl main(){
-
-    // Check Registers
-
-    // logTypeRegister()
-    // logNullRefs()
-    // logFunctionRegister()
-    // logDiffTemplates(); logSeparator()
-    // logSimplifications(); logSeparator()
 
     //
     logSeparator()
     log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
     logSeparator()
 
-    //
-    evaluateExample(orderTSM, dimension)
+    double startTime = now()
+    callOnExtendedStack("evaluateExample", 1500, args())
+
+    logSeparator()
+    slog("Ausfuehrungszeit des Beispiels : ", now() - startTime, "s")
+    logSeparator()
 
     return 0
 }
 
-// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
-if(calledAs(__MainProc__)){
-
-    return [main()]
-}
+// Main Guard
+if(calledAs(__MainProc__)){ return [main()] }

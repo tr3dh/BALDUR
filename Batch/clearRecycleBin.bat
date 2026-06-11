@@ -1,0 +1,1 @@
+PowerShell.exe -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue"
