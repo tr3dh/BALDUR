@@ -1,18 +1,44 @@
-fetch backend "tensor"                              // Backends fetchen
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//                                      Minimalistic Baldur CheatSheet
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Minimalistisches CheatSheet, das Basisfeatures der tensoralgebraischen Skriptsprache Baldur darstellt
+// Das CheatSheet nutzt dabei teilweise Funktionen der Standard-Umgebung 'pckg', die direkt aus dem GitHub-Repo
+// geclont werden oder als Teil des 'Examples'-Releases heruntergeladen werden kann.
+//    
+// !! Hinweis : dieses CheatSheet kann fehlerfrei ausgeführt werden, um dynamisches Syntaxhighlighting zu aktivieren
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+fetch backend ["tensor"]                            // Backends laden
 fetch script ["pckg/preDecls", "pckg/functions"]    // Standardincludes
 
-... = tExpr(label, order, args(dimensions))         // Generieren von symbolischen Tensorausdrücken
+decl fnLabel(){}                                    // Funktionsdeklaration
+return []                                           // Rückgabe
+
+operand1 <+ operand2 | <+ operand2                  // Kopie
+operand1 <- operand2 | <- operand2                  // Verschiebung
+operand1 << operand2 | << operand2                  // Referenzierung
+operand1 <> operand2                                // Vertauschung
+
+operand1 => operand2                                // Zuweisungerückgabe (Walrus)
+
+dref ...                                            // Dereferenzierung
+detach ...                                          // Scopeeintrag löschen
+
+member -> [attrib, mbFunction(...), ...]            // Zugriff auf Attribute und Memberfunktionen
+className >> [attrib, staticFunction(...), ...]     // Zugriff auf statische Attribute und Funktionen einer Klasse
+
+... = tExpr(label, order, args(dimensions))         // Erstellt symbolischen Tensorausdruck
 ... = tExprTmpl(label, order = -1)                  // Erstellt Std-Template Instanz
 ... = tExprInstTmpl(label)                          // Erstellt Instanz-Template Instanz
-... = tExprArgTmpl(label, order= -1)                // Erstellt Arg-Template Instanz
-... = tExprCnstTmpl(label)                          // Erstellt Skalar-Konstanten-Template Instanz
+... = tExprArgTmpl(label, order = -1)               // Erstellt Arg-Template Instanz
+... = tExprCnstTmpl(label = NULLSTR)                // Erstellt Skalar-Konstanten-Template Instanz
 
 setDiff(operand1, operand2, result)                 // Setzt konkrete Ableitung
 setDiffTemplate(operand1, operand2, resultTemplate) // Setzt Ableitungsregel mit template-ierten Ausdrücken 
 setEqual(term, simplification)                      // Setzt Simplifizierung / Simplifizierungsregel
 
 ... = diff(operand1, operand2)                      // algebraische Ableitung
-... = wrpSimplified()                               // gibt simplifizierten Ausdruck zurück
+... = wrpSimplified(...)                            // gibt simplifizierten Ausdruck zurück
 
 ... = emplcXtNodesTaylorSeries(f, x, order)         // Std-Taylorreihenfunktion, die Ableitungen von f im Taylorreihenglied
                                                     // als externe Node mit 'f_{order}' einsetzt
