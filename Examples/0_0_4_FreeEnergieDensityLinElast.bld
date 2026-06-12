@@ -1,0 +1,12 @@
+fetch backend ["tensor"]                        
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+// Ableitung der freien Energie Dichte eines lin. elastischen Materials nach der Dehnung
+Psi = [epsilon => tExpr("epsilon", 2, args(3) * 2)] : tExpr("E", 4, args(3) * 4) : epsilon
+sigma = diff(Psi, epsilon)
+toIDN(wrpSimplified(sigma)) -> toJuliaString("evalSigma") -> writeToFile("Examples/juliaScripts/evalSigma.jl")
+
+// Ableitung der freien Energie Dichte eines lin. elastischen Materials nach der Dehnung in Voigt-Notation
+Psi = [epsilon => tExpr("epsilon", 1, args(6) * 1)] . tExpr("E", 2, args(6) * 2) . epsilon
+sigma = diff(Psi, epsilon)
+toIDN(wrpSimplified(sigma)) -> toJuliaString("evalSigmaVoigt") -> writeToFile("Examples/juliaScripts/evalSigmaVoigt.jl")
