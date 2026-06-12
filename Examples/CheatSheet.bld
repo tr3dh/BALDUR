@@ -44,3 +44,8 @@ setEqual(term, simplification)                      // Setzt Simplifizierung / S
                                                     // als externe Node mit 'f_{order}' einsetzt
 ... = emplcDiffsTaylorSeries(f, x, order)           // Std-Taylorreihenfunktion, die Ableitungen von f im Taylorreihenglied
                                                     // als algebraische Ableitungen durchführt
+
+... = toWrappedIDN(algebraicTensorExpression)       // Umwandlung eines algebraischen in einen indexnotierten Ausdruck
+... = tIdnMember -> toJuliaString(label)            // Attributsfunktion eines indexnotierten Ausdrucks,
+                                                    // der Julia-Skript-String erzeugt
+stringMember -> writeToFile(path)                   // Attributsfunktion eines Strings, die Inhalt in Datei schreibt
