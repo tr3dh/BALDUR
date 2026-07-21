@@ -313,6 +313,7 @@ windiligent:
 lsp:
 	@if [ ! -d "thirdParty/lsp-framework" ]; then \
 		cd thirdParty && git clone https://github.com/leon-bckl/lsp-framework.git; \
+		cd ../; \
 	fi; \
 	\
 	if [ ! -d "thirdParty/lsp-framework/build" ]; then \
@@ -389,6 +390,9 @@ npm:
 
 prefab:
 
+#	Updaten der Submodule
+	git submodule update --init --recursive
+
 	@mkdir -p build
 	@mkdir -p thirdParty
 
@@ -459,4 +463,9 @@ prefab:
 	@make raylibImgui
 	@make implot
 
-	@make compiledb
+#	@make compiledb
+	@make lsp
+	cd src/Alberich && make
+
+#	Bau des rc-Skripts, dass als Ressource für die Kompilierung erforderlich ist
+	@make res

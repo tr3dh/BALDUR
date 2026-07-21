@@ -195,10 +195,9 @@ std::vector<ImWchar> CodeEditor::getInputChars(){
     // Einfacher Textinput
     ImGuiIO& io = ImGui::GetIO();
     for (int n = 0; n < io.InputQueueCharacters.Size; n++) {
-
         inputChars.emplace_back(io.InputQueueCharacters[n]);
     }
-    io.ClearInputCharacters();
+    io.InputQueueCharacters.resize(0); // ersetzt io.ClearInputCharacters()
     ImGui::SetNextFrameWantCaptureKeyboard(true);
 
     return inputChars;
