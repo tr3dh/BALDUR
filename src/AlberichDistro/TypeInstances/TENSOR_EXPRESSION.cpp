@@ -1884,6 +1884,7 @@ bool TensorExpression::operator==(const TensorExpression& other) const {
     else if(contractReversed != other.contractReversed){ return false; }
 
     if(isConstant && other.isConstant && !isConstantTemplate() && !other.isConstantTemplate() && (value != other.value)){ return false; }
+    if(isConstantTemplate() && other.isConstantTemplate()){ return label == other.label; }
     if(isConstant && other.isConstantTemplate() || isConstantTemplate() && other.isConstant){ return true; }
 
     if(tensorOrder != -1 && other.tensorOrder != -1 && tensorOrder != other.tensorOrder){ return false; }

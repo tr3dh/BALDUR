@@ -224,6 +224,12 @@ setEqual(ArgTmplA - ArgTmplA, zeros(ArgTmplA))
 setEqual(ArgTmplA - CnstTmplA * ArgTmplA, (CnstTmplA - 1) * ArgTmplA)
 setEqual(CnstTmplA * ArgTmplA - CnstTmplB * ArgTmplA, (CnstTmplA - CnstTmplB) * ArgTmplA)
 
+// //
+// setEqual(diff(tmplA, CnstTmpl), zeros(tmplA))
+// setEqual(diff(tmplA, zerosInstanceTemplate), zeros(tmplA \(x) zerosInstanceTemplate))
+// setEqual(diff(tmplA, identityInstanceTemplate), zeros(tmplA \(x) identityInstanceTemplate))
+// setEqual(diff(tmplA, onesInstanceTemplate), zeros(tmplA \(x) onesInstanceTemplate))
+
 decl emplaceExtendedSimplifications(){
     
     setEqual((tmplA + tmplB) + tmplB, tmplA + 2 * tmplB)
@@ -233,6 +239,9 @@ decl emplaceExtendedSimplifications(){
     setEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB, tmplA + (tmplScalar + otherTmplScalar) * tmplB)
 
     setEqual(CnstTmplA * (CnstTmplB * tmplB), (CnstTmplA * CnstTmplB) * tmplB)
+    setEqual(CnstTmplA * (tmplB * CnstTmplB), (CnstTmplA * CnstTmplB) * tmplB)
+    setEqual(tmplA * (CnstTmplA * tmplB), CnstTmplA * (tmplA * tmplB))
+    setEqual(tmplA * (tmplB * CnstTmplA), CnstTmplA * (tmplA * tmplB))
 }
 
 decl removeExtendedSimplifications(){
@@ -243,7 +252,10 @@ decl removeExtendedSimplifications(){
     removeEqual((tmplA + tmplB) + tmplScalar * tmplB)
     removeEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB)
 
-    removeEqual(CnstTmplA * (CnstTmplB * tmplB))
+    setEqual(CnstTmplA * (CnstTmplB * tmplB))
+    setEqual(CnstTmplA * (tmplB * CnstTmplB))
+    setEqual(tmplA * (CnstTmplA * tmplB))
+    setEqual(tmplA * (tmplB * CnstTmplA))
 }
 
 // Diese Simplifizierungen sind vergleichsweise teuer, simplifizieren aber stark
@@ -283,14 +295,18 @@ setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplat
 // Dieser erweiterte Konsistenzcheck ist relativ teuer und verlangsamt das Programm auch dann wenn keine templates
 // dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
 // 'setCompareTemplateDependencies(true)'
-setEqual(identity(tmplA) . tmplA, tmplA)                                                                                            // .
-setEqual(tmplA . identity(tmplA), tmplA)
+
+// // setEqual(identity(tmplA) . tmplA, tmplA)                                                                                            // .
+// // setEqual(tmplA . identity(tmplA), tmplA)
+
 setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
 setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityInstanceTemplate \(x) identityInstanceTemplate))     // \(x)
 
 // Vereinfachungen für Container
-setEqual(tmplA . inverse(tmplA), identity(tmplA))
-setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+
+// // setEqual(tmplA . inverse(tmplA), identity(tmplA))
+// // setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
+
 setEqual(inverse(inverse(tmplA)), tmplA)
 setEqual(transpose(transpose(tmplA)), tmplA)
 setEqual(sqrt(tmplScalar) * sqrt(tmplScalar), tmplScalar)
