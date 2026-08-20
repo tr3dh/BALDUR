@@ -1400,10 +1400,10 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceJuliaString(cons
 int g_recommedSubstitutionFromComplexity = 25;
 int g_forceSubstitutionFromComplexity = 30;
 
-std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString() const{
+std::string IndexNotatedTensorExpression::wrapTensorSequenceTullioString(const std::string& resLabel) const{
 
     IndexNotatedTensorExpression copy = *this;
-    return copy.generateTensorSequenceTullioString();
+    return copy.generateTensorSequenceTullioString(0, false, false, resLabel);
 }
 
 // std::string IndexNotatedTensorExpression::wrapTensorSequenceIDNString() const{
@@ -1434,17 +1434,17 @@ bool IndexNotatedTensorExpression::containsOnlyScalars() const{
 
 // Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
 // dafür gibts die wrapper funktion
-std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(size_t depth, bool forceSubstitution, bool useTensorNotation){
+std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(size_t depth, bool forceSubstitution, bool useTensorNotation, const std::string& resLabel){
 
     // Werte so setzen dass sie Rekursive Funktion direkt beim ersten Durchlauf abbrechen
-    static int dependencieIdx = -1;
+    static int dependencieIdx = 0;
     static std::string dependencieDecls = "__INVALIDDECLS__", dependencieAssignment = "__INVALIDDECLS__";
     static bool terminate = true;
 
     // >> Setup der Werte für jeden einzelnen Aufruf der Funktionen für einen frischen Ausdruck
     if(depth == 0){
 
-        dependencieIdx = 0;
+        // dependencieIdx = 0;
         dependencieDecls = ""; dependencieAssignment = "";
         terminate = false;
     }
@@ -1571,7 +1571,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             /* dependencieDecls + "\n" + */ dependencieAssignment + "\n" + \
             /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
             /* "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + */ \
-            (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode("res").generateTensorSequenceTullioString(1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res + "\n\n\treturn res";
+            (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode(resLabel).generateTensorSequenceTullioString(1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res + "\n\n";
     }
     else if((Relation == TkType::Operator && getNumOfNodes() > g_recommedSubstitutionFromComplexity) || forceSubstitution){
 
@@ -1610,13 +1610,57 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
 }
 
 //
-std::string IndexNotatedTensorExpression::toJuliaString(const std::string& instanceLabel) const {
+std::string IndexNotatedTensorExpression::toJuliaString(const std::string& instanceLabel, const std::vector<IndexNotatedTensorExpression>& depsKeys, const std::vector<IndexNotatedTensorExpression>& depsValues) const {
 
     //
     RETURNING_ASSERT(containsDimensions(), "Ohne Dimensionsberücksichtigung kann Julia Skript nicht erstellt werden","");
 
     // Unique External Nodes
     auto uniqueExternals = getUniqueExternalNodes();
+
+    // Format :
+    // * depsKeys ist ein Vektor mit den konditionierten externen Nodes für die ein Ausdruck substituiert wird
+    // * depsVals ist die entsprechende Substitution
+    //
+    // Bspl.
+    // DepsKeys[0] = tIdn("devSigma", ...) | DepsVals[0] = toIDN(S . (E0 . (eps0 - epsvp0))  
+
+    //
+    RETURNING_ASSERT(depsKeys.size() == depsValues.size(), "Ungleiche Listengrößen für Deps angegeben", "");
+
+    // Übertrag der Abhängigkeiten
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        std::vector<const IndexNotatedTensorExpression*> uniqueDepExternals = depsValues[i].getUniqueExternalNodes();
+
+        for(auto uniqueNode : uniqueDepExternals){
+
+            bool alreadyIn = std::find_if(uniqueExternals.begin(), uniqueExternals.end(),
+                [uniqueNode](const IndexNotatedTensorExpression* existing) {
+                    return areEqualExternals(*existing, *uniqueNode);
+                }) != uniqueExternals.end();
+
+            if (!alreadyIn) {
+                uniqueExternals.push_back(uniqueNode);
+            }
+        }
+    }
+
+    // Löschen der Substituierten aus den Abhängigkeiten
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        // Sicherstellen das depsKey externe Node ist
+        RETURNING_ASSERT(areEqualExternals(depsKeys[i].asExternalNode(depsKeys[i].label), depsKeys[i]), "Übergebene Substitution ist keine externe Node", "");
+
+        //
+        uniqueExternals.erase(
+            std::remove_if(uniqueExternals.begin(), uniqueExternals.end(),
+                [&](const IndexNotatedTensorExpression* existing) {
+                    return areEqualExternals(*existing, depsKeys[i]);
+                }),
+            uniqueExternals.end()
+        );
+    }
 
     // Return string
     std::string res;
@@ -1626,10 +1670,18 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "# unique external nodes :\n";
 
     //
-    for(const auto& node : getUniqueExternalNodes()){
+    for(const auto& node : uniqueExternals){
 
         res += "# | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
         res += printPlainVector(node->dimensions, false);
+        res += "}\n";
+    }
+
+    //
+    for(const auto& node : depsKeys){
+
+        res += "# | deps '" + getArgLabel(node) + "', order [" + std::to_string(node.tensorOrder) + "], dimensions {";
+        res += printPlainVector(node.dimensions, false);
         res += "}\n";
     }
 
@@ -1727,7 +1779,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     bool filledInFirstExternal = false;
 
     //
-    for(const auto& node : getUniqueExternalNodes()){
+    for(const auto& node : uniqueExternals){
 
         if(isFunctionalNode(*node)){
 
@@ -1743,10 +1795,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += ")\n\n";
 
     //
-    auto externalNodes = getUniqueExternalNodes();
-
-    //
-    for(const auto& node : externalNodes){
+    for(const auto& node : uniqueExternals){
 
         if(isFunctionalNode(*node)){
 
@@ -1806,7 +1855,16 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     // //
     // res += "\n\treturn res\n";
 
-    res += wrapTensorSequenceTullioString();
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        // depsKeys[i] | depsValues[i]
+        // LOG << depsValues[i].toString() << " | " << depsValues[i].toString() << endln;
+        res += depsValues[i].wrapTensorSequenceTullioString(depsKeys[i].label);
+    }
+
+    std::string resLabel = "res";
+    res += wrapTensorSequenceTullioString(resLabel);
+    res += "\n\n\treturn " + resLabel;
     res += "\n\n";
 
     //
@@ -1817,16 +1875,16 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
         res += "start_time = time()\nres = " + instanceLabel + "(";
 
         //
-        for(auto it = externalNodes.begin(); it != externalNodes.end(); ){
+        for(auto it = uniqueExternals.begin(); it != uniqueExternals.end(); ){
 
             if(isFunctionalNode(**it)){
-                it = externalNodes.erase(it);
+                it = uniqueExternals.erase(it);
             } else {
                 ++it;
             }
         }
 
-        for(auto it = externalNodes.begin(); it != externalNodes.end(); ++it) {
+        for(auto it = uniqueExternals.begin(); it != uniqueExternals.end(); ++it) {
 
             auto expr = *it;
 
@@ -1834,7 +1892,7 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
             res += "rand" + printPlainVector(expr->dimensions);
             
             //
-            if(std::next(it) != externalNodes.end()) {
+            if(std::next(it) != uniqueExternals.end()) {
                 res += ", ";
             }
         }
@@ -2066,7 +2124,7 @@ std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const I
 //     // tensorOrder = notatedIndices.size();
 // }
 
-bool IndexNotatedTensorExpression::equals(const IndexNotatedTensorExpression& other){
+bool IndexNotatedTensorExpression::equals(const IndexNotatedTensorExpression& other) const{
 
     if(label != other.label){ return false; }
 
@@ -2076,6 +2134,15 @@ bool IndexNotatedTensorExpression::equals(const IndexNotatedTensorExpression& ot
 
         if(notatedIndices[idx] != other.notatedIndices[idx]){ return false; }
     }
+
+    return true;
+}
+
+bool IndexNotatedTensorExpression::equalsWoIdx(const IndexNotatedTensorExpression& other) const{
+
+    if(label != other.label){ return false; }
+
+    if(notatedIndices.size() != other.notatedIndices.size()){ return false; }
 
     return true;
 }
@@ -2705,6 +2772,50 @@ namespace types{
                 GET_ARG(STRING, 0); GET_RETURN(STRING, 0);
 
                 ret0->getMember() = mb->getMember().toJuliaString(arg0->getMember());
+        },
+        {STRING::typeIndex});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toJuliaString", {STRING::typeIndex, ARGS::typeIndex, ARGS::typeIndex},
+            [__functionLabel__ = "toJuliaString", __numArgs__ = 3](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_ARG(STRING, 0); GET_ARG(ARGS, 1); GET_ARG(ARGS, 2); GET_RETURN(STRING, 0);
+
+                //
+                RETURNING_ASSERT(arg1->getMember().size() == arg2->getMember().size(), "Übergebene Listen DependencieKeys und -Vals haben ungleiche Länge",);
+
+                // DependencieKeys
+
+                // EvalResultVec zu IndexNotatedTensorExpressionVec parsen
+                std::vector<IndexNotatedTensorExpression> depsKeys = {};
+                depsKeys.reserve(arg1->getMember().size());
+
+                for(size_t i = 0; i < arg1->getMember().size(); i++){
+
+                    RETURNING_ASSERT(arg1->getMember().at(i).getVariableRef().getData()->getTypeIndex() == INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "Input ist kein Indexnotierter Ausdruck",);
+                    depsKeys.emplace_back(static_cast<INDEX_NOTATED_TENSOR_EXPRESSION*>(arg1->getMember().at(i).getVariableRef().getData())->getMember());
+                }
+
+                // DependencieVals
+
+                // EvalResultVec zu IndexNotatedTensorExpressionVec parsen
+                std::vector<IndexNotatedTensorExpression> depsVals = {};
+                depsVals.reserve(arg2->getMember().size());
+
+                for(size_t i = 0; i < arg1->getMember().size(); i++){
+
+                    RETURNING_ASSERT(arg2->getMember().at(i).getVariableRef().getData()->getTypeIndex() == INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "Input ist kein Indexnotierter Ausdruck",);
+                    depsVals.emplace_back(static_cast<INDEX_NOTATED_TENSOR_EXPRESSION*>(arg2->getMember().at(i).getVariableRef().getData())->getMember());
+                }
+
+                ret0->getMember() = mb->getMember().toJuliaString(arg0->getMember(), depsKeys, depsVals);
         },
         {STRING::typeIndex});
 

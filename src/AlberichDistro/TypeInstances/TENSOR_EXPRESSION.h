@@ -331,7 +331,8 @@ struct IndexNotatedTensorExpression{
 
     // void reEvaluateIndices();
 
-    bool equals(const IndexNotatedTensorExpression& other);
+    bool equals(const IndexNotatedTensorExpression& other) const;
+    bool equalsWoIdx(const IndexNotatedTensorExpression& other) const;
 
     void evaluateIndexDimensions(std::map<int, int>& indexDimensions) const;
 
@@ -340,9 +341,9 @@ struct IndexNotatedTensorExpression{
 
     std::string generateTensorSequenceJuliaString(const std::vector<NotationIndex>& indexPermutation, size_t depth = 0) const;
 
-    std::string wrapTensorSequenceTullioString() const;
-    std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false);
-    std::string toJuliaString(const std::string& instanceLabel = "Tmp") const;
+    std::string wrapTensorSequenceTullioString(const std::string& resLabel = "res") const;
+    std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false, const std::string& resLabel = "res");
+    std::string toJuliaString(const std::string& instanceLabel = "Tmp", const std::vector<IndexNotatedTensorExpression>& depsKeys = {}, const std::vector<IndexNotatedTensorExpression>& depsValues = {}) const;
 
     std::string toString(size_t depth = 0) const;
     friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);
