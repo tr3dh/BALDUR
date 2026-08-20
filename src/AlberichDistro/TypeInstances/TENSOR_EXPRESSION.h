@@ -138,6 +138,8 @@ struct TensorExpression{
 
     //
     TensorExpression asExternalNode(const std::string& label);
+    bool isExternalNode() const;
+
     bool contains(const TensorExpression& other) const;
     int countOccurences(const TensorExpression& other) const;
     bool containsDimensions() const;
@@ -360,6 +362,7 @@ namespace types{
         static bool setUpClass();
 
         TENSOR_EXPRESSION() = default;
+        TENSOR_EXPRESSION(const TensorExpression& Inst) : INativeObject(Inst){}
         TENSOR_EXPRESSION(TensorExpression* Ptr) : INativeObject(Ptr){}
 
         // virtual ist redundant, die print bleibt überscheibbar

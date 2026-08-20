@@ -81,6 +81,11 @@ TensorExpression TensorExpression::asExternalNode(const std::string& label){
     return TensorExpression(label, tensorOrder, dimensions);
 }
 
+bool TensorExpression::isExternalNode() const{
+
+    return Relation == TkType::Argument; // && children.size() == 0;
+}
+
 // bei Rückgabe von true wird lhs vor rhs sortiert bei false andersherum
 bool operator<(const TensorExpression& lhs, const TensorExpression& rhs)
 {
@@ -2799,6 +2804,24 @@ namespace types{
         {TENSOR_EXPRESSION::typeIndex});
 
         // Konstruktoren
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "isExternalNode", {},
+            [__functionLabel__ = "isExternalNode", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(BOOL, 0);
+                
+                // schreiben in returns
+                ret0->getMember() = mb->getMember().isExternalNode();
+        },
+        {BOOL::typeIndex});
+
+        // Konstruktoren
         registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getOrder", {},
             [__functionLabel__ = "getOrder", __numArgs__ = 0](FREG_ARGS){
 
@@ -3768,6 +3791,51 @@ namespace types{
 
                 //
                 ret0->getMember() = static_cast<int>(mb->getMember().getNumOfExternalNodes());
+        },
+        {INT::typeIndex});
+
+        //
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "getUniqueNodes", {},
+            [__functionLabel__ = "getUniqueNodes", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_RETURN(ARGS, 0);
+
+                //
+                auto externals = mb->getMember().getUniqueExternalNodes();
+
+                //
+                ret0->getMember().reserve(externals.size());
+
+                for(auto& external : externals){
+                    
+                    ret0->getMember().emplace_back().constructRValueByObject(new TENSOR_EXPRESSION(*external));
+                }
+        },
+        {ARGS::typeIndex});
+
+        //
+        registerMemberFunction(TENSOR_EXPRESSION::typeIndex, "countOccurences", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "countOccurences", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+            
+                // schreiben in returns
+                GET_MEMBER(TENSOR_EXPRESSION);
+                GET_ARG(TENSOR_EXPRESSION, 0);
+                GET_RETURN(INT, 0);
+
+                //
+                ret0->getMember() = mb->getMember().countOccurences(arg0->getMember());
         },
         {INT::typeIndex});
 
