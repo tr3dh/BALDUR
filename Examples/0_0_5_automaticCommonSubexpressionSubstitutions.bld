@@ -1,0 +1,102 @@
+// ---------------------------------------------------------------------------
+//                              Example 3.2.1 A
+// ---------------------------------------------------------------------------
+// Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
+// "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
+// von Hedrik Geisler, 2025
+// Kapitel : 3.2.1, Example A : TSM - Modelling Stress, S.34 ff
+//
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_5_automaticCommonSubexpressionSubstitutions.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_5_automaticCommonSubexpressionSubstitutions.bld
+//
+// Für Release
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_5_automaticCommonSubexpressionSubstitutions.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_5_automaticCommonSubexpressionSubstitutions.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/0_0_5_automaticCommonSubexpressionSubstitutions.bld
+
+// Includes
+fetch backend ["tensor"]
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+//
+string [examplePrefix, exampleChapter, exampleTitle] = "0_0_5", "x", "Julia-Export - Substitute Common Subexpressions"
+int [orderTSM, dimension] = 3, 2
+
+int nVoigtComps = getNumOfVoigtComponents(dimension)
+
+decl tVoigtCompsUniTensor(string ref label, int order){
+
+    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
+    return [ <- tUniExpr(label, order, nVoigtComps)]
+}
+
+//
+decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
+
+//
+decl evaluateExample(){
+
+    //
+    slog("* Skript wird fuer TSM", orderTSM, "ter Stufe in", dimension, "D ausgefuehrt")
+
+    // Container zur Vereinheitlichung der Beispiele
+    tExpr ref result
+    string tResultLabel
+
+    //
+    epsilon, epsilonv = tVoigtCompsUniTensor("epsilon", 1), tVoigtCompsUniTensor("epsilonv", 1)
+    ETSM = [E0 => tVoigtCompsUniTensor("E0", 2)] + [D => tVoigtCompsUniTensor("D", 2)]
+
+    //
+    epsilonvTSM = emplcXtNodesTaylorSeries(epsilonv, D, orderTSM)
+    sigma = ETSM . (epsilon - epsilonvTSM)
+    sigmaTSM = emplcDiffsTaylorSeries(sigma, D, orderTSM)
+
+    //
+    result << sigmaTSM
+    tResultLabel = "sigmaTSM"
+
+    //
+    wrpSimplify(result)
+
+    //
+    slog("* Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
+
+    //
+    void tIDNResult = toIDN(result)
+    slog("* Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
+
+    //
+    slog("* Writing Tangents", tResultLabel, "Index Notation to jl File ...")
+
+    //
+    stdGenerateJuliaString(result, tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + examplePrefix + "_std_" +  tResultLabel + ".jl")
+    cssGenerateJuliaString(result, tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + examplePrefix + "_css_" +  tResultLabel + ".jl")
+
+    //
+    slog("* Example evaluated")
+}
+
+//
+decl main(){
+
+    //
+    logSeparator()
+    log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
+
+    double startTime = now()
+    callOnExtendedStack("evaluateExample", 1500, args())
+
+    logSeparator()
+    slog("Ausfuehrungszeit des Beispiels : ", now() - startTime, "s")
+    logSeparator()
+
+    return 0
+}
+
+// Main Guard
+if(calledAs(__MainProc__)){ return [main()] }

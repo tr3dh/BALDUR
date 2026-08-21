@@ -252,10 +252,10 @@ decl removeExtendedSimplifications(){
     removeEqual((tmplA + tmplB) + tmplScalar * tmplB)
     removeEqual((tmplA + tmplScalar * tmplB) + otherTmplScalar * tmplB)
 
-    setEqual(CnstTmplA * (CnstTmplB * tmplB))
-    setEqual(CnstTmplA * (tmplB * CnstTmplB))
-    setEqual(tmplA * (CnstTmplA * tmplB))
-    setEqual(tmplA * (tmplB * CnstTmplA))
+    removeEqual(CnstTmplA * (CnstTmplB * tmplB))
+    removeEqual(CnstTmplA * (tmplB * CnstTmplB))
+    removeEqual(tmplA * (CnstTmplA * tmplB))
+    removeEqual(tmplA * (tmplB * CnstTmplA))
 }
 
 // Diese Simplifizierungen sind vergleichsweise teuer, simplifizieren aber stark

@@ -132,11 +132,13 @@ std::vector<const IndexNotatedTensorExpression*> IndexNotatedTensorExpression::g
     {
         if(node.Relation == TkType::Argument){
 
+            // Konstanten außenvor lassen
+            if(node.isConstant){ return; }
+
             // Prüfen ob die Node schon in uniqueNodes enthalten ist
             for (const auto* u : uniqueNodes)
-            {
+            {   
                 if (areEqualExternals(*u, node)){ return; }
-                else if(node.isConstant){ return; }
             }
 
             // Node ist einzigartig
@@ -1432,12 +1434,15 @@ bool IndexNotatedTensorExpression::containsOnlyScalars() const{
     return true;
 }
 
+//
+int IndexNotatedTensorExpression::dependencieIdx = 0;
+
 // Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
 // dafür gibts die wrapper funktion
 std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(size_t depth, bool forceSubstitution, bool useTensorNotation, const std::string& resLabel){
 
     // Werte so setzen dass sie Rekursive Funktion direkt beim ersten Durchlauf abbrechen
-    static int dependencieIdx = 0;
+    // static int dependencieIdx = 0;
     static std::string dependencieDecls = "__INVALIDDECLS__", dependencieAssignment = "__INVALIDDECLS__";
     static bool terminate = true;
 
@@ -1628,10 +1633,16 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     //
     RETURNING_ASSERT(depsKeys.size() == depsValues.size(), "Ungleiche Listengrößen für Deps angegeben", "");
 
+    // //
+    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
     // Übertrag der Abhängigkeiten
     for(size_t i = 0; i < depsKeys.size(); i++){
 
         std::vector<const IndexNotatedTensorExpression*> uniqueDepExternals = depsValues[i].getUniqueExternalNodes();
+
+        // //
+        // LOG << fprintPlainVector(uniqueDepExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
 
         for(auto uniqueNode : uniqueDepExternals){
 
@@ -1645,6 +1656,9 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
             }
         }
     }
+
+    // //
+    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
 
     // Löschen der Substituierten aus den Abhängigkeiten
     for(size_t i = 0; i < depsKeys.size(); i++){
@@ -1854,6 +1868,9 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     // //
     // res += "\n\treturn res\n";
+
+    //
+    dependencieIdx = 0;
 
     for(size_t i = 0; i < depsKeys.size(); i++){
 
