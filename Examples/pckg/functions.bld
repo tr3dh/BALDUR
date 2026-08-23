@@ -431,7 +431,7 @@ decl cssGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref file
                 // Wenn vordere Komponente die hintere nicht enthält, erfordert diese keine vorherige
                 // Berechnung der ersten
                 // Damit ist eine Umsortierung nicht nötig
-                if(!lhs -> contains(rhs)){ continue }
+                if(!lhs -> contains(rhs) || lhs == rhs){ continue }
                 
                 // Swap wenn Umsortierung notwendig ist und Reihenfolge des Komponentenpaars inkosisten
                 // Vermerken der gefundenen Inkonsistenz für Abbruchsfall

@@ -154,6 +154,20 @@ decl __detach__(void ref var){
     return [recast("void",  var)]
 }
 
+// Ueberschreiben der ursrpünglichen Operation durch veralgemeinterte Kontratkion
+// fuer die zweite Stufe
+decl __mirroringDoubleContractionAssign__(tExpr ref lhs, tExpr ref rhs){
+
+    return [__contractAssign__(lhs, rhs, 2, contractReversed)]
+}
+
+// Ueberschreiben der ursrpünglichen Operation durch veralgemeinterte Kontratkion
+// fuer die zweite Stufe
+decl __crossingDoubleContractionAssign__(tExpr ref lhs, tExpr ref rhs){
+
+    return [__contractAssign__(lhs, rhs, 2, contractForward)]
+}
+
 // erzeugt einen algebraischen Tensorausdruck mit uniformen Dimensionen
 decl tUniExpr(string ref label, int order, int uniDimension){
 
@@ -272,18 +286,23 @@ setEqual(zerosInstanceTemplate + tmplA, tmplA)                                  
 setEqual(tmplA + zerosInstanceTemplate, tmplA)                                          // (trivial)
 setEqual(zerosInstanceTemplate - tmplA, (-1) * tmplA)                                   // -
 setEqual(tmplA - zerosInstanceTemplate, tmplA)
-setEqual(zerosInstanceTemplate * tmplScalar, zeros(zerosInstanceTemplate))               // *
-setEqual(tmplScalar * zerosInstanceTemplate, zeros(zerosInstanceTemplate))               // (trivial)
+setEqual(zerosInstanceTemplate * tmplScalar, zeros(zerosInstanceTemplate))              // *
+setEqual(tmplScalar * zerosInstanceTemplate, zeros(zerosInstanceTemplate))              // (trivial)
 setEqual(zerosInstanceTemplate * CnstTmpl, zerosInstanceTemplate)                       // *
 setEqual(CnstTmpl * zerosInstanceTemplate, zerosInstanceTemplate)
+
+// Basiskontraktionen
 setEqual(zerosInstanceTemplate . tmplA, zeros(zerosInstanceTemplate . tmplA))           // .
 setEqual(tmplA . zerosInstanceTemplate, zeros(tmplA . zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate .n tmplA, zeros(zerosInstanceTemplate .n tmplA))         // .n
 setEqual(tmplA .n zerosInstanceTemplate, zeros(tmplA .n zerosInstanceTemplate))
+
+// ToDo : für alle Stufen implementieren
 setEqual(zerosInstanceTemplate .. tmplA, zeros(zerosInstanceTemplate .. tmplA))         // ..
 setEqual(tmplA .. zerosInstanceTemplate, zeros(tmplA .. zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate : tmplA, zeros(zerosInstanceTemplate : tmplA))           // :
 setEqual(tmplA : zerosInstanceTemplate, zeros(tmplA : zerosInstanceTemplate))
+
 setEqual(zerosInstanceTemplate \x tmplA, zeros(zerosInstanceTemplate \x tmplA))         // \x
 setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)

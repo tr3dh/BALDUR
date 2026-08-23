@@ -1785,6 +1785,31 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "    return sqrt(result)\n";
     res += "end\n\n";
 
+    res += "const Scalar0 = Array{Float64,0}\n\n";
+
+    res += "import Base: +, -, *, /, sqrt\n\n";
+
+    res += "+(a::Scalar0, b::Scalar0) = a[] + b[]\n";
+    res += "+(a::Scalar0, b::Real)    = a[] + b\n";
+    res += "+(a::Real,    b::Scalar0) = a + b[]\n\n";
+
+    res += "-(a::Scalar0, b::Scalar0) = a[] - b[]\n";
+    res += "-(a::Scalar0, b::Real)    = a[] - b\n";
+    res += "-(a::Real,    b::Scalar0) = a - b[]\n";
+    res += "-(a::Scalar0)             = -a[]\n\n";
+
+    res += "*(a::Scalar0, b::Scalar0) = a[] * b[]\n";
+    res += "*(a::Scalar0, b::Real)    = a[] * b\n";
+    res += "*(a::Real,    b::Scalar0) = a * b[]\n\n";
+
+    res += "/(a::Scalar0, b::Scalar0) = a[] / b[]\n";
+    res += "/(a::Scalar0, b::Real)    = a[] / b\n";
+    res += "/(a::Real,    b::Scalar0) = a / b[]\n\n";
+
+    res += "sqrt(a::Scalar0) = sqrt(a[])\n";
+    res += "det(a::Scalar0)  = a[]\n";
+    res += "inv(a::Scalar0)  = 1 / a[]\n\n";
+
     //
     res += "\n";
     res += "function " + instanceLabel + "(";
