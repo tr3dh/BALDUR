@@ -44,7 +44,10 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "C", "3.2.2", "Modelling of the evolution equation of elasto-viscoplasticity"
-int [orderTSM, dimension] = 3, 2
+int [orderTSM, dimension] = 2, 3
+
+//
+string exportFunktionLabel = "cssGenerateJuliaString"
 
 //
 decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
@@ -215,9 +218,8 @@ decl evaluateExample(int orderTSM, int dimension){
     log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
     //
-    tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+    call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
     // Ermitteln der Tangenten
     for(int order = 1, order < orderTSM + 1, order++){
@@ -266,9 +268,8 @@ decl evaluateExample(int orderTSM, int dimension){
         log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
         //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+        call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
         // Tangente in Julia Skript schreiben
         result << tmpTangentY
@@ -276,9 +277,8 @@ decl evaluateExample(int orderTSM, int dimension){
         log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
         //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+        call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
         // Kreuztherme bestimmen
         // Kreuztherme aus vorheriger Ordnung in crossTangest cachen, Startpunkt bei Ordnung 1 (bei Ordnung 2 tauchen zuerst Kreuztherme auf)
@@ -316,9 +316,8 @@ decl evaluateExample(int orderTSM, int dimension){
                 log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
                 //
-                tIDNResult = toWrappedIDN(result)
-                tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-                    examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+                call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+                    examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
                 if(i == crossTangents->size() - 1){ dref result }
             }
@@ -351,9 +350,8 @@ decl evaluateExample(int orderTSM, int dimension){
     log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
     //
-    tIDNResult = toWrappedIDN(result)
-    tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+    call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+        examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
     // Ermitteln der Tangenten
     for(int order = 1, order < orderTSM + 1, order++){
@@ -400,9 +398,8 @@ decl evaluateExample(int orderTSM, int dimension){
         log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
         //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+        call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
         // Tangente in Julia Skript schreiben
         result << tmpTangentY
@@ -410,9 +407,8 @@ decl evaluateExample(int orderTSM, int dimension){
         log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
         //
-        tIDNResult = toWrappedIDN(result)
-        tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+        call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+            examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
         // Kreuztherme bestimmen
         // Kreuztherme aus vorheriger Ordnung in crossTangest cachen, Startpunkt bei Ordnung 1 (bei Ordnung 2 tauchen zuerst Kreuztherme auf)
@@ -450,9 +446,8 @@ decl evaluateExample(int orderTSM, int dimension){
                 log("Writing Tangent '", tResultLabel, "' with ", result->getNumOfNodes(), " Nodes to jl File ...")
 
                 //
-                tIDNResult = toWrappedIDN(result)
-                tIDNResult->toJuliaString("eval_" + tResultLabel)->writeToFile("Examples/juliaScripts/" + exampleChapter + "_" + \
-                    examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl")
+                call(exportFunktionLabel, args(result, "eval_" + tResultLabel, "Examples/juliaScripts/" + exampleChapter + "_" + \
+                    examplePrefix + "_wrapped_tangent_" + tResultLabel + ".jl"))
 
                 if(i == crossTangents->size() - 1){ dref result }
             }

@@ -27,8 +27,13 @@ E0=  [
     0.0   0.0   0.0  0.0  0.0  8.0;
 ]
 
-print(eval_epsilonvp_Y_1(eta, P, E0, eps, epsvp, sigmaY, zeros(6)) * delta_t)
-permutedims(eval_epsilonvp_E_1(eta, P, E0, eps, epsvp, sigmaY, zeros(6,6,6)), (1,3,2)) * delta_t
+start_time = time()
+
+display(eval_epsilonvp_Y_1(eta, P, E0, eps, epsvp, sigmaY, zeros(6)) * delta_t)
+display(permutedims(eval_epsilonvp_E_1(eta, P, E0, eps, epsvp, sigmaY, zeros(6,6,6)), (1,3,2)) * delta_t)
+
+elapsed = time() - start_time
+println("Laufzeit: ", elapsed, " s")
 
 # Bei korrekter Tangenten-Berechnung muss Output folgendermaßen aussehen
 # '
