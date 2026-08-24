@@ -281,6 +281,19 @@ else if(g_emplaceExtendedSimplifications == true){
     emplaceExtendedSimplifications()
 }
 
+//
+int g_emplaceTemplatesOnToOrder = 5
+
+//
+if(!variableExists("g_PresetEmplaceTemplatesOnToOrder")){}
+else if(typename(g_PresetEmplaceTemplatesOnToOrder) != "int"){}
+else{
+
+    g_emplaceTemplatesOnToOrder = g_PresetEmplaceTemplatesOnToOrder
+}
+
+g_emplaceExtendedSimplifications
+
 // Nullmatrix Vereinfachungen
 setEqual(zerosInstanceTemplate + tmplA, tmplA)                                          // +
 setEqual(tmplA + zerosInstanceTemplate, tmplA)                                          // (trivial)
@@ -297,12 +310,14 @@ setEqual(tmplA . zerosInstanceTemplate, zeros(tmplA . zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate .n tmplA, zeros(zerosInstanceTemplate .n tmplA))         // .n
 setEqual(tmplA .n zerosInstanceTemplate, zeros(tmplA .n zerosInstanceTemplate))
 
-// ToDo : für alle Stufen implementieren
-setEqual(zerosInstanceTemplate .. tmplA, zeros(zerosInstanceTemplate .. tmplA))         // ..
-setEqual(tmplA .. zerosInstanceTemplate, zeros(tmplA .. zerosInstanceTemplate))
-setEqual(zerosInstanceTemplate : tmplA, zeros(zerosInstanceTemplate : tmplA))           // :
-setEqual(tmplA : zerosInstanceTemplate, zeros(tmplA : zerosInstanceTemplate))
+// Skalare Multiplikation und Skalarprodukt (Kontration 1. Stufe) abgedeckt
+for(int order = 2, order < g_emplaceTemplatesOnToOrder, order++){
 
+    setEqual(contract(zerosInstanceTemplate, tmplA, order, contractForward), zeros(contract(zerosInstanceTemplate, tmplA, order, contractForward)))
+    setEqual(contract(zerosInstanceTemplate, tmplA, order, contractReversed), zeros(contract(zerosInstanceTemplate, tmplA, order, contractReversed)))
+}
+
+//
 setEqual(zerosInstanceTemplate \x tmplA, zeros(zerosInstanceTemplate \x tmplA))         // \x
 setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
@@ -315,17 +330,29 @@ setEqual(tmplA \(x) zerosInstanceTemplate, zeros(tmplA \(x) zerosInstanceTemplat
 // dieser Form angegeben werden, zudem erfordert es die Aktivierung entsprechenden Backend Flage über
 // 'setCompareTemplateDependencies(true)'
 
-// // setEqual(identity(tmplA) . tmplA, tmplA)                                                                                            // .
-// // setEqual(tmplA . identity(tmplA), tmplA)
+setEqual(tExprIdentity(2) . tmplMatrix, tmplMatrix)                                     // .
+setEqual(tmplMatrix . tExprIdentity(2), tmplMatrix)
+setEqual(tmplMatrix . inverse(tmplMatrix), tExprIdentity(2))
+setEqual(tExprArgTmpl("tmplMat", 2) . inverse(tExprArgTmpl("tmplMat", 2)), tExprIdentity(2))
+
+// Skalare Multiplikation und Skalarprodukt (Kontration 1. Stufe) abgedeckt
+for(int order = 2, order < g_emplaceTemplatesOnToOrder, order++){
+
+    setEqual(contract(tExprIdentity(2 * order), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractForward), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
+    setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), tExprIdentity(2 * order), order, contractForward), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
+    setEqual(contract(tExprIdentity(2 * order), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractReversed), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
+    setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), tExprIdentity(2 * order), order, contractReversed), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
+
+    setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), order, contractForward), tExprIdentity(2 * order))
+    setEqual(contract(inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractForward), tExprIdentity(2 * order))
+    setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), order, contractReversed), tExprIdentity(2 * order))
+    setEqual(contract(inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractReversed), tExprIdentity(2 * order))
+}
 
 setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
 setEqual(identityInstanceTemplate \(x) identityInstanceTemplate, zeros(identityInstanceTemplate \(x) identityInstanceTemplate))     // \(x)
 
 // Vereinfachungen für Container
-
-// // setEqual(tmplA . inverse(tmplA), identity(tmplA))
-// // setEqual(ArgTmplA . inverse(ArgTmplA), identity(ArgTmplA))
-
 setEqual(inverse(inverse(tmplA)), tmplA)
 setEqual(transpose(transpose(tmplA)), tmplA)
 setEqual(sqrt(tmplScalar) * sqrt(tmplScalar), tmplScalar)
