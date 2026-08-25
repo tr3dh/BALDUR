@@ -314,10 +314,12 @@ setEqual(tmplA .n zerosInstanceTemplate, zeros(tmplA .n zerosInstanceTemplate))
 for(int order = 2, order < g_emplaceTemplatesOnToOrder, order++){
 
     setEqual(contract(zerosInstanceTemplate, tmplA, order, contractForward), zeros(contract(zerosInstanceTemplate, tmplA, order, contractForward)))
+    setEqual(contract(tmplA, zerosInstanceTemplate, order, contractForward), zeros(contract(zerosInstanceTemplate, tmplA, order, contractForward)))
     setEqual(contract(zerosInstanceTemplate, tmplA, order, contractReversed), zeros(contract(zerosInstanceTemplate, tmplA, order, contractReversed)))
+    setEqual(contract(tmplA, zerosInstanceTemplate, order, contractReversed), zeros(contract(zerosInstanceTemplate, tmplA, order, contractReversed)))
 }
 
-//
+// 
 setEqual(zerosInstanceTemplate \x tmplA, zeros(zerosInstanceTemplate \x tmplA))         // \x
 setEqual(tmplA \x zerosInstanceTemplate, zeros(tmplA \x zerosInstanceTemplate))
 setEqual(zerosInstanceTemplate \(x) tmplA, zeros(zerosInstanceTemplate \(x) tmplA))     // \(x)
