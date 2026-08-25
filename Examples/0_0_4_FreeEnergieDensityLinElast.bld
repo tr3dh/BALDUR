@@ -1,3 +1,21 @@
+// ---------------------------------------------------------------------------
+//                              Example 0.0.5
+// ---------------------------------------------------------------------------
+// Kontext
+// Das Beispiel zeigt das Ermitteln der vektoriellen Spannung eines linear elastischen Materials als symbolische Ableitung der freien
+// Helmholtz-Energiedichte Psi nach der Dehnung epsilon.
+//
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_4_FreeEnergieDensityLinElast.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_4_FreeEnergieDensityLinElast.bld
+//
+// Für Release
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_4_FreeEnergieDensityLinElast.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_4_FreeEnergieDensityLinElast.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/0_0_4_FreeEnergieDensityLinElast.bld
+
 fetch backend ["tensor"]                        
 fetch script ["pckg/preDecls", "pckg/functions"]
 
