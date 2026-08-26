@@ -13,7 +13,7 @@ fetch script ["0_0_0_testInclude"]
 decl main(int [a,b,c]){
 
     slog("Init Main")
-    testFunction()
+    slog("Rueckgabe :", testFunction())
 }
 
 //

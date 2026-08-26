@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-//                              Example 0.0.5
+//                              Example 0.0.7
 // ---------------------------------------------------------------------------
 // Kontext
 // Das Beispiel zeigt die Verwendung der im Rahmen der 'pckg'-Umgebung implementierten Funktionen
@@ -23,7 +23,7 @@ fetch backend ["tensor"]
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
-string [examplePrefix, exampleChapter, exampleTitle] = "0_0_6", "x", "Exploiting Baldurs Posibillities"
+string [examplePrefix, exampleChapter, exampleTitle] = "0_0_7", "x", "Pendulum"
 int dimension = 3
 int nVoigtComps = getNumOfVoigtComponents(dimension)
 

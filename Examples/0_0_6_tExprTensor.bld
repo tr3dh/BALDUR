@@ -8,15 +8,15 @@
 // vorkommender Teilausdrücke implementieren
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
-// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_exploitingPossibilities.bld
-// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_exploitingPossibilities.bld
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_tExprTensor.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_tExprTensor.bld
 //
 // Für Release
-// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_exploitingPossibilities.bld
-// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_exploitingPossibilities.bld
+// - $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_tExprTensor.bld
+// - $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_6_tExprTensor.bld
 //
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
-// $ ./build/Baldur_d execute Examples/0_0_6_exploitingPossibilities.bld
+// $ ./build/Baldur_d execute Examples/0_0_6_tExprTensor.bld
 
 // Includes
 fetch backend ["tensor"]

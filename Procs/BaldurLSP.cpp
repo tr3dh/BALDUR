@@ -103,7 +103,7 @@ void registerCallbacks(lsp::MessageHandler& messageHandler, lsp::Connection& con
 
 	auto state = std::make_shared<LspState>();
 
-	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct", "ref", "this", "uniform" };
+	state->keywords     = { "if","xIf","rIf","nIf","else","requires","assert","fetch","script","backend","decl","for","while","return","break","continue","static","struct", "ref", "this", "uniform", "defer" };
     state->typeKeywords = { "void", "bool", "int", "double", "args" };
 
 	messageHandler.add<lsp::requests::Initialize>(

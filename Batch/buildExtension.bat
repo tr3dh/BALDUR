@@ -1,7 +1,7 @@
 @echo off
 echo Baue VS Code Extension ...
 
-cd /D C:\Uni\IKM\BALDUR\extensions\vscode
+cd /D extensions\vscode
 if errorlevel 1 (
     echo Fehler: extensions\vscode nicht gefunden.
     exit /b 1
