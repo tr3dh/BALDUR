@@ -1196,6 +1196,78 @@ void IndexNotatedTensorExpression::sqrtAssign(){
     // reEvaluateIndices();
 }
 
+void IndexNotatedTensorExpression::sinAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Sin;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
+void IndexNotatedTensorExpression::cosAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Cos;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
+void IndexNotatedTensorExpression::tanAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Tan;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
+void IndexNotatedTensorExpression::cotanAssign(){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "Tensor hat keine ausreichende Stufe um die Spur zu bestimmen",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::Cotan;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
 void IndexNotatedTensorExpression::evaluateIndexDimensions(std::map<int, int>& indexDimensions) const{
 
     for(size_t i = 0; i < notatedIndices.size(); i++){
@@ -1485,6 +1557,10 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             case IndexNotationOperator::Determinant:
             case IndexNotationOperator::Frobenius:
             case IndexNotationOperator::Sqrt:
+            case IndexNotationOperator::Sin:
+            case IndexNotationOperator::Cos:
+            case IndexNotationOperator::Tan:
+            case IndexNotationOperator::Cotan:
             case IndexNotationOperator::Inversion:{
 
                 //
@@ -1495,6 +1571,10 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                 else if(Operator == IndexNotationOperator::Determinant){ jlFuncLabel = "det"; }
                 else if(Operator == IndexNotationOperator::Frobenius){ jlFuncLabel = "frobenius"; }
                 else if(Operator == IndexNotationOperator::Sqrt){ jlFuncLabel = "sqrt"; }
+                else if(Operator == IndexNotationOperator::Sin){ jlFuncLabel = "sin"; }
+                else if(Operator == IndexNotationOperator::Cos){ jlFuncLabel = "cos"; }
+                else if(Operator == IndexNotationOperator::Tan){ jlFuncLabel = "tan"; }
+                else if(Operator == IndexNotationOperator::Cotan){ jlFuncLabel = "cot"; }
                 else{ jlFuncLabel = "inv"; }
 
                 //
@@ -1787,7 +1867,8 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     res += "const Scalar0 = Array{Float64,0}\n\n";
 
-    res += "import Base: +, -, *, /, sqrt\n\n";
+    res += "import Base: +, -, *, /, sqrt\n";
+    res += "import Base: sin, cos, tan, cot\n\n";
 
     res += "+(a::Scalar0, b::Scalar0) = a[] + b[]\n";
     res += "+(a::Scalar0, b::Real)    = a[] + b\n";
@@ -1807,6 +1888,11 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "/(a::Real,    b::Scalar0) = a / b[]\n\n";
 
     res += "sqrt(a::Scalar0) = sqrt(a[])\n";
+    res += "sin(a::Scalar0)  = sin(a[])\n";
+    res += "cos(a::Scalar0)  = cos(a[])\n";
+    res += "tan(a::Scalar0)  = tan(a[])\n";
+    res += "cot(a::Scalar0)  = cot(a[])\n\n";
+
     res += "det(a::Scalar0)  = a[]\n";
     res += "inv(a::Scalar0)  = 1 / a[]\n\n";
 
@@ -2299,6 +2385,22 @@ IndexNotatedTensorExpression convertToIndexNotation(const TensorExpression& expr
             else if(expr.Operator == TensorExpressionOperator::Sqrt){
 
                 res.sqrtAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Sin){
+
+                res.sinAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Cos){
+
+                res.cosAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Tan){
+
+                res.tanAssign();
+            }
+            else if(expr.Operator == TensorExpressionOperator::Cotan){
+
+                res.cotanAssign();
             }
             else if(expr.Operator == TensorExpressionOperator::Section){
 

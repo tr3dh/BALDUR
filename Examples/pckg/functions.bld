@@ -291,34 +291,6 @@ decl removeRequiredDiffs(int ref order, tExpr ref expr, tExpr ref dExpr, string 
     }
 }
 
-decl __expAssign__(tExpr ref lhs, int ref rhs){
-
-    bool lhsIsScalar = lhs->getOrder() == 0
-
-    if(rhs < 1 && !lhsIsScalar){
-
-        lhs <- identity(lhs)
-        return {}
-    }
-    else if(rhs < 1){
-
-        lhs <- tExpr(1)
-        return {}
-    }
-
-    //
-    tExpr res <+ lhs
-
-    //
-    for(int i = 0, i < rhs - 1, i++){
-
-        if(lhsIsScalar){ res *= lhs } 
-        else{ res .= lhs }
-    }
-
-    lhs <- res
-}
-
 decl exp(tExpr ref x, int ref order){ return [exp(x, order, true)] }
 
 decl exp(tExpr ref x, int ref order, bool simplifyResult){

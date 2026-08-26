@@ -154,6 +154,34 @@ decl __detach__(void ref var){
     return [recast("void",  var)]
 }
 
+decl __expAssign__(tExpr ref lhs, int ref rhs){
+
+    bool lhsIsScalar = lhs->getOrder() == 0
+
+    if(rhs < 1 && !lhsIsScalar){
+
+        lhs <- identity(lhs)
+        return {}
+    }
+    else if(rhs < 1){
+
+        lhs <- tExpr(1)
+        return {}
+    }
+
+    //
+    tExpr res <+ lhs
+
+    //
+    for(int i = 0, i < rhs - 1, i++){
+
+        if(lhsIsScalar){ res *= lhs } 
+        else{ res .= lhs }
+    }
+
+    lhs <- res
+}
+
 // Ueberschreiben der ursrpünglichen Operation durch veralgemeinterte Kontratkion
 // fuer die zweite Stufe
 decl __mirroringDoubleContractionAssign__(tExpr ref lhs, tExpr ref rhs){
@@ -359,6 +387,17 @@ setEqual(inverse(inverse(tmplA)), tmplA)
 setEqual(transpose(transpose(tmplA)), tmplA)
 setEqual(sqrt(tmplScalar) * sqrt(tmplScalar), tmplScalar)
 
+// Vereinfachungen von Termen mit trigonometrischen Subtermen
+setEqual(sin(tmplScalar) ^ 2 + cos(tmplScalar) ^ 2, tExpr(1))
+setEqual(1 + tan(tmplScalar)^2, inverse(cos(tmplScalar))^2)
+setEqual(1 + cotan(tmplScalar)^2, inverse(sin(tmplScalar))^2)
+setEqual(tan(tmplScalar), sin(tmplScalar) * inverse(cos(tmplScalar)))
+setEqual(cotan(tmplScalar), cos(tmplScalar) * inverse(sin(tmplScalar)))
+setEqual(tan(tmplScalar) * cos(tmplScalar), sin(tmplScalar))
+setEqual(cotan(tmplScalar) * sin(tmplScalar), cos(tmplScalar))
+// setEqual(sin(tmplScalar) * inverse(cos(tmplScalar)), tan(tmplScalar))
+// setEqual(cos(tmplScalar) * inverse(sin(tmplScalar)), cotan(tmplScalar))
+
 // Aufsetzen des Default Verhaltens bei der Ableitung von Tensorausdrücken
 
 //
@@ -424,3 +463,13 @@ setDiffTemplate(sqrt(tmplScalar), tmplB, 0.5 * inverse(sqrt(tmplScalar)) * diff(
 // // redundant wenn frobenius norm über bekannte Operationen definiert wird wie sqrt(trace(transpose(...) . ...))
 // setDiffTemplate(frobenius(tmplVector), tmplB, (tmplVector * inverse(frobenius(tmplVector))) . diff(tmplVector, tmplB))
 // setDiffTemplate(frobenius(tmplMatrix), tmplB, (tmplMatrix * inverse(frobenius(tmplMatrix))) .. diff(tmplMatrix, tmplB))
+
+// Ableitungen von trigonometrischen Funktionen
+setDiffTemplate(sin(tmplScalar), tmplA, cos(tmplScalar) * diff(tmplScalar, tmplA))
+setDiffTemplate(cos(tmplScalar), tmplA, (-1) * sin(tmplScalar) * diff(tmplScalar, tmplA))
+// setDiffTemplate(tan(tmplScalar), tmplA, (1 + tan(tmplScalar)^2) * diff(tmplScalar, tmplA))
+// setDiffTemplate(cotan(tmplScalar), tmplA, (-1) * (1 + cot(tmplScalar)^2) * diff(tmplScalar, tmplA))
+
+// alternative Ableitungen von tan / cotan
+setDiffTemplate(tan(tmplScalar), tmplA, inverse(cos(tmplScalar)^2) * diff(tmplScalar, tmplA))
+setDiffTemplate(cotan(tmplScalar), tmplA, (-1) * inverse(sin(tmplScalar)^2) * diff(tmplScalar, tmplA))

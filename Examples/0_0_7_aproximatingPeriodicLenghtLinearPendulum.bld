@@ -36,50 +36,7 @@ decl tVoigtCompsUniTensor(string ref label, int order){
 //
 decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
 
-struct tExprTensor{
-
-    int order
-    args components, dimensions
-
-    decl construct(args dimensionsIn){
-
-        // Uebertrag
-        dimensions = dimensionsIn
-
-        order = dimensions -> size()
-        
-        for(int i = 0, i < product(dimensions), i++){
-
-            components -> emplace(tExpr())
-        }
-    }
-
-    decl get(args indices){
-
-        requires {indices -> size() == order} "Getter bekommt ungueltige Indizes uebergeben"
-        requires {nIf(indices... < dimensions...)} "Indizes sind inkosistent mit Dimensionen"
-
-        int [index, stride] = 0, 1
-  
-        for(i = order - 1, i > -1, i--){
-
-            index += stride * indices -> get(i)
-            stride *= dimensions -> get(i)
-        }
-
-        requires {index < components -> size()} "Ungültiger Projizierter Index"
-        return [<< [components -> get(index)]]
-    }
-}
-
-decl tExprTensor(args dimensionsIn){
-
-    //
-    tExprTensor res
-    res -> construct(dimensionsIn)
-
-    return [<- res]
-}
+setGenerateJLDebugCall(true)
 
 //
 decl evaluateExample(){
@@ -89,10 +46,6 @@ decl evaluateExample(){
     string tResultLabel
 
     //
-    tExprTensor res(3,3,3)
-    res -> get(1,2,2) = tExpr("EintragA", 2, args(3) * 2)
-
-    slog(res[1,2,2])
 
     //
     slog("* Example evaluated")

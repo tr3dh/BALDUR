@@ -49,6 +49,10 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperat
     {TensorExpressionOperator::Macaulay, &TensorExpression::macaulayAssign},
     {TensorExpressionOperator::Signum, &TensorExpression::signumAssign},
     {TensorExpressionOperator::Sqrt, &TensorExpression::sqrtAssign},
+    {TensorExpressionOperator::Sin, &TensorExpression::sinAssign},
+    {TensorExpressionOperator::Cos, &TensorExpression::cosAssign},
+    {TensorExpressionOperator::Tan, &TensorExpression::tanAssign},
+    {TensorExpressionOperator::Cotan, &TensorExpression::cotanAssign},
 };
 
 std::map<std::pair<TensorExpression, TensorExpression>, TensorExpression> tensorExpressionDiffs = {};
@@ -706,8 +710,6 @@ bool TensorExpression::simplifyOnce(){
     for(const auto& [k, v] : tensorExpressionSimplifications){
 
         if(k == *this){
-
-            // LOG << "found tmpl " << k.toString(1) << " <> " << toString(1) << endln;
 
             auto prevOrder = tensorOrder;
 
@@ -1693,6 +1695,116 @@ void TensorExpression::sqrtAssign(){
 
     //
     RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    if(isConstant && !isConstantTemplate()){
+        
+        value = std::sqrt(value);
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::sinAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Sin;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = std::sin(value);
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::cosAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Cos;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = std::cos(value);
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::tanAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Tan;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = std::tan(value);
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::cotanAssign(){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::Cotan;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1, "...",);
+
+    //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = 1 / std::tan(value);
+        return;
+    }
 
     //
     moveSelfIntoFirstChild();
@@ -3555,6 +3667,74 @@ namespace types{
 
                 GET_RETURN(TENSOR_EXPRESSION, 0);
                 ret0->getMember().sqrtAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("sin", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "sin", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().sinAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("cos", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "cos", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().cosAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("tan", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "tan", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().tanAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("cotan", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "cotan", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+                ret0->getMember().cotanAssign();
         },
         {TENSOR_EXPRESSION::typeIndex});
 

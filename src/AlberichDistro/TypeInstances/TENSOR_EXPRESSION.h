@@ -17,6 +17,10 @@ enum class IndexNotationOperator{
     Macaulay,
     Signum,
     Sqrt,
+    Sin,
+    Cos,
+    Tan,
+    Cotan,
 
     Diff,
 
@@ -60,6 +64,10 @@ enum class TensorExpressionOperator{
     Macaulay,
     Signum,
     Sqrt,
+    Sin,
+    Cos,
+    Tan,
+    Cotan,
     Ones,
     Zeros,
     Identity,
@@ -214,6 +222,11 @@ struct TensorExpression{
     void signumAssign();
     void sqrtAssign();
 
+    void sinAssign();
+    void cosAssign();
+    void tanAssign();
+    void cotanAssign();
+
     void sectionAssign();
 
     //
@@ -330,6 +343,11 @@ struct IndexNotatedTensorExpression{
     void macaulayAssign();
     void signumAssign();
     void sqrtAssign();
+
+    void sinAssign();
+    void cosAssign();
+    void tanAssign();
+    void cotanAssign();
 
     // void reEvaluateIndices();
 
