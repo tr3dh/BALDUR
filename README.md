@@ -87,13 +87,6 @@ slog(jlScript)
 // '
 ```
 
-# Fullbuild
-
-```bash
-make fexport                # In Mingw64 Bash ausführen
-.\Batch\buildExtension.bat  # in cmd
-```
-
 # 🤝 Acknowledgments
 
 I would like to extend my special thanks to my advisor, Dr. Hendrik Geisler, who was a great help throughout the development process.
