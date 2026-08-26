@@ -26,6 +26,7 @@ copyTmp:
 
 	cp -r Recc tmp/
 	cp -r Examples tmp/
+	cp -r thirdPartyLicenses tmp/
 #	cp -r Documentation tmp/
 	cp -r Batch tmp/
 	cp -f .VERSION tmp/
@@ -49,11 +50,37 @@ movRelease:
 
 	@make copyTmp
 	rm -f tmp/build/*.a
+	@make cleanTmpExamples
 	cp -r tmp/ __OUT/prebuild/
 
 	@make copyTmp
 	rm -f tmp/build/*.exe
+	@make cleanTmpExamples
 	cp -r tmp/ __OUT/prebuildLib/
+
+	rm -rf tmp
+
+cleanTmpExamples:
+
+	find tmp/Examples -type d -name '.LSP_CACHE' -exec rm -rf {} +
+	find tmp/Examples -type f -name '__LPECONFIG.JSON' -delete
+	find tmp/Examples/juliaScripts -type f -name '*.jl' -delete
+	
+exportExamples:
+
+	mkdir -p __OUT
+
+	rm -rf __OUT/Examples
+	mkdir __OUT/Examples
+
+	rm -rf __OUT/Examples.zip
+
+	@make copyTmp
+	rm -rf tmp/build/
+	@make cleanTmpExamples
+
+	cp -r tmp/ __OUT/Examples/
+	zip -r __OUT/Examples.zip tmp/.VERSION tmp/*
 
 	rm -rf tmp
 
@@ -65,11 +92,17 @@ exportRelease:# fullRelease
 	rm -rf __OUT/BALDURLib.zip
 
 	@make copyTmp
+
 	rm -f tmp/build/*.a
+	@make cleanTmpExamples
+
 	zip -r __OUT/BALDUR.zip tmp/.VERSION tmp/*
 
 	@make copyTmp
+
 	rm -f tmp/build/*.exe
+	@make cleanTmpExamples
+
 	zip -r __OUT/BALDURLib.zip tmp/.VERSION tmp/*
 
 	rm -rf tmp
@@ -91,4 +124,4 @@ extension:
 
 rawExtension: fullRelease movRelease extension
 
-fexport: fullRelease movRelease exportRelease extension
+fexport: fullRelease movRelease exportRelease extension exportExamples
