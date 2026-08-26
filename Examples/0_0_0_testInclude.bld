@@ -11,10 +11,19 @@ decl testFunction(){
     double expDb = 5.2;
 
     //
+    int ref iRef
+
+    //
     for(int i = 0, i < 10, i++){
 
-        static{ slog("Starte Schleife") }
+        static{ slog("Starte Schleife"); iRef << i }
         if(i == 7){ return i }
     } \
-    defer { slog("Verlasse Schleife") }
+    defer {
+
+        // Dereferenzierung geschieht unabhaengig vom ExitCase
+        dref iRef
+
+        slog("Verlasse Schleife");                     
+    }
 }
