@@ -1559,6 +1559,13 @@ void TensorExpression::inverseAssign(){
     static TensorExpressionOperator operation = TensorExpressionOperator::Inversion;
 
     //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = 1 / value;
+        return;
+    }
+
+    //
     moveSelfIntoFirstChild();
 
     // node erneut Aufsetzen
@@ -1659,6 +1666,13 @@ void TensorExpression::macaulayAssign(){
     RETURNING_ASSERT(tensorOrder < 1, "...",);
 
     //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = value > 0 ? value : 0.0;
+        return;
+    }
+
+    //
     moveSelfIntoFirstChild();
 
     // node erneut Aufsetzen
@@ -1673,6 +1687,13 @@ void TensorExpression::signumAssign(){
 
     //
     static TensorExpressionOperator operation = TensorExpressionOperator::Signum;
+
+    //
+    if(isConstant && !isConstantTemplate()){
+        
+        value = value > 0 ? 1.0 : -1.0;
+        return;
+    }
 
     //
     RETURNING_ASSERT(tensorOrder < 1, "...",);

@@ -182,6 +182,8 @@ decl __expAssign__(tExpr ref lhs, int ref rhs){
     lhs <- res
 }
 
+decl __divAssign__(tExpr ref lhs, tExpr ref rhs){ lhs *= inverse(rhs) }
+
 // Ueberschreiben der ursrpünglichen Operation durch veralgemeinterte Kontratkion
 // fuer die zweite Stufe
 decl __mirroringDoubleContractionAssign__(tExpr ref lhs, tExpr ref rhs){

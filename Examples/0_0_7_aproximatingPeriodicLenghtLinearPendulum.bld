@@ -2,10 +2,8 @@
 //                              Example 0.0.7
 // ---------------------------------------------------------------------------
 // Kontext
-// Das Beispiel zeigt die Verwendung der im Rahmen der 'pckg'-Umgebung implementierten Funktionen
-// 'stdGenerateJuliaString' und 'cssGenerateJuliaString', die den Standardexport und den Export
-// inklusive automatischer Erkennung, Zählung und Substitution mehrfach im algebraischen Exportausdruck
-// vorkommender Teilausdrücke implementieren
+// Das Beispiel demonstriert die Nutzung des Tensoralgebra-Systems anhand der Naeherung
+// der Periodenlaenge eines Pendels per Taylorreihe
 //
 // Ausführung des Skripts über Make Target und Spezifikationen
 // - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_7_aproximatingPeriodicLenghtLinearPendulum.bld
@@ -23,20 +21,37 @@ fetch backend ["tensor"]
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
-string [examplePrefix, exampleChapter, exampleTitle] = "0_0_7", "x", "Pendulum"
-int dimension = 3
-int nVoigtComps = getNumOfVoigtComponents(dimension)
-
-decl tVoigtCompsUniTensor(string ref label, int order){
-
-    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
-    return [ <- tUniExpr(label, order, nVoigtComps)]
-}
+g_terminateAfterAssertionFailed = true
 
 //
-decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
+string [examplePrefix, exampleChapter, exampleTitle] = "0_0_7", "x", "Pendulum"
 
+//
+emplaceExtendedSimplifications()
 setGenerateJLDebugCall(true)
+
+//
+int [TSeriesOrder, KSeriesOrder] = 4, 4
+
+//
+decl tExprScalar(string ref label){ return [tExpr(label, 0)] }
+
+//
+decl tExprScalars(args labels){
+
+    args prms
+
+    for(int i = 0, i < labels -> size(), i++){
+
+        prms -> emplace(tExprScalar(labels[i]))
+    }
+
+    return [prms]
+}
+
+decl printArgs(args prms){
+    slog(...prms)
+}
 
 //
 decl evaluateExample(){
@@ -44,8 +59,33 @@ decl evaluateExample(){
     // Container zur Vereinheitlichung der Beispiele
     tExpr ref result
     string tResultLabel
+    
+    //
+    tExpr[L, g, theta_0] = ...tExprScalars("L", "g", "theta_0")
+
+    decl evalCn(int ref n){ return [ double(ffactorial((2 * n) - 1)) / double(ffactorial(2 * n))] }
+    decl evalKn(int ref order){ return ((-1) ^ order) * (theta_0 ^ (2 * order)) / tExpr(factorial(2 * order)) }
+
+    decl evalK(int ref seriesOrder){
+
+        tExpr res
+
+        for(int i = 0, i < seriesOrder, i ++){ res += wrpSimplified(evalKn(i)) }
+        return [<- wrpSimplified(res)]
+    }
 
     //
+    tExpr [k, T] <- evalK(KSeriesOrder), tExpr()
+
+    //
+    for(int order = 0, order < TSeriesOrder, order++){
+
+        T += wrpSimplified((evalCn(order) ^ 2) * (k ^ (2 * order)))
+    } \
+    defer{ wrpSimplify(T) }
+
+    //
+    slog("Taylorreihenansatz fuer die Periodenlaenge des Pendels :", T)
 
     //
     slog("* Example evaluated")
