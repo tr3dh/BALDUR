@@ -1307,7 +1307,7 @@ std::string getArgLabel(const IndexNotatedTensorExpression& node){
 
     if(isFunctionalNode(node)){
 
-        return node.label + "_ord" + std::to_string(node.tensorOrder) + "_dm" + printPlainVector(node.dimensions, false, "");
+        return "tExpr_" + node.label + "_ord" + std::to_string(node.tensorOrder) + "_dm" + printPlainVector(node.dimensions, false, "");
     }
     else{
 
@@ -3092,6 +3092,11 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
     std::string res = "";
 
     //
+    res += "C     " + resLabel + " = " + label + "\n";
+
+    return res;
+
+    //
     if(isConstant){ res += string::strippedString(value); }
     else if(Relation == TkType::Argument){
 
@@ -3257,6 +3262,22 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 }
 
 //
+bool generateFortranHelpers = true;
+
+std::string fortranApplyDims(const IndexNotatedTensorExpression& member, const std::string& dimsVarName = "DIMS"){
+
+    std::string res;
+
+    for(size_t i = 0; i < member.dimensions.size(); i++){
+
+        res += "      " + dimsVarName + "(" + std::to_string(i+1) + ") = " + std::to_string(member.dimensions[i]) + "\n";
+    }
+
+    res += "\n";
+    return res;
+};
+
+// Erzeugtes Skript testen per 'gfortran -g -Wall -std=legacy -ffixed-form -o Examples/fortranScripts/tangente.exe Examples/fortranScripts/evalSigma.f'
 std::string IndexNotatedTensorExpression::toFortranString(const std::string& instanceLabel, const std::vector<IndexNotatedTensorExpression>& depsKeys, const std::vector<IndexNotatedTensorExpression>& depsValues) const {
 
     //
@@ -3318,17 +3339,42 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         );
     }
 
+    // Unique Externals sind sortiert
+
+    // Extrahieren der generierten Nodes (Identity/zeros/ones/eps)
+    // aus den uniqueExternals -> die werden NICHT als Argument
+    // uebergeben, sondern in der Subroutine selbst erzeugt
+    std::vector<const IndexNotatedTensorExpression*> generatedDeps;
+
+    for(auto it = uniqueExternals.begin(); it != uniqueExternals.end(); ){
+
+        if(isFunctionalNode(**it)){
+            generatedDeps.push_back(*it);
+            it = uniqueExternals.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     // Return string
     std::string res;
 
     //
-    res += "# Fortran Skript\n#\n";
-    res += "# unique external nodes :\n";
+    res += "C      Fortran Skript, generated with Baldur\nC\n";
+    res += "C      unique external nodes :\n";
 
     //
     for(const auto& node : uniqueExternals){
 
-        res += "# | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
+        res += "C      | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
+        res += printPlainVector(node->dimensions, false);
+        res += "}\n";
+    }
+
+    //
+    for(const auto& node : generatedDeps){
+
+        res += "C      | extConst '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
         res += printPlainVector(node->dimensions, false);
         res += "}\n";
     }
@@ -3336,131 +3382,379 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     //
     for(const auto& node : depsKeys){
 
-        res += "# | deps '" + getArgLabel(node) + "', order [" + std::to_string(node.tensorOrder) + "], dimensions {";
+        res += "C      | deps '" + getArgLabel(node) + "', order [" + std::to_string(node.tensorOrder) + "], dimensions {";
         res += printPlainVector(node.dimensions, false);
         res += "}\n";
     }
 
-    res += "\n";
-    res += "using LinearAlgebra\nusing TensorOperations\nusing Dates\n\n";
+    if(generateFortranHelpers){
 
-    // Helper functions to create precomputed tensors
-    res += "function create_zeros(dims::Integer...)\n";
-    res += "    if length(dims) == 0\n";
-    res += "        return 0\n";
-    res += "    end\n";
-    res += "    return zeros(Float64, dims...)\n";
-    res += "end\n\n";
+        res += "\n";
+        res += "C     Gibt die Groeße des 1D-Arrays zurück,\n";
+        res += "C     dass über die Dimensionen projiziert wird\n";
+        res += "      INTEGER FUNCTION TENS_SIZE(DIMS, RANK)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      INTEGER DIMS(*), RANK, I, S\n";
+        res += "      S = 1\n";
+        res += "      DO 10 I = 1, RANK\n";
+        res += "        S = S * DIMS(I)\n";
+        res += "   10 CONTINUE\n";
+        res += "      TENS_SIZE = S\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Mapt Indices pro Dimension auf Index in\n";
+        res += "C     1D-Array\n";
+        res += "      INTEGER FUNCTION TENS_INDEX(DIMS, RANK, IDX)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      INTEGER DIMS(*), RANK, IDX(*), I, S, STRIDE\n";
+        res += "      S = 1\n";
+        res += "      STRIDE = 1\n";
+        res += "      DO 10 I = 1, RANK\n";
+        res += "        S = S + (IDX(I)-1)*STRIDE\n";
+        res += "        STRIDE = STRIDE*DIMS(I)\n";
+        res += "   10 CONTINUE\n";
+        res += "      TENS_INDEX = S\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt einen Nulltensor in uebergenem\n";
+        res += "C     Tensor 'A' für uebergebenen Dimension\n";
+        res += "C     und Ordnung\n";
+        res += "      SUBROUTINE CREATE_ZEROS(A, DIMS, RANK)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      INTEGER DIMS(*), RANK, N, I\n";
+        res += "      INTEGER TENS_SIZE\n";
+        res += "      DIMENSION A(*)\n";
+        res += "      N = TENS_SIZE(DIMS, RANK)\n";
+        res += "      DO 10 I = 1, N\n";
+        res += "        A(I) = 0.0D0\n";
+        res += "   10 CONTINUE\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt einen Einsentensor in uebergenem\n";
+        res += "C     Tensor 'A' für uebergebenen Dimension\n";
+        res += "C     und Ordnung\n";
+        res += "      SUBROUTINE CREATE_ONES(A, DIMS, RANK)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      INTEGER DIMS(*), RANK, N, I\n";
+        res += "      INTEGER TENS_SIZE\n";
+        res += "      DIMENSION A(*)\n";
+        res += "      N = TENS_SIZE(DIMS, RANK)\n";
+        res += "      DO 10 I = 1, N\n";
+        res += "        A(I) = 1.0D0\n";
+        res += "   10 CONTINUE\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt einen Einheitstensor in uebergenem\n";
+        res += "C     Tensor 'A' für uebergebenen Dimension\n";
+        res += "C     und Ordnung\n";
+        res += "      SUBROUTINE CREATE_IDENTITY(A, DIMS, RANK)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      INTEGER MAXR\n";
+        res += "      PARAMETER (MAXR=8)\n";
+        res += "      DIMENSION A(*)\n";
+        res += "      INTEGER DIMS(*), RANK, N, K, NTOT, I, M, POS\n";
+        res += "      INTEGER TENS_SIZE\n";
+        res += "      INTEGER IDX(MAXR), POW(MAXR)\n";
+        res += "      N = DIMS(1)\n";
+        res += "      K = RANK/2\n";
+        res += "      NTOT = TENS_SIZE(DIMS, RANK)\n";
+        res += "      DO 10 I = 1, NTOT\n";
+        res += "        A(I) = 0.0D0\n";
+        res += "   10 CONTINUE\n";
+        res += "      POW(1) = 1\n";
+        res += "      DO 20 M = 2, RANK\n";
+        res += "        POW(M) = POW(M-1)*N\n";
+        res += "   20 CONTINUE\n";
+        res += "      DO 30 I = 1, K\n";
+        res += "        IDX(I) = 1\n";
+        res += "   30 CONTINUE\n";
+        res += "   40 CONTINUE\n";
+        res += "        POS = 1\n";
+        res += "        DO 50 M = 1, K\n";
+        res += "          POS = POS + (IDX(M)-1)*(POW(M)+POW(K+M))\n";
+        res += "   50   CONTINUE\n";
+        res += "        A(POS) = 1.0D0\n";
+        res += "        M = 1\n";
+        res += "   60   CONTINUE\n";
+        res += "        IDX(M) = IDX(M) + 1\n";
+        res += "        IF (IDX(M) .LE. N) GOTO 40\n";
+        res += "        IDX(M) = 1\n";
+        res += "        M = M + 1\n";
+        res += "        IF (M .LE. K) GOTO 60\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt einen Levi-Civita-Tensor in uebergenem\n";
+        res += "C     Tensor 'A' für uebergebenen Dimension\n";
+        res += "C     und Ordnung\n";
+        res += "      SUBROUTINE CREATE_EPS(A)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      DIMENSION A(*)\n";
+        res += "      INTEGER I, J, K, POS, SGN\n";
+        res += "      DO 10 I = 1, 27\n";
+        res += "        A(I) = 0.0D0\n";
+        res += "   10 CONTINUE\n";
+        res += "      DO 20 I = 1, 3\n";
+        res += "        DO 30 J = 1, 3\n";
+        res += "          DO 40 K = 1, 3\n";
+        res += "            POS = 1 + (I-1) + (J-1)*3 + (K-1)*9\n";
+        res += "            SGN = (I-J)*(J-K)*(K-I)/2\n";
+        res += "            A(POS) = DBLE(SGN)\n";
+        res += "   40     CONTINUE\n";
+        res += "   30   CONTINUE\n";
+        res += "   20 CONTINUE\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt in uebergenem Tensor 'B'\n";
+        res += "C     die Macaulynormen der Elemente von 'A'\n";
+        res += "C     fuer 'N' Elemente\n";
+        res += "      SUBROUTINE MACAULAY(A, B, N)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      DIMENSION A(*), B(*)\n";
+        res += "      INTEGER N, I\n";
+        res += "      DO 10 I = 1, N\n";
+        res += "        IF (A(I) .GT. 0.0D0) THEN\n";
+        res += "          B(I) = A(I)\n";
+        res += "        ELSE\n";
+        res += "          B(I) = 0.0D0\n";
+        res += "        END IF\n";
+        res += "   10 CONTINUE\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt in uebergenem Tensor 'B'\n";
+        res += "C     die Signumnormen der Elemente von 'A'\n";
+        res += "C     fuer 'N' Elemente\n";
+        res += "      SUBROUTINE SIGNUM(A, B, N)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      DIMENSION A(*), B(*)\n";
+        res += "      INTEGER N, I\n";
+        res += "      DO 10 I = 1, N\n";
+        res += "        IF (A(I) .GT. 0.0D0) THEN\n";
+        res += "          B(I) = 1.0D0\n";
+        res += "        ELSE IF (A(I) .LT. 0.0D0) THEN\n";
+        res += "          B(I) = -1.0D0\n";
+        res += "        ELSE\n";
+        res += "          B(I) = 0.0D0\n";
+        res += "        END IF\n";
+        res += "   10 CONTINUE\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Erstellt in uebergenem Tensor 'B'\n";
+        res += "C     die Frobeniusnorm von 'A'\n";
+        res += "C     fuer 'N' Elemente\n";
+        res += "      SUBROUTINE FROBENIUS(A, B, N)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      DIMENSION A(*), B(*)\n";
+        res += "      INTEGER N, I\n";
+        res += "      REAL*8 S\n";
+        res += "\n";
+        res += "      S = 0.0D0\n";
+        res += "\n";
+        res += "      DO 10 I = 1, N\n";
+        res += "        S = S + A(I)**2\n";
+        res += "   10 CONTINUE\n";
+        res += "\n";
+        res += "      B(1) = DSQRT(S)\n";
+        res += "\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     gibt einen Tensor vollstaendig aus\n";
+        res += "      SUBROUTINE PRINT_TENSOR(A, DIMS, RANK, NAME)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      CHARACTER*(*) NAME\n";
+        res += "      DIMENSION A(*)\n";
+        res += "      INTEGER DIMS(*), RANK, N, I, COL\n";
+        res += "      INTEGER TENS_SIZE\n";
+        res += "      INTEGER PERLINE\n";
+        res += "      PARAMETER (PERLINE=6)\n";
+        res += "      N = TENS_SIZE(DIMS, RANK)\n";
+        res += "      WRITE(*,*) NAME, '  rank=', RANK, ' dims=(',\n";
+        res += "     &            (DIMS(I), I=1,RANK), ')  N=', N\n";
+        res += "      COL = 0\n";
+        res += "      DO 10 I = 1, N\n";
+        res += "        WRITE(*,'(1X,ES13.5,$)') A(I)\n";
+        res += "        COL = COL + 1\n";
+        res += "        IF (COL .GE. PERLINE) THEN\n";
+        res += "          WRITE(*,*)\n";
+        res += "          COL = 0\n";
+        res += "        END IF\n";
+        res += "   10 CONTINUE\n";
+        res += "      IF (COL .GT. 0) WRITE(*,*)\n";
+        res += "      RETURN\n";
+        res += "      END\n\n\n";
+    }
 
-    res += "function create_ones(dims::Integer...)\n";
-    res += "    if length(dims) == 0\n";
-    res += "        return 1\n";
-    res += "    end\n";
-    res += "    return ones(Float64, dims...)\n";
-    res += "end\n\n";
+    res += "      SUBROUTINE " + instanceLabel + " (RES, ";
+    res += fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> label; }, false, ",\n" + std::string(5, ' ') + "& ");
+    res += ")\n\n";
 
-    res += "function create_Identity(dims::Integer...)\n";
-    res += "    if length(dims) == 0\n";
-    res += "        return 1\n";
-    res += "    end\n";
-    res += "    n = dims[1]\n";
-    res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Identity\"\n";
-    res += "    @assert length(dims) % 2 == 0 \"Number of dimensions must be even\"\n";
-    res += "    tensor = zeros(Float64, dims...)\n";
-    res += "    half = length(dims) ÷ 2\n";
-    res += "    for idxs in Iterators.product(ntuple(x -> 1:n, half)...)\n";
-    res += "        full_indices = (idxs..., idxs...)\n";
-    res += "        tensor[full_indices...] = 1.0\n";
-    res += "    end\n";
-    res += "    return tensor\n";
-    res += "end\n\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n\n";
 
-    res += "function create_eps(dims::Integer...)\n";
-    res += "    # Alle Dimensionen müssen gleich sein\n";
-    res += "    n = dims[1]\n";
-    res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Levi-Civita\"\n";
-    res += "    @assert n == 3 \"Levi-Civita only implemented for dimension 3\"\n";
-    res += "    @assert length(dims) == 3 \"Levi-Civita must be 3D tensor\"\n";
-    res += "    \n";
-    res += "    eps_tensor = Base.zeros(Float64, dims...)\n";
-    res += "    \n";
-    res += "    for i in 1:n\n";
-    res += "        for j in 1:n\n";
-    res += "            for k in 1:n\n";
-    res += "                indices = [i, j, k]\n";
-    res += "                if length(unique(indices)) != 3\n";
-    res += "                    continue\n";
-    res += "                end\n";
-    res += "                sign = 1\n";
-    res += "                for x in 1:2\n";
-    res += "                    for y in x+1:3\n";
-    res += "                        if indices[x] > indices[y]\n";
-    res += "                            sign *= -1\n";
-    res += "                        end\n";
-    res += "                    end\n";
-    res += "                end\n";
-    res += "                eps_tensor[i, j, k] = sign\n";
-    res += "            end\n";
-    res += "        end\n";
-    res += "    end\n";
-    res += "    \n";
-    res += "    return eps_tensor\n";
-    res += "end\n\n";
+    // Maximale Order bestimmen
+    int maxOrder = 0;
+    for(const auto* elem : uniqueExternals){
+        maxOrder = std::max(maxOrder, elem->tensorOrder);
+    }
 
-    res += "function macaulay(x)\n";
-    res += "    val = x isa AbstractArray ? x[] : x\n";
-    res += "    return val > 0 ? val : 0.0\n";
-    res += "end\n\n";
+    for(const auto& elem : generatedDeps){
+        maxOrder = std::max(maxOrder, elem->tensorOrder);
+    }
 
-    res += "function signum(x)\n";
-    res += "    val = x isa AbstractArray ? x[] : x\n";
-    res += "    return sign(val)\n";
-    res += "end\n\n";
-
-    res += "function frobenius(A)\n";
-    res += "    result = 0.0\n";
-    res += "    for i in axes(A, 1)\n";
-    res += "        for j in axes(A, 2)\n";
-    res += "            result += A[i,j]^2\n";
-    res += "        end\n";
-    res += "    end\n";
-    res += "    return sqrt(result)\n";
-    res += "end\n\n";
-
-    res += "const Scalar0 = Array{Float64,0}\n\n";
-
-    res += "import Base: +, -, *, /, sqrt\n";
-    res += "import Base: sin, cos, tan, cot\n\n";
-
-    res += "+(a::Scalar0, b::Scalar0) = a[] + b[]\n";
-    res += "+(a::Scalar0, b::Real)    = a[] + b\n";
-    res += "+(a::Real,    b::Scalar0) = a + b[]\n\n";
-
-    res += "-(a::Scalar0, b::Scalar0) = a[] - b[]\n";
-    res += "-(a::Scalar0, b::Real)    = a[] - b\n";
-    res += "-(a::Real,    b::Scalar0) = a - b[]\n";
-    res += "-(a::Scalar0)             = -a[]\n\n";
-
-    res += "*(a::Scalar0, b::Scalar0) = a[] * b[]\n";
-    res += "*(a::Scalar0, b::Real)    = a[] * b\n";
-    res += "*(a::Real,    b::Scalar0) = a * b[]\n\n";
-
-    res += "/(a::Scalar0, b::Scalar0) = a[] / b[]\n";
-    res += "/(a::Scalar0, b::Real)    = a[] / b\n";
-    res += "/(a::Real,    b::Scalar0) = a / b[]\n\n";
-
-    res += "sqrt(a::Scalar0) = sqrt(a[])\n";
-    res += "sin(a::Scalar0)  = sin(a[])\n";
-    res += "cos(a::Scalar0)  = cos(a[])\n";
-    res += "tan(a::Scalar0)  = tan(a[])\n";
-    res += "cot(a::Scalar0)  = cot(a[])\n\n";
-
-    res += "det(a::Scalar0)  = a[]\n";
-    res += "inv(a::Scalar0)  = 1 / a[]\n\n";
+    for(const auto& elem : depsKeys){
+        maxOrder = std::max(maxOrder, elem.tensorOrder);
+    }
+    
+    // Berücksichtigung des aktuellen Members
+    maxOrder = std::max(maxOrder, tensorOrder);
 
     //
-    res += "\n";
-    res += "function " + instanceLabel + "(";
+    res += "      INTEGER DIMS(" + std::to_string(std::max(maxOrder, 1)) + ")\n\n";
+
+    // Dimension Assert
+    res += "C     Dimension Asserts\n\n";
+
+    res += "      " + fprintPlainVector(uniqueExternals,
+        [](const IndexNotatedTensorExpression* elem){
+
+            if(elem -> tensorOrder == 0){ return "REAL*8 " + elem -> label; }
+            return "DIMENSION " + elem -> label + printPlainVector(elem -> dimensions);
+        }, false, "\n" + std::string(6, ' '));
+    
+    res += "\n\n";
+    
+    res += "      " + fprintPlainVector(generatedDeps,
+    [](const IndexNotatedTensorExpression* elem){
+
+        if(elem->tensorOrder == 0){ return "REAL*8 " + getArgLabel(*elem); }
+        return "DIMENSION " + getArgLabel(*elem) + printPlainVector(elem->dimensions);
+    }, false, "\n" + std::string(6, ' '));
+
+    res += "\n\n";
+
+    res += "      " + fprintPlainVector(depsKeys,
+    [](const IndexNotatedTensorExpression& elem){
+
+        if(elem.tensorOrder == 0){ return "REAL*8 " + elem.label; }
+        return "DIMENSION " + elem.label + printPlainVector(elem.dimensions);
+    }, false, "\n" + std::string(6, ' '));
+
+    res += "\n\n";
+
+    res += "C     DIMS nullen\n\n";
+
+    //
+    for(int i = 0; i < maxOrder; i++){
+
+        res += "      DIMS(" + std::to_string(i + 1) + ") = 0\n"; 
+    }
+
+    //
+    res += "\n\n";
+
+    //
+    res += "C     Funktionale Nodes\n\n";
+
+    // generatedDeps (functional Nodes ermitteln)
+    for(const auto& node : generatedDeps){
+
+        res += fortranApplyDims(*node);
+
+        if(node -> label == "Identity"){
+
+            res += "      CALL CREATE_IDENTITY(" + getArgLabel(*node) + ", DIMS, " + std::to_string(node -> tensorOrder) + ")\n";
+        }
+        else if(node -> label == "zeros"){
+
+            res += "      CALL CREATE_ZEROS(" + getArgLabel(*node) + ", DIMS, " + std::to_string(node -> tensorOrder) + ")\n";
+        }
+        else if(node -> label == "ones"){
+
+            res += "      CALL CREATE_ONES(" + getArgLabel(*node) + ", DIMS, " + std::to_string(node -> tensorOrder) + ")\n";
+        }
+        else if(node -> label == "eps"){
+            
+            res += "      CALL CREATE_EPS(" + getArgLabel(*node) + ", DIMS, " + std::to_string(node -> tensorOrder) + ")\n";
+        }
+
+        res += "\n";
+    }
+
+    res += "\n\n";
+
+    res += "C     Deps ermitteln\n\n";
+
+    //
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        const auto& key = depsKeys[i];
+        const auto& val = depsValues[i];
+
+        res += val.wrapTensorSequenceFortranString(key.label);
+    }
+
+    res += "\n\n";
+
+    res += "      RETURN\n      END\n\n\n";
+
+    if(generateDebugCall){
+
+        res += "      PROGRAM MAIN\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n\n";
+
+        // Maximale Order bestimmen
+        int maxOrder = 0;
+        for(const auto* elem : uniqueExternals){
+            maxOrder = std::max(maxOrder, elem->tensorOrder);
+        }
+        
+        // Berücksichtigung des aktuellen Members
+        maxOrder = std::max(maxOrder, tensorOrder);
+
+        //
+        res += "      INTEGER DIMS(" + std::to_string(std::max(maxOrder, 1)) + ")\n\n";
+
+        if(tensorOrder == 0){ res += "      REAL*8 " + label + "\n\n"; }
+        else{ res += "      DIMENSION RES" + printPlainVector(dimensions) + "\n\n"; }
+
+        res += "      " + fprintPlainVector(uniqueExternals,
+        [](const IndexNotatedTensorExpression* elem){
+
+            if(elem -> tensorOrder == 0){ return "REAL*8 " + elem -> label; }
+            return "DIMENSION " + elem -> label + printPlainVector(elem -> dimensions);
+        }, false, "\n" + std::string(6, ' '));
+
+        res += "\n\n";
+
+        res += "      CALL " + instanceLabel + " (RES, ";
+        res += fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> label; }, false, ",\n" + std::string(5, ' ') + "& ");
+        res += ")\n\n";
+
+        //
+        if(tensorOrder == 0){
+
+            res += "      WRITE(*,*) 'RES = ', RES\n\n";
+
+        } else {
+
+            res += fortranApplyDims(*this);
+
+            res += "\n";
+            res += "      CALL PRINT_TENSOR(RES, DIMS, " + std::to_string(tensorOrder) + ", 'RES')\n\n";
+        }
+
+        res += "      STOP\n";
+        res += "      END\n";
+    }
+
+    return res;
 
     //
     bool filledInFirstExternal = false;

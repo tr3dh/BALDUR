@@ -113,13 +113,13 @@ decl logSeparator(){ log(separator) }
 
 // Standardmatritzen für Tensorausdrücke der Stufe <order>
 decl tExprIdentity(int order){ return [tExpr("Identity", order)] }
-decl tIdnIdentity(int order){ return [tIDN("Identity", order)] }
+decl tIdnIdentity(int order){ return [tIdn("Identity", order)] }
 decl tExprZeros(int order){ return [tExpr("zeros", order)] }
-decl tIdnZeros(int order){ return [tIDN("zeros", order)] }
+decl tIdnZeros(int order){ return [tIdn("zeros", order)] }
 decl tExprOnes(int order){ return [tExpr("ones", order)] }
-decl tIdnOnes(int order){ return [tIDN("ones", order)] }
+decl tIdnOnes(int order){ return [tIdn("ones", order)] }
 decl tExprEps(int order){ return [tExpr("eps", order)] }
-decl tIdnEps(int order){ return [tIDN("eps", order)] }
+decl tIdnEps(int order){ return [tIdn("eps", order)] }
 
 // Vervielfältigung von Args über *= / *
 decl __mulAssign__(args ref prms, int n){

@@ -126,7 +126,7 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [epsilon_TSM, epsilon_v_TSM, theta_TSM] = ...tExprUniVectors("epsilon_TSM", "epsilon_v_TSM", "theta_TSM")
     
     //
-    tExpr sigma_TSM = (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM)
+    tExpr sigma_TSM = (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM) . tExpr("Identity", 2, args(nVoigtComps) * 2)
 
     // FullTaylor
     epsilon_fTSM = \
@@ -194,7 +194,9 @@ decl evaluateExample(int orderTSM, int dimension){
 
             tmpTangentA <+ sigma_TSM
 
-            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma") -> writeToFile("Examples/fortranScripts/evalSigma.f")
+            args [depsKeys, depsVals] = args(toWrappedIDN(tVoigtCompsUniTensor("depsE", 4)), toWrappedIDN(tVoigtCompsUniTensor("depsA", 0))), \
+                                        args(toWrappedIDN(E \(x) E), toWrappedIDN(E .. E)),
+            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma", depsKeys, depsVals) -> writeToFile("Examples/fortranScripts/evalSigma.f")
 
             tmpTangentA -> replace(aTilde, zeros(aTilde))
             tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))

@@ -374,6 +374,8 @@ struct IndexNotatedTensorExpression{
     friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);
 };
 
+extern bool generateFortranHelpers;
+
 void moveSelfIntoFirstChild(IndexNotatedTensorExpression& node);
 
 namespace types{
