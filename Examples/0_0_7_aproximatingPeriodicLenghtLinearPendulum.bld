@@ -28,7 +28,7 @@ string [examplePrefix, exampleChapter, exampleTitle] = "0_0_7", "x", "Pendulum"
 
 //
 emplaceExtendedSimplifications()
-setGenerateJLDebugCall(true)
+setGenerateExportDebugCall(true)
 
 //
 int [TSeriesOrder, KSeriesOrder] = 4, 4

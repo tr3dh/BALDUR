@@ -2963,9 +2963,88 @@ namespace types{
         },
         {STRING::typeIndex});
 
+
         //
-        registerFunction("setGenerateJLDebugCall", {BOOL::typeIndex},
-            [__functionLabel__ = "setGenerateJLDebugCall", __numArgs__ = 1](FREG_ARGS){
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toFortranString", {},
+            [__functionLabel__ = "toFortranString", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_RETURN(STRING, 0);
+
+                ret0->getMember() = mb->getMember().toFortranString();
+        },
+        {STRING::typeIndex});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toFortranString", {STRING::typeIndex},
+            [__functionLabel__ = "toFortranString", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_ARG(STRING, 0); GET_RETURN(STRING, 0);
+
+                ret0->getMember() = mb->getMember().toFortranString(arg0->getMember());
+        },
+        {STRING::typeIndex});
+
+        //
+        registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toFortranString", {STRING::typeIndex, ARGS::typeIndex, ARGS::typeIndex},
+            [__functionLabel__ = "toFortranString", __numArgs__ = 3](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_MEMBER(INDEX_NOTATED_TENSOR_EXPRESSION);
+                GET_ARG(STRING, 0); GET_ARG(ARGS, 1); GET_ARG(ARGS, 2); GET_RETURN(STRING, 0);
+
+                //
+                RETURNING_ASSERT(arg1->getMember().size() == arg2->getMember().size(), "Übergebene Listen DependencieKeys und -Vals haben ungleiche Länge",);
+
+                // DependencieKeys
+
+                // EvalResultVec zu IndexNotatedTensorExpressionVec parsen
+                std::vector<IndexNotatedTensorExpression> depsKeys = {};
+                depsKeys.reserve(arg1->getMember().size());
+
+                for(size_t i = 0; i < arg1->getMember().size(); i++){
+
+                    RETURNING_ASSERT(arg1->getMember().at(i).getVariableRef().getData()->getTypeIndex() == INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "Input ist kein Indexnotierter Ausdruck",);
+                    depsKeys.emplace_back(static_cast<INDEX_NOTATED_TENSOR_EXPRESSION*>(arg1->getMember().at(i).getVariableRef().getData())->getMember());
+                }
+
+                // DependencieVals
+
+                // EvalResultVec zu IndexNotatedTensorExpressionVec parsen
+                std::vector<IndexNotatedTensorExpression> depsVals = {};
+                depsVals.reserve(arg2->getMember().size());
+
+                for(size_t i = 0; i < arg1->getMember().size(); i++){
+
+                    RETURNING_ASSERT(arg2->getMember().at(i).getVariableRef().getData()->getTypeIndex() == INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "Input ist kein Indexnotierter Ausdruck",);
+                    depsVals.emplace_back(static_cast<INDEX_NOTATED_TENSOR_EXPRESSION*>(arg2->getMember().at(i).getVariableRef().getData())->getMember());
+                }
+
+                ret0->getMember() = mb->getMember().toFortranString(arg0->getMember(), depsKeys, depsVals);
+        },
+        {STRING::typeIndex});
+
+        //
+        registerFunction("setGenerateExportDebugCall", {BOOL::typeIndex},
+            [__functionLabel__ = "setGenerateExportDebugCall", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -2981,4 +3060,535 @@ namespace types{
 
         return true;
     }
+}
+
+// Fortran Export
+
+std::string IndexNotatedTensorExpression::wrapTensorSequenceFortranString(const std::string& resLabel) const{
+
+    IndexNotatedTensorExpression copy = *this;
+    return copy.generateTensorSequenceFortranString(0, false, false, resLabel);
+}
+
+
+// Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
+// dafür gibts die wrapper funktion
+std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(size_t depth, bool forceSubstitution, bool useTensorNotation, const std::string& resLabel){
+
+    // Werte so setzen dass sie Rekursive Funktion direkt beim ersten Durchlauf abbrechen
+    // static int dependencieIdx = 0;
+    static std::string dependencieDecls = "__INVALIDDECLS__", dependencieAssignment = "__INVALIDDECLS__";
+    static bool terminate = true;
+
+    // >> Setup der Werte für jeden einzelnen Aufruf der Funktionen für einen frischen Ausdruck
+    if(depth == 0){
+
+        // dependencieIdx = 0;
+        dependencieDecls = ""; dependencieAssignment = "";
+        terminate = false;
+    }
+
+    //
+    std::string res = "";
+
+    //
+    if(isConstant){ res += string::strippedString(value); }
+    else if(Relation == TkType::Argument){
+
+        if(tensorOrder < 1){ res += getArgLabel(*this); }
+        else{ res += getArgLabel(*this) + (useTensorNotation ? "" : ("[" + fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + "]")); }
+    }
+    else if(Relation == TkType::Operator){
+
+        //
+        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)) + ", Node : " + toString(), "");
+
+        //
+        res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& child){ return child.generateTensorSequenceFortranString(depth + 1);},
+                                    true, " " + IndexNotationOperatorStrings[Operator] + " ");
+    }
+    else if(Relation == TkType::Container){
+
+        RETURNING_ASSERT(children.size() == 1, "...","");
+
+        switch(Operator){
+        
+            // Node Substituieren
+            case IndexNotationOperator::Macaulay:
+            case IndexNotationOperator::Signum:
+            case IndexNotationOperator::Determinant:
+            case IndexNotationOperator::Frobenius:
+            case IndexNotationOperator::Sqrt:
+            case IndexNotationOperator::Sin:
+            case IndexNotationOperator::Cos:
+            case IndexNotationOperator::Tan:
+            case IndexNotationOperator::Cotan:
+            case IndexNotationOperator::Inversion:{
+
+                //
+                std::string jlFuncLabel;
+
+                if(Operator == IndexNotationOperator::Macaulay){ jlFuncLabel = "macaulay"; }
+                else if(Operator == IndexNotationOperator::Signum){ jlFuncLabel = "signum"; }
+                else if(Operator == IndexNotationOperator::Determinant){ jlFuncLabel = "det"; }
+                else if(Operator == IndexNotationOperator::Frobenius){ jlFuncLabel = "frobenius"; }
+                else if(Operator == IndexNotationOperator::Sqrt){ jlFuncLabel = "sqrt"; }
+                else if(Operator == IndexNotationOperator::Sin){ jlFuncLabel = "sin"; }
+                else if(Operator == IndexNotationOperator::Cos){ jlFuncLabel = "cos"; }
+                else if(Operator == IndexNotationOperator::Tan){ jlFuncLabel = "tan"; }
+                else if(Operator == IndexNotationOperator::Cotan){ jlFuncLabel = "cot"; }
+                else{ jlFuncLabel = "inv"; }
+
+                //
+                children.front().generateTensorSequenceFortranString(depth + 1, true);
+
+                //
+                bool returnScalar = tensorOrder == 0;
+                bool onlyScalars = containsOnlyScalars();
+                bool useTOps = (returnScalar && !onlyScalars) || !returnScalar;
+
+                if(Operator == IndexNotationOperator::Inversion){
+
+                    res += (returnScalar ? "(1/" : "(inv(") + children.front().generateTensorSequenceFortranString(depth + 1, false, true) + (returnScalar ? ")" : "))");
+                }
+                else{
+
+                    res += jlFuncLabel + "(" + children.front().generateTensorSequenceFortranString(depth + 1, false, true) + ")";
+                }
+
+                std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
+                int complexity = getNumOfNodes();
+
+                //
+                dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
+
+                //
+                // dependencieAssignment += "\n\tprintln(\"[Evaluating '" + extNodeLabel + "', Komplexität " + std::to_string(complexity) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
+                dependencieAssignment += "\n\t" + extNodeLabel + " = " + res + "\n";
+
+                *this = asExternalNode(extNodeLabel);
+                res = generateTensorSequenceFortranString(depth + 1);
+
+                break;
+            }
+            default:{
+
+                res += children.front().generateTensorSequenceFortranString(depth + 1);
+                break;
+            }
+        }
+    }
+
+    //
+    if(Relation == TkType::Operator && getNumOfNodes() > g_forceSubstitutionFromComplexity){
+
+        int numOfNodes = getNumOfNodes();
+
+        for(auto& child : children){
+
+            child.generateTensorSequenceFortranString(depth + 1, true);
+            if(terminate){ return ""; }
+        }
+
+        // Ausdruck konnte trotz Optimierung nicht in benätigts Format gepackt werden
+        // >> unwrapped Ausdruck mit zu langen Operandenketten
+        if(numOfNodes == getNumOfNodes()){
+
+            terminate = true;
+            RETURNING_ASSERT(TRIGGER_ASSERT, "Ausdruck ist für Konvertierung zu breit aufgestellt, übergebe gepackte Version an jl Skript Generierung","");
+        }
+
+        res = generateTensorSequenceFortranString(depth + 1);
+    }
+
+    if(terminate){ return ""; }
+
+    //
+    bool returnScalar = tensorOrder == 0;
+    bool onlyScalars = containsOnlyScalars();
+    bool useTOps = (returnScalar && !onlyScalars) || !returnScalar;
+
+    //
+    if(returnScalar && Relation == TkType::Operator){ forceSubstitution = true; }
+
+    //
+    if(depth == 0){
+
+        res = /* "\n\tprintln(\"[Ausdruck mit " + std::to_string(dependencieIdx) + " temporären Dependencies substituiert]\")\n" + */ \
+            /* dependencieDecls + "\n" + */ dependencieAssignment + "\n" + \
+            /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
+            /* "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + */ \
+            (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode(resLabel).generateTensorSequenceFortranString(1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res + "\n\n";
+    }
+    else if((Relation == TkType::Operator && getNumOfNodes() > g_recommedSubstitutionFromComplexity) || forceSubstitution){
+
+        RETURNING_ASSERT(getNumOfNodes() <= g_forceSubstitutionFromComplexity, "...", "");
+
+        std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
+        int complexity = getNumOfNodes();
+
+        //
+        dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
+
+        //
+        // dependencieAssignment += "\n\tprintln(\"[Evaluating '" + extNodeLabel + "', Komplexität " + std::to_string(complexity) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
+        dependencieAssignment += (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode(extNodeLabel).generateTensorSequenceFortranString(depth + 1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res;
+
+        //
+        if(returnScalar && useTOps){
+
+            //
+            std::string prevNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
+            std::swap(extNodeLabel, prevNodeLabel);
+ 
+            dependencieAssignment += "\n\t" + extNodeLabel + " = " + prevNodeLabel + "[]";
+        }
+
+        //
+        dependencieAssignment += "\n";
+
+        //
+        *this = asExternalNode(extNodeLabel);
+        res = generateTensorSequenceFortranString(depth + 1);
+    }
+
+    //
+    return res;
+}
+
+//
+std::string IndexNotatedTensorExpression::toFortranString(const std::string& instanceLabel, const std::vector<IndexNotatedTensorExpression>& depsKeys, const std::vector<IndexNotatedTensorExpression>& depsValues) const {
+
+    //
+    RETURNING_ASSERT(containsDimensions(), "Ohne Dimensionsberücksichtigung kann Fortran Skript nicht erstellt werden","");
+
+    // Unique External Nodes
+    auto uniqueExternals = getUniqueExternalNodes();
+
+    // Format :
+    // * depsKeys ist ein Vektor mit den konditionierten externen Nodes für die ein Ausdruck substituiert wird
+    // * depsVals ist die entsprechende Substitution
+    //
+    // Bspl.
+    // DepsKeys[0] = tIdn("devSigma", ...) | DepsVals[0] = toIDN(S . (E0 . (eps0 - epsvp0))  
+
+    //
+    RETURNING_ASSERT(depsKeys.size() == depsValues.size(), "Ungleiche Listengrößen für Deps angegeben", "");
+
+    // //
+    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
+    // Übertrag der Abhängigkeiten
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        std::vector<const IndexNotatedTensorExpression*> uniqueDepExternals = depsValues[i].getUniqueExternalNodes();
+
+        // //
+        // LOG << fprintPlainVector(uniqueDepExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
+        for(auto uniqueNode : uniqueDepExternals){
+
+            bool alreadyIn = std::find_if(uniqueExternals.begin(), uniqueExternals.end(),
+                [uniqueNode](const IndexNotatedTensorExpression* existing) {
+                    return areEqualExternals(*existing, *uniqueNode);
+                }) != uniqueExternals.end();
+
+            if (!alreadyIn) {
+                uniqueExternals.push_back(uniqueNode);
+            }
+        }
+    }
+
+    // //
+    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
+    // Löschen der Substituierten aus den Abhängigkeiten
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        // Sicherstellen das depsKey externe Node ist
+        RETURNING_ASSERT(areEqualExternals(depsKeys[i].asExternalNode(depsKeys[i].label), depsKeys[i]), "Übergebene Substitution ist keine externe Node", "");
+
+        //
+        uniqueExternals.erase(
+            std::remove_if(uniqueExternals.begin(), uniqueExternals.end(),
+                [&](const IndexNotatedTensorExpression* existing) {
+                    return areEqualExternals(*existing, depsKeys[i]);
+                }),
+            uniqueExternals.end()
+        );
+    }
+
+    // Return string
+    std::string res;
+
+    //
+    res += "# Fortran Skript\n#\n";
+    res += "# unique external nodes :\n";
+
+    //
+    for(const auto& node : uniqueExternals){
+
+        res += "# | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
+        res += printPlainVector(node->dimensions, false);
+        res += "}\n";
+    }
+
+    //
+    for(const auto& node : depsKeys){
+
+        res += "# | deps '" + getArgLabel(node) + "', order [" + std::to_string(node.tensorOrder) + "], dimensions {";
+        res += printPlainVector(node.dimensions, false);
+        res += "}\n";
+    }
+
+    res += "\n";
+    res += "using LinearAlgebra\nusing TensorOperations\nusing Dates\n\n";
+
+    // Helper functions to create precomputed tensors
+    res += "function create_zeros(dims::Integer...)\n";
+    res += "    if length(dims) == 0\n";
+    res += "        return 0\n";
+    res += "    end\n";
+    res += "    return zeros(Float64, dims...)\n";
+    res += "end\n\n";
+
+    res += "function create_ones(dims::Integer...)\n";
+    res += "    if length(dims) == 0\n";
+    res += "        return 1\n";
+    res += "    end\n";
+    res += "    return ones(Float64, dims...)\n";
+    res += "end\n\n";
+
+    res += "function create_Identity(dims::Integer...)\n";
+    res += "    if length(dims) == 0\n";
+    res += "        return 1\n";
+    res += "    end\n";
+    res += "    n = dims[1]\n";
+    res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Identity\"\n";
+    res += "    @assert length(dims) % 2 == 0 \"Number of dimensions must be even\"\n";
+    res += "    tensor = zeros(Float64, dims...)\n";
+    res += "    half = length(dims) ÷ 2\n";
+    res += "    for idxs in Iterators.product(ntuple(x -> 1:n, half)...)\n";
+    res += "        full_indices = (idxs..., idxs...)\n";
+    res += "        tensor[full_indices...] = 1.0\n";
+    res += "    end\n";
+    res += "    return tensor\n";
+    res += "end\n\n";
+
+    res += "function create_eps(dims::Integer...)\n";
+    res += "    # Alle Dimensionen müssen gleich sein\n";
+    res += "    n = dims[1]\n";
+    res += "    @assert all(d -> d == n, dims) \"All dimensions must be equal for Levi-Civita\"\n";
+    res += "    @assert n == 3 \"Levi-Civita only implemented for dimension 3\"\n";
+    res += "    @assert length(dims) == 3 \"Levi-Civita must be 3D tensor\"\n";
+    res += "    \n";
+    res += "    eps_tensor = Base.zeros(Float64, dims...)\n";
+    res += "    \n";
+    res += "    for i in 1:n\n";
+    res += "        for j in 1:n\n";
+    res += "            for k in 1:n\n";
+    res += "                indices = [i, j, k]\n";
+    res += "                if length(unique(indices)) != 3\n";
+    res += "                    continue\n";
+    res += "                end\n";
+    res += "                sign = 1\n";
+    res += "                for x in 1:2\n";
+    res += "                    for y in x+1:3\n";
+    res += "                        if indices[x] > indices[y]\n";
+    res += "                            sign *= -1\n";
+    res += "                        end\n";
+    res += "                    end\n";
+    res += "                end\n";
+    res += "                eps_tensor[i, j, k] = sign\n";
+    res += "            end\n";
+    res += "        end\n";
+    res += "    end\n";
+    res += "    \n";
+    res += "    return eps_tensor\n";
+    res += "end\n\n";
+
+    res += "function macaulay(x)\n";
+    res += "    val = x isa AbstractArray ? x[] : x\n";
+    res += "    return val > 0 ? val : 0.0\n";
+    res += "end\n\n";
+
+    res += "function signum(x)\n";
+    res += "    val = x isa AbstractArray ? x[] : x\n";
+    res += "    return sign(val)\n";
+    res += "end\n\n";
+
+    res += "function frobenius(A)\n";
+    res += "    result = 0.0\n";
+    res += "    for i in axes(A, 1)\n";
+    res += "        for j in axes(A, 2)\n";
+    res += "            result += A[i,j]^2\n";
+    res += "        end\n";
+    res += "    end\n";
+    res += "    return sqrt(result)\n";
+    res += "end\n\n";
+
+    res += "const Scalar0 = Array{Float64,0}\n\n";
+
+    res += "import Base: +, -, *, /, sqrt\n";
+    res += "import Base: sin, cos, tan, cot\n\n";
+
+    res += "+(a::Scalar0, b::Scalar0) = a[] + b[]\n";
+    res += "+(a::Scalar0, b::Real)    = a[] + b\n";
+    res += "+(a::Real,    b::Scalar0) = a + b[]\n\n";
+
+    res += "-(a::Scalar0, b::Scalar0) = a[] - b[]\n";
+    res += "-(a::Scalar0, b::Real)    = a[] - b\n";
+    res += "-(a::Real,    b::Scalar0) = a - b[]\n";
+    res += "-(a::Scalar0)             = -a[]\n\n";
+
+    res += "*(a::Scalar0, b::Scalar0) = a[] * b[]\n";
+    res += "*(a::Scalar0, b::Real)    = a[] * b\n";
+    res += "*(a::Real,    b::Scalar0) = a * b[]\n\n";
+
+    res += "/(a::Scalar0, b::Scalar0) = a[] / b[]\n";
+    res += "/(a::Scalar0, b::Real)    = a[] / b\n";
+    res += "/(a::Real,    b::Scalar0) = a / b[]\n\n";
+
+    res += "sqrt(a::Scalar0) = sqrt(a[])\n";
+    res += "sin(a::Scalar0)  = sin(a[])\n";
+    res += "cos(a::Scalar0)  = cos(a[])\n";
+    res += "tan(a::Scalar0)  = tan(a[])\n";
+    res += "cot(a::Scalar0)  = cot(a[])\n\n";
+
+    res += "det(a::Scalar0)  = a[]\n";
+    res += "inv(a::Scalar0)  = 1 / a[]\n\n";
+
+    //
+    res += "\n";
+    res += "function " + instanceLabel + "(";
+
+    //
+    bool filledInFirstExternal = false;
+
+    //
+    for(const auto& node : uniqueExternals){
+
+        if(isFunctionalNode(*node)){
+
+            continue;
+        }
+
+        res += filledInFirstExternal ? ", " + node->label : node->label;
+        filledInFirstExternal = true;
+    }
+
+    // Abhängigkeiten des Indexnotierten Ausdrucks >> unique External Nodes
+
+    res += ")\n\n";
+
+    //
+    for(const auto& node : uniqueExternals){
+
+        if(isFunctionalNode(*node)){
+
+            res += "\t" + getArgLabel(*node) + " = create_" + node->label + printPlainVector(node->dimensions) + "\n";
+        }
+        else if(node->containsDimensions() && node->dimensions.size() > 1){
+
+            res += "\t@assert size(" + node->label + ") == " + printPlainVector(node->dimensions) + "\n";
+        }
+        else if(node->containsDimensions() && node->dimensions.size() == 1){
+
+            res += "\t@assert length(" + node->label + ") == " + std::to_string(node->dimensions.front()) + "\n";
+        }
+        else if(node->containsDimensions() && node->dimensions.size() == 0){
+
+            res += "\t@assert ndims(" + node->label + ") == 0\n";
+        }
+    }
+
+    res += "\n";
+
+    // // Return Wert initialisieren
+    // res += "\tres = Base.zeros" + printPlainVector(dimensions) + "\n\n";
+
+    // //
+    // if(!usingFortran){
+
+    //     //
+    //     for(const auto& idxs : generateTensorIndexPermutations(dimensions)){
+
+    //         //
+    //         res += "\tres[" + printIncreasedPlainVector(idxs, false) + "] = ";
+
+    //         // Werte der nach extern weitergereichten Indices : idxs
+    //         res += generateTensorSequenceFortranString(idxs);
+
+    //         //
+    //         res += "\n";
+    //     }
+    // }
+    // else{
+
+    //     //
+    //     res += "\t@tensor opt=true res[";
+
+    //     res += fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false);
+
+    //     // fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); })
+
+    //     res += "] = ";
+    //     res += generateTensorSequenceFortranString({});
+
+    //     //
+    //     res += "\n";
+    // }
+
+    // //
+    // res += "\n\treturn res\n";
+
+    //
+    dependencieIdx = 0;
+
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        // depsKeys[i] | depsValues[i]
+        // LOG << depsValues[i].toString() << " | " << depsValues[i].toString() << endln;
+        res += depsValues[i].wrapTensorSequenceFortranString(depsKeys[i].label);
+    }
+
+    std::string resLabel = "res";
+    res += wrapTensorSequenceFortranString(resLabel);
+    res += "\n\n\treturn " + resLabel;
+    res += "\n\n";
+
+    //
+    res += "end\n\n";
+
+    if(generateDebugCall){
+
+        res += "start_time = time()\nres = " + instanceLabel + "(";
+
+        //
+        for(auto it = uniqueExternals.begin(); it != uniqueExternals.end(); ){
+
+            if(isFunctionalNode(**it)){
+                it = uniqueExternals.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        for(auto it = uniqueExternals.begin(); it != uniqueExternals.end(); ++it) {
+
+            auto expr = *it;
+
+            //
+            res += "rand" + printPlainVector(expr->dimensions);
+            
+            //
+            if(std::next(it) != uniqueExternals.end()) {
+                res += ", ";
+            }
+        }
+
+        res +=  ")\nelapsed = time() - start_time\nprintln(\"Laufzeit: \", elapsed, \" s\")\nprintln(\"Ergebnis: \", res)";
+    }
+
+    return res;
 }

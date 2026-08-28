@@ -44,14 +44,14 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "x", "4.2.2", "Modelling of the stress of elastothermal-viscoplasticity"
-int [orderTSM, dimension] = 2, 3
+int [orderTSM, dimension] = 1, 3
 
 //
 decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
 
 //
 // disableDiffTemplateDefaults()
-setGenerateJLDebugCall(true)
+setGenerateExportDebugCall(true)
 
 int nVoigtComps(-1)
 
@@ -194,13 +194,13 @@ decl evaluateExample(int orderTSM, int dimension){
 
             tmpTangentA <+ sigma_TSM
 
-            toWrappedIDN(tmpTangentA) -> toJuliaString("evalSigma") -> writeToFile("Examples/fortranScripts/evalSigma.jl")
+            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma") -> writeToFile("Examples/fortranScripts/evalSigma.f")
 
             tmpTangentA -> replace(aTilde, zeros(aTilde))
             tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
             tmpTangentA -> replace(betaTilde, zeros(betaTilde))
 
-            toWrappedIDN(tmpTangentA) -> toJuliaString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.jl")
+            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
         }
 
         // Tangente i mal ableiten und D mit null substituieren
@@ -224,7 +224,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         wrpSimplify(tmpTangentA); wrpSimplify(tmpTangentAlpha); wrpSimplify(tmpTangentBeta);
 
-        toWrappedIDN(tmpTangentA) -> toJuliaString("evalTangentdSigmadA" + string(order)) -> writeToFile("Examples/fortranScripts/evalTangentdSigmadA" + string(order) + ".jl")
+        toWrappedIDN(tmpTangentA) -> toJuliaString("evalTangentdSigmadA" + string(order)) -> writeToFile("Examples/fortranScripts/evalTangentdSigmadA" + string(order) + ".f")
     } \
     defer { dref result }
 

@@ -70,7 +70,7 @@ decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
 
 //
 // disableDiffTemplateDefaults()
-setGenerateJLDebugCall(false)
+setGenerateExportDebugCall(false)
 
 int nVoigtComps(-1)
 

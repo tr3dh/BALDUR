@@ -366,6 +366,10 @@ struct IndexNotatedTensorExpression{
     std::string generateTensorSequenceTullioString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false, const std::string& resLabel = "res");
     std::string toJuliaString(const std::string& instanceLabel = "Tmp", const std::vector<IndexNotatedTensorExpression>& depsKeys = {}, const std::vector<IndexNotatedTensorExpression>& depsValues = {}) const;
 
+    std::string wrapTensorSequenceFortranString(const std::string& resLabel = "res") const;
+    std::string generateTensorSequenceFortranString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false, const std::string& resLabel = "res");
+    std::string toFortranString(const std::string& instanceLabel = "Tmp", const std::vector<IndexNotatedTensorExpression>& depsKeys = {}, const std::vector<IndexNotatedTensorExpression>& depsValues = {}) const;
+
     std::string toString(size_t depth = 0) const;
     friend std::ostream& operator<<(std::ostream& os, const IndexNotatedTensorExpression& expr);
 };
