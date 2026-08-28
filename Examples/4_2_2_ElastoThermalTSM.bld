@@ -1,0 +1,294 @@
+// ---------------------------------------------------------------------------
+//                              Example 4.2.2
+// ---------------------------------------------------------------------------
+// Diese Datei enthält die Rekonstruktion eines Beispiels aus der Dissertation
+// "Uncertainty quantification for inelastic materials and structures: Time-separated stochastic mechanics"
+// von Hedrik Geisler, 2025
+// Kapitel : 3.2.1, Example D : TSM - Modelling of the evolution equation of viscoelasticity, S.44 ff
+//
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - build DEBUG    : $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/4_2_2_ElastoThermalTSM.bld
+// - run DEBUG      : $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/4_2_2_ElastoThermalTSM.bld
+// - build NDEBUG   : $ make launch BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/4_2_2_ElastoThermalTSM.bld
+// - run NDEBUG     : $ make exec BUILD_MODE=NDEBUG TARGET=build/BaldurTestEnv SCRIPT=Examples/4_2_2_ElastoThermalTSM.bld
+// 
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/4_2_2_ElastoThermalTSM.bld
+// $ ./build/Baldur execute Examples/4_2_2_ElastoThermalTSM.bld
+
+// Requires / Asserts für uniforms, args, aufruf, etc.
+assert(calledAs(__MainProc__), __script__ + " should be executed directly")
+
+// Includes
+fetch backend ["tensor"]
+
+//
+requires bool uniform g_unwrapOperands
+requires bool uniform g_compareTemplateDependencies
+requires bool uniform g_suppressAssertionWarnings
+requires bool uniform g_terminateAfterAssertionFailed
+
+// Einstellung
+__assign__(g_terminateAfterAssertionFailed, true)
+
+// Steuert welche Konvention beim Einlagern der Standardtemplates verwendet wird
+bool g_emplaceTemplatesUnwrapped = false
+setUnwrapOperands(g_emplaceTemplatesUnwrapped)
+
+// Flag für das Setzen erweiterter Simplifizierungsregeln
+// Wird nach dem Ermitteln der Spannungstangenten zurückgesetzt
+bool g_emplaceExtendedSimplifications = true
+
+//
+fetch script ["pckg/preDecls", "pckg/functions"]
+
+//
+string [examplePrefix, exampleChapter, exampleTitle] = "x", "4.2.2", "Modelling of the stress of elastothermal-viscoplasticity"
+int [orderTSM, dimension] = 2, 3
+
+//
+decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
+
+//
+// disableDiffTemplateDefaults()
+setGenerateJLDebugCall(true)
+
+int nVoigtComps(-1)
+
+decl tVoigtCompsUniTensor(string ref label, int order){
+
+    requires {nVoigtComps > -1} "Invalide Anzahl an Komponenten der Voigt Notation"
+    return [ <- tUniExpr(label, order, nVoigtComps)]
+}
+
+//
+decl tExprScalar(string ref label){ return [tExpr(label, 0)] }
+
+//
+decl tExprScalars(args labels){
+
+    args prms
+
+    for(int i = 0, i < labels -> size(), i++){
+
+        prms -> emplace(tExprScalar(labels[i]))
+    }
+
+    return [<- prms]
+}
+
+decl tExprUniVectors(args labels){
+
+    args prms
+
+    for(int i = 0, i < labels -> size(), i++){
+
+        prms -> emplace(tVoigtCompsUniTensor(labels[i], 1))
+    }
+
+    return [prms]
+}
+
+//
+decl evaluateExample(int orderTSM, int dimension){
+    
+    // !! Wichtig : Ausdrücke die Templates enthalten sollten nicht simplifiziert werden
+    // Templates sollen ja andere Ausdrücke repsräsentieren und dass tuen sie auch im Ableich mit den restlichen
+    // SimplifizierungsTemplates und Simplifizierungen die Instanzen enthalten
+
+    //
+    tExpr expDiff
+    for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplA ^ i, tmplB) }
+    setDiffTemplate(exp(tmplA, orderTSM, false), tmplB, expDiff)
+    for([expDiff = tExpr(); i = 0], i < orderTSM + 1, i++){ expDiff += (1.0/factorial(i)) * diff(tmplScalar ^ i, tmplB) }
+    setDiffTemplate(exp(tmplScalar, orderTSM, false), tmplB, expDiff)
+
+    //
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplA ^ i, tmplB, i * ((tmplA ^ (i - 1)) . diff(tmplA, tmplB))) }
+    for(int i = 2, i < orderTSM + 1, i++){ setDiffTemplate(tmplScalar ^ i, tmplB, i * (tmplScalar ^ (i-1)) * diff(tmplScalar, tmplB)) }
+
+    //
+    tExpr ref result
+    string tResultLabel
+    tIdn tIDNResult
+
+    //
+    nVoigtComps = getNumOfVoigtComponents(dimension)
+
+    //
+    tExpr [a, aTilde, alpha, alphaTilde, beta, betaTilde] = ...tExprScalars("a", "aTilde", "alpha", "alphaTilde", "beta", "betaTilde")
+    tExpr [epsilon, epsilon_a, epsilon_alpha, epsilon_beta] = ...tExprUniVectors("epsilon", "epsilon_a", "epsilon_alpha", "epsilon_beta")
+    tExpr [epsilon_v, epsilon_a_v, epsilon_alpha_v, epsilon_beta_v] = ...tExprUniVectors("epsilon_v", "epsilon_a_v", "epsilon_alpha_v", "epsilon_beta_v")
+    tExpr [theta, theta_a, theta_alpha, theta_beta] = ...tExprUniVectors("theta", "theta_a", "theta_alpha", "theta_beta")
+
+    //
+    tExpr [E, alphaTherm] = tVoigtCompsUniTensor("E", 2), tExprScalar("alphaTerm") 
+    tExpr [epsilon_TSM, epsilon_v_TSM, theta_TSM] = ...tExprUniVectors("epsilon_TSM", "epsilon_v_TSM", "theta_TSM")
+    
+    //
+    tExpr sigma_TSM = (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM)
+
+    // FullTaylor
+    epsilon_fTSM = \
+        taylorSeries(epsilon_a, aTilde, orderTSM, false) + \
+        taylorSeries(epsilon_alpha, alphaTilde, orderTSM, false) + \
+        taylorSeries(epsilon_beta, betaTilde, orderTSM, false)
+
+    epsilon_v_fTSM = \
+        taylorSeries(epsilon_a_v, aTilde, orderTSM, false) + \
+        taylorSeries(epsilon_alpha_v, alphaTilde, orderTSM, false) + \
+        taylorSeries(epsilon_beta_v, betaTilde, orderTSM, false)
+
+    theta_fTSM = \
+        taylorSeries(theta_a, aTilde, orderTSM, false) + \
+        taylorSeries(theta_alpha, alphaTilde, orderTSM, false) + \
+        taylorSeries(theta_beta, betaTilde, orderTSM, false)
+
+    // partial Taylor mit externer, kummulierter erster Ordnung
+    tExpr [epsilon0, epsilon_v0, theta0] = ...tExprUniVectors("epsilon0", "epsilon_v0", "theta0")
+
+    epsilon_pTSM = epsilon0 + \
+        partialTaylorSeries(epsilon_a, aTilde, 1, orderTSM, false) + \
+        partialTaylorSeries(epsilon_alpha, alphaTilde, 1, orderTSM, false) + \
+        partialTaylorSeries(epsilon_beta, betaTilde, 1, orderTSM, false)
+
+    epsilon_v_pTSM = epsilon_v0 + \
+        partialTaylorSeries(epsilon_a_v, aTilde, 1, orderTSM, false) + \
+        partialTaylorSeries(epsilon_alpha_v, alphaTilde, 1, orderTSM, false) + \
+        partialTaylorSeries(epsilon_beta_v, betaTilde, 1, orderTSM, false)
+
+    theta_pTSM = theta0 + \
+        partialTaylorSeries(theta_a, aTilde, 1, orderTSM, false) + \
+        partialTaylorSeries(theta_alpha, alphaTilde, 1, orderTSM, false) + \
+        partialTaylorSeries(theta_beta, betaTilde, 1, orderTSM, false)
+
+    //
+    slog("Stress Shape :", sigma_TSM)
+
+    //
+    bool substitutePartialSeries = true
+
+    if(substitutePartialSeries){
+
+        sigma_TSM -> replace(epsilon_TSM, epsilon_pTSM)
+        sigma_TSM -> replace(epsilon_v_TSM, epsilon_v_pTSM)
+        sigma_TSM -> replace(theta_TSM, theta_pTSM)
+    }
+    else{
+
+        sigma_TSM -> replace(epsilon_TSM, epsilon_fTSM)
+        sigma_TSM -> replace(epsilon_v_TSM, epsilon_v_fTSM)
+        sigma_TSM -> replace(theta_TSM, theta_fTSM)
+    }
+
+    //
+    slog("Substituted Stress:", sigma_TSM)
+
+    // Ermitteln der Tangenten
+    for(int order = 1, order < orderTSM + 1, order++){
+
+        static{
+
+            tExpr [tmpTangentA, tmpTangentAlpha, tmpTangentBeta]
+            tExpr [tangentA, tangentAlpha, tangentBeta] <+ ...[args(sigma_TSM) * 3]
+
+            tmpTangentA <+ sigma_TSM
+
+            toWrappedIDN(tmpTangentA) -> toJuliaString("evalSigma") -> writeToFile("Examples/fortranScripts/evalSigma.jl")
+
+            tmpTangentA -> replace(aTilde, zeros(aTilde))
+            tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
+            tmpTangentA -> replace(betaTilde, zeros(betaTilde))
+
+            toWrappedIDN(tmpTangentA) -> toJuliaString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.jl")
+        }
+
+        // Tangente i mal ableiten und D mit null substituieren
+        tangentA \diff= aTilde; tangentAlpha \diff= alphaTilde; tangentBeta \diff= betaTilde
+        wrpSimplify(tangentA); wrpSimplify(tangentAlpha); wrpSimplify(tangentBeta);
+
+        // Einsetzen
+        tmpTangentA, tmpTangentAlpha, tmpTangentBeta <+ tangentA, tangentAlpha, tangentBeta
+
+        tmpTangentA -> replace(aTilde, zeros(aTilde))
+        tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
+        tmpTangentA -> replace(betaTilde, zeros(betaTilde))
+
+        tmpTangentAlpha -> replace(aTilde, zeros(aTilde))
+        tmpTangentAlpha -> replace(alphaTilde, zeros(alphaTilde))
+        tmpTangentAlpha -> replace(betaTilde, zeros(betaTilde))
+
+        tmpTangentBeta -> replace(aTilde, zeros(aTilde))
+        tmpTangentBeta -> replace(alphaTilde, zeros(alphaTilde))
+        tmpTangentBeta -> replace(betaTilde, zeros(betaTilde))
+
+        wrpSimplify(tmpTangentA); wrpSimplify(tmpTangentAlpha); wrpSimplify(tmpTangentBeta);
+
+        toWrappedIDN(tmpTangentA) -> toJuliaString("evalTangentdSigmadA" + string(order)) -> writeToFile("Examples/fortranScripts/evalTangentdSigmadA" + string(order) + ".jl")
+    } \
+    defer { dref result }
+
+    //
+    logSeparator()
+
+    //
+    slog("Example evaluated")
+}
+
+//
+decl main(){
+
+    // // Check Registers
+    // isRvalue(...), isLValue(...), isReference(...), isInstance(...)
+    // logRes(...)
+    // logRegisteredBackends()
+    // logTypeRegister()
+    // logNullRefs()
+    // logFunctionRegister()
+    // logStaticFunctionRegister()
+    // logMemberFunctionRegister()
+    // logScope()
+    // logRootScope()
+    // logPresetDiffs()
+    // logDiffTemplates()
+    // logSimplifications()
+    
+    //
+    logSeparator()
+    log("[", timeStamp(), "] Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")
+    logSeparator()
+
+    // Der Interpreter hat standardmäßig ohne Linkerspezifikationen 2MB Stack zur Verfügung.
+    // Rekursive Aufrufe verbrauchen sehr schnell Stack-Speicher, da sich das Programm die
+    // Return Adresse, Variablen aus lokalen Scopes, etc. für jeden rekursiven Funktionsaufruf
+    // im Stack abspeichern muss und den Speicher solange nicht wieder freigeben kann bis der
+    // Return stattgefunden hat. Damit wächst der benötigte Speicher im Stack bis zur maximalen
+    // Rekursionstiefe mit an. Aus diesem Grund reicht der Standardstack für Tensorausdrücke mit
+    // hoher Komplexität häufig nicht mehr aus.
+    // Selbst simple, kaum rechenintensive Operationen wie 'wrap', 'unwrap', 'replace', 'rebuild', etc.
+    // führen bei Tensorausdrücken mit hoher Komplexität (Check über 'mb->getNumOfNodes()')
+    // zum Overflow des 2MB Interpreter Stacks.
+    // Zum Umgehen des Problems kann der Interpreter mit der entsprechenden Linkerflag kompiliert
+    // werden : 'LDFLAGS += -Wl,--stack,100000000' (nicht laufzeitfähig) oder ein temporärer nativer WinThread
+    // erzeugt werden (laufzeitfähig), der einen Stack der gewünschten Größe bereitstellt.
+    // Dazu dient die im Folgenden aufgerufene Funktion.
+    // Die Funktion nimmt das Funktionslabel, die Stackgröße in MB und die Funktionsinputs gepackt als
+    // Evaluierungsergebnis-Vektor (args) entgegen und erzeugt einen WinThread mit einem Stack der übergebenen
+    // Größe. In diesem Thread wird die Funktion dann aufgerufen. Nach dem Return der Funktion werden der Stack
+    // und der Thread wieder freigegeben.
+
+    double startTime = now()
+    callOnExtendedStack("evaluateExample", 1500, args(orderTSM, dimension))
+
+    logSeparator()
+    slog("Ausfuehrungszeit des Beispiels : ", now() - startTime, "s")
+    logSeparator()
+
+    return 0
+}
+
+// Section wird Ausgeführt wenn Skript mit Argument --execute aufgerufen wird
+if(calledAs(__MainProc__)){
+
+    return [main()]
+}

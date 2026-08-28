@@ -62,18 +62,17 @@ decl getNumOfVoigtComponents(int dimension){
 }
 
 //
-decl factorial(int ref member){
-    
-    if(member <= 1){ return 1 }
-    return [member * factorial(member - 1)]
+decl nfactorial(int ref member, int ref order){
+
+    if(member <= 0){ return 1 }
+    return [member * nfactorial(member - order, order)]
 }
 
 //
-decl ffactorial(int ref member){
-
-    if(member <= 0){ return 1 }
-    return [member * ffactorial(member - 2)]
-}
+decl factorial(int ref member){ return [<- nfactorial(member, 1)] }
+decl ffactorial(int ref member){ return [<- nfactorial(member, 2)] }
+decl fffactorial(int ref member){ return [<- nfactorial(member, 3)] }
+// ...
 
 // Taylorreihenfunktion, die Ableitungen als externe Nodes mit '_{order}' einsetzt
 decl emplcXtNodesTaylorSeries(tExpr ref function, tExpr ref x, int seriesOrder){
@@ -101,13 +100,23 @@ decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplace
 //
 decl taylorSeries(tExpr ref function, tExpr ref x, int seriesOrder, bool emplaceDiffs, bool returnTangents){
 
+    return [<- partialTaylorSeries(function, x, 0, seriesOrder, emplaceDiffs, returnTangents)]
+}
+
+decl partialTaylorSeries(tExpr ref function, tExpr ref x, int fromOrder, int seriesOrder, bool emplaceDiffs){
+
+    return [<- partialTaylorSeries(function, x, fromOrder, seriesOrder, emplaceDiffs, false)]
+}
+
+decl partialTaylorSeries(tExpr ref function, tExpr ref x, int fromOrder, int seriesOrder, bool emplaceDiffs, bool returnTangents){
+
     //
     tExpr res
     
     args tangents
 
     //
-    for(int order = 0, order < seriesOrder + 1, order++){
+    for(int order = fromOrder, order < seriesOrder + 1, order++){
         
         //
         static{ tExpr [tmp, tangent] }

@@ -42,6 +42,10 @@ __OUT/
 Examples/juliaScripts/*
 !Examples/juliaScripts/.gitignore
 
+#
+Examples/fortranScripts/*
+!Examples/fortranScripts/.gitignore
+
 __LPECONFIG.JSON
 
 # Os Dateien
