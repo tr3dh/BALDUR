@@ -126,7 +126,7 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [epsilon_TSM, epsilon_v_TSM, theta_TSM] = ...tExprUniVectors("epsilon_TSM", "epsilon_v_TSM", "theta_TSM")
     
     //
-    tExpr sigma_TSM = (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM) . tExpr("Identity", 2, args(nVoigtComps) * 2)
+    tExpr sigma_TSM = tExpr("ones", 3, args(nVoigtComps) * 3) . (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM) . tExpr("Identity", 2, args(nVoigtComps) * 2)
 
     // FullTaylor
     epsilon_fTSM = \
@@ -202,7 +202,8 @@ decl evaluateExample(int orderTSM, int dimension){
             tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
             tmpTangentA -> replace(betaTilde, zeros(betaTilde))
 
-            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
+            // toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
+            toWrappedIDN(tExpr(1)) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
         }
 
         // Tangente i mal ableiten und D mit null substituieren
@@ -232,6 +233,8 @@ decl evaluateExample(int orderTSM, int dimension){
 
     //
     logSeparator()
+
+    slog(toIDN(E . epsilon . (epsilon - epsilon0)))
 
     //
     slog("Example evaluated")

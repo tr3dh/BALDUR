@@ -314,6 +314,9 @@ struct IndexNotatedTensorExpression{
     std::vector<NotationIndex> getUniqueChildIndices() const;
     std::vector<NotationIndex> getUniqueChildDimensions() const;
     std::vector<NotationIndex> getNotUniqueChildIndices() const;
+    std::vector<NotationIndex> getNotUniqueChildDimensions() const;
+
+    std::vector<NotationIndex> collectAllContainedIndices() const;
 
     //
     const std::vector<NotationIndex>& getSortedIndices();
