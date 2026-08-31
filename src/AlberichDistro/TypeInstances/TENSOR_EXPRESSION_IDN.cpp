@@ -3090,6 +3090,23 @@ namespace types{
         },
         {});
 
+        
+        //
+        registerFunction("setGenerateExportHelpers", {BOOL::typeIndex},
+            [__functionLabel__ = "setGenerateExportDebugCall", __numArgs__ = 1](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(BOOL, 0);
+
+                generateExportHelpers = arg0->getMember();
+        },
+        {});
+
         return true;
     }
 }
@@ -3142,6 +3159,26 @@ std::string IndexNotatedTensorExpression::wrapTensorSequenceFortranString(const 
 std::string g_fortranDependencieDecls = "C     __DECLS__\n\n";
 std::string g_fortranDependencieAssignments = "C     __Assignment__\n\n";
 
+//
+bool generateExportHelpers = true;
+
+std::string fortranApplyDims(const IndexNotatedTensorExpression& member, const std::string& dimsVarName = "DIMS"){
+
+    std::string res;
+
+    for(size_t i = 0; i < member.dimensions.size(); i++){
+
+        res += "      " + dimsVarName + "(" + std::to_string(i+1) + ") = " + std::to_string(member.dimensions[i]) + "\n";
+    }
+
+    res += "\n";
+
+    res += "      RANK = " + std::to_string(member.tensorOrder) + "\n";
+    res += "\n";
+
+    return res;
+};
+
 // Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
 // dafür gibts die wrapper funktion
 std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(size_t depth, bool forceSubstitution, bool useTensorNotation, const std::string& resLabel){
@@ -3181,6 +3218,14 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 
         uniqueIndices = notUniqueIndices;
         uniqueDimensions = notUniqueDimensions;
+        notUniqueIndices = {};
+        notUniqueDimensions = {};
+    }
+
+    if(Relation == TkType::Container && Operator == IndexNotationOperator::Inversion){
+
+        uniqueIndices = sortedIndices;
+        uniqueDimensions = dimensions;
         notUniqueIndices = {};
         notUniqueDimensions = {};
     }
@@ -3236,7 +3281,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
         }
         else{
 
-            insertion = "      " + resLabel + fprintPlainVector(sortedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + " = " + \
+            insertion = "      " + resLabel + fprintPlainVector(sortedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + "\n     & = " + \
                                     resLabel + fprintPlainVector(sortedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + "\n     & + (";
         }
 
@@ -3254,6 +3299,10 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
         }
 
         return res;
+    }
+    else if(resLabel != ""){
+
+        // läuft bis in die Behandlung von Inversion, det, etc. 
     }
 
     //
@@ -3288,7 +3337,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 
         // Predecls für substituierte Dependencie
         if(tensorOrder == 0){ g_fortranDependencieDecls += "      REAL*8 " + tmpResLabel; }
-        else{ g_fortranDependencieDecls += "      DIMENSION " + tmpResLabel + printPlainVector(dimensions); }
+        else{ g_fortranDependencieDecls += "      REAL*8 " + tmpResLabel + printPlainVector(dimensions); }
 
         g_fortranDependencieDecls += "\n\n";
 
@@ -3297,12 +3346,10 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 
         //
         *this = this -> asExternalNode(tmpResLabel);
-
-        // >> nach Substitution wird Behandlung für externe Node beaufschlagt und zurückgegeben
     }
 
     if(isConstant){ res += string::strippedString(value); }
-    else if(Relation == TkType::Argument && tensorOrder == 0){
+    else if(Relation == TkType::Argument && (tensorOrder == 0 || useTensorNotation)){
 
         res += getArgLabel(*this);
     }
@@ -3328,27 +3375,6 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
             return elem.generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, ""); },
             true, " \n     & + ");
     }
-
-    return res;
-
-#pragma region old
-
-    //
-    if(isConstant){ res += string::strippedString(value); }
-    else if(Relation == TkType::Argument){
-
-        if(tensorOrder < 1){ res += getArgLabel(*this); }
-        else{ res += getArgLabel(*this) + (useTensorNotation ? "" : ("(" + fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "idx" + std::to_string(elem); }, false) + ")")); }
-    }
-    else if(Relation == TkType::Operator){
-
-        //
-        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)) + ", Node : " + toString(), "");
-
-        //
-        res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& child){ return child.generateTensorSequenceFortranString(depth + 1);},
-                                    true, " " + IndexNotationOperatorStrings[Operator] + " ");
-    }
     else if(Relation == TkType::Container){
 
         RETURNING_ASSERT(children.size() == 1, "...","");
@@ -3358,167 +3384,92 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
             // Node Substituieren
             case IndexNotationOperator::Macaulay:
             case IndexNotationOperator::Signum:
-            case IndexNotationOperator::Determinant:
-            case IndexNotationOperator::Frobenius:
             case IndexNotationOperator::Sqrt:
             case IndexNotationOperator::Sin:
             case IndexNotationOperator::Cos:
             case IndexNotationOperator::Tan:
-            case IndexNotationOperator::Cotan:
-            case IndexNotationOperator::Inversion:{
+            case IndexNotationOperator::Cotan:{
+                
+                //
+                RETURNING_ASSERT(tensorOrder == 0, "...","");
 
                 //
-                std::string jlFuncLabel;
+                std::string FuncLabel;
 
-                if(Operator == IndexNotationOperator::Macaulay){ jlFuncLabel = "macaulay"; }
-                else if(Operator == IndexNotationOperator::Signum){ jlFuncLabel = "signum"; }
-                else if(Operator == IndexNotationOperator::Determinant){ jlFuncLabel = "det"; }
-                else if(Operator == IndexNotationOperator::Frobenius){ jlFuncLabel = "frobenius"; }
-                else if(Operator == IndexNotationOperator::Sqrt){ jlFuncLabel = "sqrt"; }
-                else if(Operator == IndexNotationOperator::Sin){ jlFuncLabel = "sin"; }
-                else if(Operator == IndexNotationOperator::Cos){ jlFuncLabel = "cos"; }
-                else if(Operator == IndexNotationOperator::Tan){ jlFuncLabel = "tan"; }
-                else if(Operator == IndexNotationOperator::Cotan){ jlFuncLabel = "cot"; }
-                else{ jlFuncLabel = "inv"; }
+                if(Operator == IndexNotationOperator::Macaulay){ FuncLabel = "MACAULAY"; }
+                else if(Operator == IndexNotationOperator::Signum){ FuncLabel = "SIGNUM"; }
+                else if(Operator == IndexNotationOperator::Sqrt){ FuncLabel = "SQRT"; }
+                else if(Operator == IndexNotationOperator::Sin){ FuncLabel = "SIN"; }
+                else if(Operator == IndexNotationOperator::Cos){ FuncLabel = "COS"; }
+                else if(Operator == IndexNotationOperator::Tan){ FuncLabel = "TAN"; }
+                else if(Operator == IndexNotationOperator::Cotan){ FuncLabel = "COTAN"; }
 
                 //
-                children.front().generateTensorSequenceFortranString(depth + 1, true);
+                std::string callArgs = children.front().generateTensorSequenceFortranString(depth + 1, false, useTensorNotation, "");
+                bool areCallArgsWrappedInParens = string::startsWith(callArgs, "(") && string::endsWith(callArgs, ")"); 
 
                 //
-                bool returnScalar = tensorOrder == 0;
-                bool onlyScalars = containsOnlyScalars();
-                bool useTOps = (returnScalar && !onlyScalars) || !returnScalar;
-
-                if(Operator == IndexNotationOperator::Inversion){
-
-                    res += (returnScalar ? "(1/" : "(inv(") + children.front().generateTensorSequenceFortranString(depth + 1, false, true) + (returnScalar ? ")" : "))");
-                }
-                else{
-
-                    res += jlFuncLabel + "(" + children.front().generateTensorSequenceFortranString(depth + 1, false, true) + ")";
-                }
-
-                std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
-                int complexity = getNumOfNodes();
-
-                //
-                dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
-
-                //
-                // dependencieAssignment += "\n\tprintln(\"[Evaluating '" + extNodeLabel + "', Komplexität " + std::to_string(complexity) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
-                dependencieAssignment += "\n\t" + extNodeLabel + " = " + res + "\n";
-
-                *this = asExternalNode(extNodeLabel);
-                res = generateTensorSequenceFortranString(depth + 1);
+                res += FuncLabel + (areCallArgsWrappedInParens ? "" : "(") + callArgs + (areCallArgsWrappedInParens ? "" : ")"); 
 
                 break;
             }
+            // Operationen in deren zugehörige Funktionen die Tensoren eingesetzt werden, nicht die Tensoreinträge
+            case IndexNotationOperator::Determinant:
+            case IndexNotationOperator::Frobenius:
+            case IndexNotationOperator::Inversion:{
+        
+                // Inhalt (1 Node) wird substituiert
+                children.front().generateTensorSequenceFortranString(depth + 1, false, false, "");
+
+                //
+                std::string tmpResLabel = "tmpRes" + std::to_string(dependencieIdx++);
+
+                // Predecls für substituierte Dependencie
+                if(tensorOrder == 0){ g_fortranDependencieDecls += "      REAL*8 " + tmpResLabel; }
+                else{ g_fortranDependencieDecls += "      REAL*8 " + tmpResLabel + printPlainVector(dimensions); }
+
+                g_fortranDependencieDecls += "\n\n";
+
+                // Zuweisung / Berechnung der substituierten Dependencie
+                dependencieAssignment += "C     Eval Dependencie " + tmpResLabel + "\n\n";
+
+                //
+                dependencieAssignment += fortranApplyDims(*this);
+
+                if(Operator == IndexNotationOperator::Inversion && tensorOrder == 0){
+
+                    dependencieAssignment += "      CALL INVERT_SCALAR(" + children.front().label + ", " + tmpResLabel + ")\n\n";
+                }
+                else if(Operator == IndexNotationOperator::Inversion){
+                    
+                    dependencieAssignment += "      CALL INVERT_TENSOR(" + children.front().label + ", " + tmpResLabel + ", DIMS, RANK)\n\n";
+                }
+                else if(Operator == IndexNotationOperator::Determinant){
+                    
+                    dependencieAssignment += "      CALL DET_TENSOR(" + children.front().label + ", " + tmpResLabel + ", DIMS, RANK)\n\n";
+                }
+                else if(Operator == IndexNotationOperator::Frobenius){
+                    
+                    dependencieAssignment += "      CALL FROBENIUS(" + children.front().label + ", " + tmpResLabel + ", RANK)\n\n";
+                }
+
+                //
+                *this = this -> asExternalNode(tmpResLabel);
+
+                return generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, "");
+                break;
+            }
+
             default:{
 
-                res += children.front().generateTensorSequenceFortranString(depth + 1);
+                res += children.front().generateTensorSequenceFortranString(depth + 1, false, useTensorNotation, "");
                 break;
             }
         }
     }
 
-    //
-    if(Relation == TkType::Operator && getNumOfNodes() > g_forceSubstitutionFromComplexity){
-
-        int numOfNodes = getNumOfNodes();
-
-        for(auto& child : children){
-
-            child.generateTensorSequenceFortranString(depth + 1, true);
-            if(terminate){ return ""; }
-        }
-
-        // Ausdruck konnte trotz Optimierung nicht in benätigts Format gepackt werden
-        // >> unwrapped Ausdruck mit zu langen Operandenketten
-        if(numOfNodes == getNumOfNodes()){
-
-            terminate = true;
-            RETURNING_ASSERT(TRIGGER_ASSERT, "Ausdruck ist für Konvertierung zu breit aufgestellt, übergebe gepackte Version an jl Skript Generierung","");
-        }
-
-        res = generateTensorSequenceFortranString(depth + 1);
-    }
-
-    if(terminate){ return ""; }
-
-    //
-    bool returnScalar = tensorOrder == 0;
-    bool onlyScalars = containsOnlyScalars();
-    bool useTOps = (returnScalar && !onlyScalars) || !returnScalar;
-
-    //
-    if(returnScalar && Relation == TkType::Operator){ forceSubstitution = true; }
-
-    //
-    if(depth == 0){
-
-        res = /* "\n\tprintln(\"[Ausdruck mit " + std::to_string(dependencieIdx) + " temporären Dependencies substituiert]\")\n" + */ \
-            /* dependencieDecls + "\n" + */ dependencieAssignment + "\n" + \
-            /* "\tres = Base.zeros" + printPlainVector(dimensions) + */ \
-            /* "\tprintln(\"[Evaluating final Result, Komplexität " + std::to_string(getNumOfNodes()) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")" + */ \
-            (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode(resLabel).generateTensorSequenceFortranString(1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res + "\n\n";
-    }
-    else if((Relation == TkType::Operator && getNumOfNodes() > g_recommedSubstitutionFromComplexity) || forceSubstitution){
-
-        RETURNING_ASSERT(getNumOfNodes() <= g_forceSubstitutionFromComplexity, "...", "");
-
-        std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
-        int complexity = getNumOfNodes();
-
-        //
-        dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
-
-        //
-        // dependencieAssignment += "\n\tprintln(\"[Evaluating '" + extNodeLabel + "', Komplexität " + std::to_string(complexity) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
-        dependencieAssignment += (useTOps ? "\n\t@tensor opt=true " : "\n\t") + asExternalNode(extNodeLabel).generateTensorSequenceFortranString(depth + 1) + ((returnScalar && useTOps) ? "[]" : "") + (useTOps ? " := " : " = ") + res;
-
-        //
-        if(returnScalar && useTOps){
-
-            //
-            std::string prevNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
-            std::swap(extNodeLabel, prevNodeLabel);
- 
-            dependencieAssignment += "\n\t" + extNodeLabel + " = " + prevNodeLabel + "[]";
-        }
-
-        //
-        dependencieAssignment += "\n";
-
-        //
-        *this = asExternalNode(extNodeLabel);
-        res = generateTensorSequenceFortranString(depth + 1);
-    }
-
-    //
     return res;
-
-#pragma endregion
 }
-
-//
-bool generateFortranHelpers = true;
-
-std::string fortranApplyDims(const IndexNotatedTensorExpression& member, const std::string& dimsVarName = "DIMS"){
-
-    std::string res;
-
-    for(size_t i = 0; i < member.dimensions.size(); i++){
-
-        res += "      " + dimsVarName + "(" + std::to_string(i+1) + ") = " + std::to_string(member.dimensions[i]) + "\n";
-    }
-
-    res += "\n";
-
-    res += "      RANK = " + std::to_string(member.tensorOrder) + "\n";
-    res += "\n";
-
-    return res;
-};
 
 // Erzeugtes Skript testen per 'gfortran -g -Wall -std=legacy -ffixed-form -o Examples/fortranScripts/tangente.exe Examples/fortranScripts/evalSigma.f'
 std::string IndexNotatedTensorExpression::toFortranString(const std::string& instanceLabel, const std::vector<IndexNotatedTensorExpression>& depsKeys, const std::vector<IndexNotatedTensorExpression>& depsValues) const {
@@ -3640,7 +3591,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "}\n";
     }
 
-    if(generateFortranHelpers){
+    if(generateExportHelpers){
 
         res += "\n";
         res += "C     Gibt die Groeße des 1D-Arrays zurück,\n";
@@ -3678,7 +3629,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
         res += "      INTEGER DIMS(*), RANK, N, I\n";
         res += "      INTEGER TENS_SIZE\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      N = TENS_SIZE(DIMS, RANK)\n";
         res += "      DO 10 I = 1, N\n";
         res += "        A(I) = 0.0D0\n";
@@ -3693,7 +3644,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
         res += "      INTEGER DIMS(*), RANK, N, I\n";
         res += "      INTEGER TENS_SIZE\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      N = TENS_SIZE(DIMS, RANK)\n";
         res += "      DO 10 I = 1, N\n";
         res += "        A(I) = 1.0D0\n";
@@ -3708,7 +3659,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
         res += "      INTEGER MAXR\n";
         res += "      PARAMETER (MAXR=8)\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      INTEGER DIMS(*), RANK, N, K, NTOT, I, M, POS\n";
         res += "      INTEGER TENS_SIZE\n";
         res += "      INTEGER IDX(MAXR), POW(MAXR)\n";
@@ -3746,7 +3697,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "C     und Ordnung\n";
         res += "      SUBROUTINE CREATE_EPS(A)\n";
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      INTEGER I, J, K, POS, SGN\n";
         res += "      DO 10 I = 1, 27\n";
         res += "        A(I) = 0.0D0\n";
@@ -3766,9 +3717,9 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "C     Erstellt in uebergenem Tensor 'B'\n";
         res += "C     die Macaulynormen der Elemente von 'A'\n";
         res += "C     fuer 'N' Elemente\n";
-        res += "      SUBROUTINE MACAULAY(A, B, N)\n";
+        res += "      SUBROUTINE ELWISE_MACAULAY(A, B, N)\n";
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      DIMENSION A(*), B(*)\n";
+        res += "      REAL*8 A(*), B(*)\n";
         res += "      INTEGER N, I\n";
         res += "      DO 10 I = 1, N\n";
         res += "        IF (A(I) .GT. 0.0D0) THEN\n";
@@ -3783,9 +3734,9 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "C     Erstellt in uebergenem Tensor 'B'\n";
         res += "C     die Signumnormen der Elemente von 'A'\n";
         res += "C     fuer 'N' Elemente\n";
-        res += "      SUBROUTINE SIGNUM(A, B, N)\n";
+        res += "      SUBROUTINE ELWISE_SIGNUM(A, B, N)\n";
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      DIMENSION A(*), B(*)\n";
+        res += "      REAL*8 A(*), B(*)\n";
         res += "      INTEGER N, I\n";
         res += "      DO 10 I = 1, N\n";
         res += "        IF (A(I) .GT. 0.0D0) THEN\n";
@@ -3804,7 +3755,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "C     fuer 'N' Elemente\n";
         res += "      SUBROUTINE FROBENIUS(A, B, N)\n";
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      DIMENSION A(*), B(*)\n";
+        res += "      REAL*8 A(*), B(*)\n";
         res += "      INTEGER N, I\n";
         res += "      REAL*8 S\n";
         res += "\n";
@@ -3823,7 +3774,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      SUBROUTINE PRINT_TENSOR(A, DIMS, RANK, NAME)\n";
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
         res += "      CHARACTER*(*) NAME\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      INTEGER DIMS(*), RANK, N, I, COL\n";
         res += "      INTEGER TENS_SIZE\n";
         res += "      INTEGER PERLINE\n";
@@ -3851,7 +3802,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
         res += "      INTEGER DIMS(*), RANK, N\n";
         res += "      INTEGER TENS_SIZE\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      N = TENS_SIZE(DIMS, RANK)\n";
         res += "      CALL RANDOM_NUMBER(A(1:N))\n";
         res += "      RETURN\n";
@@ -3864,12 +3815,36 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      INTEGER DIMS(*), RANK, N, I\n";
         res += "      INTEGER TENS_SIZE\n";
         res += "      REAL*8 LOW, HIGH\n";
-        res += "      DIMENSION A(*)\n";
+        res += "      REAL*8 A(*)\n";
         res += "      N = TENS_SIZE(DIMS, RANK)\n";
         res += "      CALL RANDOM_NUMBER(A(1:N))\n";
         res += "      DO 10 I = 1, N\n";
         res += "        A(I) = LOW + A(I)*(HIGH-LOW)\n";
         res += "   10 CONTINUE\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Macaulay-Klammer: liefert X, falls X > 0, sonst 0\n";
+        res += "      REAL*8 FUNCTION MACAULAY(X)\n";
+        res += "      REAL*8 X\n";
+        res += "      IF (X .GT. 0.0D0) THEN\n";
+        res += "        MACAULAY = X\n";
+        res += "      ELSE\n";
+        res += "        MACAULAY = 0.0D0\n";
+        res += "      END IF\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "C     Signum-Funktion: liefert -1, 0 oder 1 je nach Vorzeichen von X\n";
+        res += "      REAL*8 FUNCTION SIGNUM(X)\n";
+        res += "      REAL*8 X\n";
+        res += "      IF (X .GT. 0.0D0) THEN\n";
+        res += "        SIGNUM = 1.0D0\n";
+        res += "      ELSE IF (X .LT. 0.0D0) THEN\n";
+        res += "        SIGNUM = -1.0D0\n";
+        res += "      ELSE\n";
+        res += "        SIGNUM = 0.0D0\n";
+        res += "      END IF\n";
         res += "      RETURN\n";
         res += "      END\n";
         res += "\n";
@@ -3896,11 +3871,11 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
         res += "      INTEGER MAXN\n";
         res += "      PARAMETER (MAXN=64)\n";
-        res += "      DIMENSION A(*), B(*)\n";
+        res += "      REAL*8 A(*), B(*)\n";
         res += "      INTEGER DIMS(*), RANK, K, I, J, M\n";
         res += "      INTEGER NROW, NCOL, PIVOTROW\n";
         res += "      REAL*8 FACTOR, PIVOT, TEMP\n";
-        res += "      DIMENSION AUG(MAXN, 2*MAXN)\n";
+        res += "      REAL*8 AUG(MAXN, 2*MAXN)\n";
         res += "\n";
         res += "C     Ordnung muss gerade sein\n";
         res += "      IF (MOD(RANK,2) .NE. 0) THEN\n";
@@ -3998,6 +3973,120 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      RETURN\n";
         res += "      END\n";
         res += "\n\n";
+        res += "C     Invertiert einen Tensor der Ordnung 0 (Skalar),\n";
+        res += "C     also B = 1/A\n";
+        res += "      SUBROUTINE INVERT_SCALAR(A, B)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      REAL*8 A, B\n";
+        res += "\n";
+        res += "      IF (DABS(A) .LT. 1.0D-14) THEN\n";
+        res += "        WRITE(*,*) 'INVERT_SCALAR: Division durch Null'\n";
+        res += "        STOP\n";
+        res += "      END IF\n";
+        res += "\n";
+        res += "      B = 1.0D0 / A\n";
+        res += "\n";
+        res += "      RETURN\n";
+        res += "      END\n";
+        res += "\n";
+        res += "\n";
+        res += "C     Berechnet die Determinante eines Tensors gerader\n";
+        res += "C     Ordnung RANK (=2K), aufgefasst als lineare Abbildung\n";
+        res += "C     zwischen Tensoren der Ordnung K (analog zu\n";
+        res += "C     INVERT_TENSOR). Ergebnis wird als Skalar DET\n";
+        res += "C     zurueckgegeben.\n";
+        res += "      SUBROUTINE DET_TENSOR(A, DET, DIMS, RANK)\n";
+        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+        res += "      INTEGER MAXN\n";
+        res += "      PARAMETER (MAXN=64)\n";
+        res += "      REAL*8 A(*)\n";
+        res += "      INTEGER DIMS(*), RANK, K, I, J, M\n";
+        res += "      INTEGER NROW, NCOL, PIVOTROW\n";
+        res += "      REAL*8 FACTOR, PIVOT, TEMP, DET, SGN\n";
+        res += "      REAL*8 MAT(MAXN, MAXN)\n";
+        res += "\n";
+        res += "C     Ordnung muss gerade sein\n";
+        res += "      IF (MOD(RANK,2) .NE. 0) THEN\n";
+        res += "        WRITE(*,*) 'DET_TENSOR: RANK muss gerade sein'\n";
+        res += "        STOP\n";
+        res += "      END IF\n";
+        res += "\n";
+        res += "      K = RANK/2\n";
+        res += "\n";
+        res += "C     NROW = Produkt der ersten K Dimensionen\n";
+        res += "      NROW = 1\n";
+        res += "      DO 10 I = 1, K\n";
+        res += "        NROW = NROW * DIMS(I)\n";
+        res += "   10 CONTINUE\n";
+        res += "\n";
+        res += "C     NCOL = Produkt der letzten K Dimensionen\n";
+        res += "      NCOL = 1\n";
+        res += "      DO 20 I = K+1, RANK\n";
+        res += "        NCOL = NCOL * DIMS(I)\n";
+        res += "   20 CONTINUE\n";
+        res += "\n";
+        res += "C     Matrix muss quadratisch sein\n";
+        res += "      IF (NROW .NE. NCOL) THEN\n";
+        res += "        WRITE(*,*) 'DET_TENSOR: nicht quadratisch, ',\n";
+        res += "     &              NROW, ' x ', NCOL\n";
+        res += "        STOP\n";
+        res += "      END IF\n";
+        res += "\n";
+        res += "      IF (NROW .GT. MAXN) THEN\n";
+        res += "        WRITE(*,*) 'DET_TENSOR: MAXN zu klein fuer ', NROW\n";
+        res += "        STOP\n";
+        res += "      END IF\n";
+        res += "\n";
+        res += "C     Matrix kopieren (gleiches Layout wie INVERT_TENSOR)\n";
+        res += "      DO 30 I = 1, NROW\n";
+        res += "        DO 40 J = 1, NCOL\n";
+        res += "          MAT(I, J) = A((J-1)*NROW + I)\n";
+        res += "   40   CONTINUE\n";
+        res += "   30 CONTINUE\n";
+        res += "\n";
+        res += "      SGN = 1.0D0\n";
+        res += "\n";
+        res += "C     Gauss-Elimination mit Zeilenpivotisierung\n";
+        res += "C     (ohne Normierung, nur obere Dreiecksform)\n";
+        res += "      DO 60 M = 1, NROW\n";
+        res += "        PIVOTROW = M\n";
+        res += "        PIVOT = DABS(MAT(M,M))\n";
+        res += "        DO 70 I = M+1, NROW\n";
+        res += "          IF (DABS(MAT(I,M)) .GT. PIVOT) THEN\n";
+        res += "            PIVOT = DABS(MAT(I,M))\n";
+        res += "            PIVOTROW = I\n";
+        res += "          END IF\n";
+        res += "   70   CONTINUE\n";
+        res += "\n";
+        res += "        IF (PIVOT .LT. 1.0D-14) THEN\n";
+        res += "          DET = 0.0D0\n";
+        res += "          RETURN\n";
+        res += "        END IF\n";
+        res += "\n";
+        res += "        IF (PIVOTROW .NE. M) THEN\n";
+        res += "          DO 80 J = 1, NCOL\n";
+        res += "            TEMP = MAT(M,J)\n";
+        res += "            MAT(M,J) = MAT(PIVOTROW,J)\n";
+        res += "            MAT(PIVOTROW,J) = TEMP\n";
+        res += "   80     CONTINUE\n";
+        res += "          SGN = -SGN\n";
+        res += "        END IF\n";
+        res += "\n";
+        res += "        DO 100 I = M+1, NROW\n";
+        res += "          FACTOR = MAT(I,M) / MAT(M,M)\n";
+        res += "          DO 110 J = M, NCOL\n";
+        res += "            MAT(I,J) = MAT(I,J) - FACTOR*MAT(M,J)\n";
+        res += "  110     CONTINUE\n";
+        res += "  100   CONTINUE\n";
+        res += "   60 CONTINUE\n";
+        res += "\n";
+        res += "      DET = SGN\n";
+        res += "      DO 120 I = 1, NROW\n";
+        res += "        DET = DET * MAT(I,I)\n";
+        res += "  120 CONTINUE\n";
+        res += "\n";
+        res += "      RETURN\n";
+        res += "      END\n";
     }
 
     if(uniqueExternals.empty()){
@@ -4012,6 +4101,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     }
 
     res += "      IMPLICIT REAL*8 (A-H,O-Z)\n\n";
+    res += "      REAL*8 MACAULAY, SIGNUM\n\n";
 
     // Maximale Order bestimmen
     int maxOrder = 0;
@@ -4041,7 +4131,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     
     // Dimension Asserts Ergebnis
     if(tensorOrder == 0){ res += "REAL*8 RES"; }
-    else{ res += "DIMENSION RES" + printPlainVector(dimensions); }
+    else{ res += "REAL*8 RES" + printPlainVector(dimensions); }
 
     res += "\n\n";
 
@@ -4050,7 +4140,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         [](const IndexNotatedTensorExpression* elem){
 
             if(elem -> tensorOrder == 0){ return "REAL*8 " + elem -> label; }
-            return "DIMENSION " + elem -> label + printPlainVector(elem -> dimensions);
+            return "REAL*8 " + elem -> label + printPlainVector(elem -> dimensions);
         }, false, "\n" + std::string(6, ' '));
     
     res += "\n\n";
@@ -4062,7 +4152,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     [](const IndexNotatedTensorExpression* elem){
 
         if(elem->tensorOrder == 0){ return "REAL*8 " + getArgLabel(*elem); }
-        return "DIMENSION " + getArgLabel(*elem) + printPlainVector(elem->dimensions);
+        return "REAL*8 " + getArgLabel(*elem) + printPlainVector(elem->dimensions);
     }, false, "\n" + std::string(6, ' '));
 
     res += "\n\n";
@@ -4071,7 +4161,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     [](const IndexNotatedTensorExpression& elem){
 
         if(elem.tensorOrder == 0){ return "REAL*8 " + elem.label; }
-        return "DIMENSION " + elem.label + printPlainVector(elem.dimensions);
+        return "REAL*8 " + elem.label + printPlainVector(elem.dimensions);
     }, false, "\n" + std::string(6, ' '));
 
     //
@@ -4196,7 +4286,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
 
     // Zwischenergebnis-Assignments nachträglich einfügen
     endOfAssignments += ("\n\n" + g_fortranDependencieDecls + "\n\n").size();
-    res.insert(endOfAssignments, "\n\n" + g_fortranDependencieAssignments + "\n\n");
+    // res.insert(endOfAssignments, "\n\n" + g_fortranDependencieAssignments + "\n\n");
 
     res += "\n\n";
 
@@ -4221,13 +4311,13 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
         res += "      INTEGER RANK\n\n";
 
         if(tensorOrder == 0){ res += "      REAL*8 RES\n\n"; }
-        else{ res += "      DIMENSION RES" + printPlainVector(dimensions) + "\n\n"; }
+        else{ res += "      REAL*8 RES" + printPlainVector(dimensions) + "\n\n"; }
 
         res += "      " + fprintPlainVector(uniqueExternals,
         [](const IndexNotatedTensorExpression* elem){
 
             if(elem -> tensorOrder == 0){ return "REAL*8 " + elem -> label; }
-            return "DIMENSION " + elem -> label + printPlainVector(elem -> dimensions);
+            return "REAL*8 " + elem -> label + printPlainVector(elem -> dimensions);
         }, false, "\n" + std::string(6, ' '));
 
         res += "\n\n";
@@ -4294,6 +4384,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
 
     //
     dependencieIdx = 0;
+    g_fortranDependencieDecls = "C     __DECLS__\n\n";
 
     return res;
 }
