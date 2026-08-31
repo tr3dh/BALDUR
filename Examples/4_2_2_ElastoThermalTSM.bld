@@ -196,14 +196,18 @@ decl evaluateExample(int orderTSM, int dimension){
 
             args [depsKeys, depsVals] = args(toWrappedIDN(tVoigtCompsUniTensor("depsE", 4)), toWrappedIDN(tVoigtCompsUniTensor("depsA", 0))), \
                                         args(toWrappedIDN(E \(x) E), toWrappedIDN(E .. E)),
-            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma", depsKeys, depsVals) -> writeToFile("Examples/fortranScripts/evalSigma.f")
+            // toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma", depsKeys, depsVals) -> writeToFile("Examples/fortranScripts/evalSigma.f")
 
             tmpTangentA -> replace(aTilde, zeros(aTilde))
             tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
             tmpTangentA -> replace(betaTilde, zeros(betaTilde))
 
             // toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
-            toWrappedIDN(tExpr(1)) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
+
+            tExpr tmpres = E . E + E . E
+            tidnres = toWrappedIDN(tmpres)
+            tidnres -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
+            slog("sigma0", tidnres)
         }
 
         // Tangente i mal ableiten und D mit null substituieren

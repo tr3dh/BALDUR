@@ -3166,13 +3166,32 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
     //
     size_t loopContent = 0;
 
-    if(depth == 0){
+    //
+    std::vector<NotationIndex> uniqueIndices = getUniqueChildIndices();
+    std::vector<int> uniqueDimensions = getUniqueChildDimensions();
 
-        std::vector<NotationIndex> uniqueIndices = getUniqueChildIndices();
-        std::vector<int> uniqueDimensions = getUniqueChildDimensions();
+    //
+    std::vector<NotationIndex> notUniqueIndices = getNotUniqueChildIndices();
+    std::vector<int> notUniqueDimensions = getNotUniqueChildDimensions();
 
-        std::vector<NotationIndex> notUniqueIndices = getNotUniqueChildIndices();
-        std::vector<int> notUniqueDimensions = getNotUniqueChildDimensions();
+    //
+    std::vector<NotationIndex> sortedIndices = getSortedIndices();
+
+    if(Relation == TkType::Operator && (Operator == IndexNotationOperator::Addition || Operator == IndexNotationOperator::Subtraction)){
+
+        uniqueIndices = notUniqueIndices;
+        uniqueDimensions = notUniqueDimensions;
+        notUniqueIndices = {};
+        notUniqueDimensions = {};
+    }
+
+    if(resLabel != ""){
+
+        //
+        res += "\n\n";
+
+        // //
+        // res += "C     Finishing Evaluation of " + resLabel + "\n\n";
 
         // Aeussere Schleifen: freie (einzigartige) Indizes
         for (size_t i = 0; i < uniqueIndices.size(); i++) {
@@ -3192,7 +3211,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
         }
         else{
 
-            insertion = "      " + resLabel + fprintPlainVector(uniqueIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + " = 0\n\n";
+            insertion = "      " + resLabel + fprintPlainVector(sortedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + " = 0\n\n";
         }
 
         //
@@ -3213,12 +3232,12 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 
         if(tensorOrder == 0){
 
-            insertion = "      " + resLabel + " = " + resLabel + " + (";
+            insertion = "      " + resLabel + " = " + resLabel + "\n     & + (";
         }
         else{
 
-            insertion = "      " + resLabel + fprintPlainVector(uniqueIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + " = " + \
-                                    resLabel + fprintPlainVector(uniqueIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + " + (";
+            insertion = "      " + resLabel + fprintPlainVector(sortedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + " = " + \
+                                    resLabel + fprintPlainVector(sortedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); }) + "\n     & + (";
         }
 
         //
@@ -3226,20 +3245,89 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
         loopContent += insertion.size();
 
         //
-        res.insert(loopContent, generateTensorSequenceFortranString(1, forceSubstitution, useTensorNotation, "") + ")");
+        res.insert(loopContent, generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, "") + ")");
+
+        //
+        if(depth == 0){
+
+            res.insert(0, dependencieAssignment);
+        }
 
         return res;
     }
 
-    // Schleife über interner Indices
-
     //
-    // res += "C     " + resLabel + " = " + label + "\n";
+    bool childContainingNoAdditionalInternalIndices = false;
+    std::vector<NotationIndex> internalChildIndices;
+
+    // Childs nach internen Indices absuchen
+    for(auto& child : children){
+
+        // Interne Indices im Child (Indices über die die Evaluierung für das child eigenständig summieren muss)
+        internalChildIndices = child.getNotUniqueChildIndices();
+
+        // Überprüft, ob es interne child indices im child gibt, die nicht in den indices des parents verfügbar sind
+        // >> nicht exportierte Indices müssen bei der Evaluierung des child intern summiert werden
+        childContainingNoAdditionalInternalIndices = std::includes(
+            sortedIndices.begin(), sortedIndices.end(),
+            internalChildIndices.begin(), internalChildIndices.end()
+        );
+
+        //
+        if(!childContainingNoAdditionalInternalIndices){
+
+            //
+            child.generateTensorSequenceFortranString(depth + 1, true, useTensorNotation, "");
+        }
+    }
+
+    if(forceSubstitution){
+
+        // Label der substituierten Dependencie
+        std::string tmpResLabel = "tmpRes" + std::to_string(dependencieIdx++);
+
+        // Predecls für substituierte Dependencie
+        if(tensorOrder == 0){ g_fortranDependencieDecls += "      REAL*8 " + tmpResLabel; }
+        else{ g_fortranDependencieDecls += "      DIMENSION " + tmpResLabel + printPlainVector(dimensions); }
+
+        g_fortranDependencieDecls += "\n\n";
+
+        // Zuweisung / Berechnung der substituierten Dependencie
+        dependencieAssignment += "C     Eval Dependencie " + tmpResLabel + "\n\n" + generateTensorSequenceFortranString(depth + 1, false, useTensorNotation, tmpResLabel);
+
+        //
+        *this = this -> asExternalNode(tmpResLabel);
+
+        // >> nach Substitution wird Behandlung für externe Node beaufschlagt und zurückgegeben
+    }
 
     if(isConstant){ res += string::strippedString(value); }
-    // // else if(Relation == TkType::Operator && Operator == IndexNotatedTensorExpression::Operator::Multi){
+    else if(Relation == TkType::Argument && tensorOrder == 0){
 
-    // // }
+        res += getArgLabel(*this);
+    }
+    else if(Relation == TkType::Argument && tensorOrder > 0){
+
+        res += getArgLabel(*this) + fprintPlainVector(notatedIndices, [](const NotationIndex& elem){ return "IDX_" + std::to_string(elem); });
+    }
+    else if(Relation == TkType::Operator && Operator == IndexNotationOperator::Multiplication){
+
+        res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& elem){
+            return elem.generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, ""); },
+            true, " \n     & * ");
+    }
+    else if(Relation == TkType::Operator && Operator == IndexNotationOperator::Addition){
+
+        res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& elem){
+            return elem.generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, ""); },
+            true, " \n     & + ");
+    }
+    else if(Relation == TkType::Operator && Operator == IndexNotationOperator::Subtraction){
+
+        res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& elem){
+            return elem.generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, ""); },
+            true, " \n     & + ");
+    }
 
     return res;
 
