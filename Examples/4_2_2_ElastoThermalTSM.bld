@@ -44,7 +44,7 @@ fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "x", "4.2.2", "Modelling of the stress of elastothermal-viscoplasticity"
-int [orderTSM, dimension] = 2, 3
+int [orderTSM, dimension] = 1, 3
 
 //
 decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
@@ -53,7 +53,7 @@ decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
 // disableDiffTemplateDefaults()
 
 //
-setGenerateExportDebugCall(true)
+setGenerateExportDebugCall(false)
 setGenerateExportHelpers(true)
 
 //
@@ -125,14 +125,18 @@ decl evaluateExample(int orderTSM, int dimension){
     tExpr [a, aTilde, alpha, alphaTilde, beta, betaTilde] = ...tExprScalars("a", "aTilde", "alpha", "alphaTilde", "beta", "betaTilde")
     tExpr [epsilon, epsilon_a, epsilon_alpha, epsilon_beta] = ...tExprUniVectors("epsilon", "epsilon_a", "epsilon_alpha", "epsilon_beta")
     tExpr [epsilon_v, epsilon_a_v, epsilon_alpha_v, epsilon_beta_v] = ...tExprUniVectors("epsilon_v", "epsilon_a_v", "epsilon_alpha_v", "epsilon_beta_v")
-    tExpr [theta, theta_a, theta_alpha, theta_beta] = ...tExprUniVectors("theta", "theta_a", "theta_alpha", "theta_beta")
+    tExpr [theta, theta_a, theta_alpha, theta_beta] = ...tExprScalars("theta", "theta_a", "theta_alpha", "theta_beta")
 
     //
     tExpr [E, alphaTherm] = tVoigtCompsUniTensor("E", 2), tExprScalar("alphaTerm") 
-    tExpr [epsilon_TSM, epsilon_v_TSM, theta_TSM] = ...tExprUniVectors("epsilon_TSM", "epsilon_v_TSM", "theta_TSM")
+    tExpr [epsilon_TSM, epsilon_v_TSM] = ...tExprUniVectors("epsilon_TSM", "epsilon_v_TSM")
+    tExpr theta_TSM = ...tExprScalars("theta_TSM")
     
     //
-    tExpr sigma_TSM = (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM)
+    tExpr IdentVec = ...tExprUniVectors("IdentVec")
+
+    //
+    tExpr sigma_TSM = (a * E) . (epsilon_TSM - epsilon_v_TSM - alphaTherm * theta_TSM * IdentVec)
 
     // FullTaylor
     epsilon_fTSM = \
@@ -151,7 +155,8 @@ decl evaluateExample(int orderTSM, int dimension){
         taylorSeries(theta_beta, betaTilde, orderTSM, false)
 
     // partial Taylor mit externer, kummulierter erster Ordnung
-    tExpr [epsilon0, epsilon_v0, theta0] = ...tExprUniVectors("epsilon0", "epsilon_v0", "theta0")
+    tExpr [epsilon0, epsilon_v0] = ...tExprUniVectors("epsilon0", "epsilon_v0")
+    tExpr theta0 = tExprScalar("theta0")
 
     epsilon_pTSM = epsilon0 + \
         partialTaylorSeries(epsilon_a, aTilde, 1, orderTSM, false) + \
@@ -206,6 +211,7 @@ decl evaluateExample(int orderTSM, int dimension){
             tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
             tmpTangentA -> replace(betaTilde, zeros(betaTilde))
 
+            wrpSimplify(tmpTangentA)
             call(exportRoutine, args(tmpTangentA, "evalSigma0", "Examples/fortranScripts/evalSigma0.f"))
         }
 
