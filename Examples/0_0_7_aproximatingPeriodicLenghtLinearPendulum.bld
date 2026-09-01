@@ -87,6 +87,12 @@ decl evaluateExample(){
     //
     slog("Taylorreihenansatz fuer die Periodenlaenge des Pendels :", T)
 
+    // Ausdruck : T(L, g, theta_0)
+    T -> replace(g, tExpr(9.81))
+    T -> replace(theta_0, tExpr(PI / 2))
+
+    slog(rebuild(T))
+
     //
     slog("* Example evaluated")
 }
