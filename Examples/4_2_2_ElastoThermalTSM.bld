@@ -51,7 +51,13 @@ decl exp(tExpr ref expr){ return [<- exp(expr, orderTSM)] }
 
 //
 // disableDiffTemplateDefaults()
+
+//
 setGenerateExportDebugCall(true)
+setGenerateExportHelpers(true)
+
+//
+string exportRoutine = "cssGenerateFortranString"
 
 int nVoigtComps(-1)
 
@@ -194,16 +200,13 @@ decl evaluateExample(int orderTSM, int dimension){
 
             tmpTangentA <+ sigma_TSM
 
-            args [depsKeys, depsVals] = args(toWrappedIDN(tVoigtCompsUniTensor("depsE", 4)), toWrappedIDN(tVoigtCompsUniTensor("depsA", 0))), \
-                                        args(toWrappedIDN(E \(x) E), toWrappedIDN(E .. E))
-
-            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma", depsKeys, depsVals) -> writeToFile("Examples/fortranScripts/evalSigma.f")
+            call(exportRoutine, args(tmpTangentA, "evalSigma", "Examples/fortranScripts/evalSigma.f"))
 
             tmpTangentA -> replace(aTilde, zeros(aTilde))
             tmpTangentA -> replace(alphaTilde, zeros(alphaTilde))
             tmpTangentA -> replace(betaTilde, zeros(betaTilde))
 
-            toWrappedIDN(tmpTangentA) -> toFortranString("evalSigma0") -> writeToFile("Examples/fortranScripts/evalSigma0.f")
+            call(exportRoutine, args(tmpTangentA, "evalSigma0", "Examples/fortranScripts/evalSigma0.f"))
         }
 
         // Tangente i mal ableiten und D mit null substituieren
@@ -227,7 +230,7 @@ decl evaluateExample(int orderTSM, int dimension){
 
         wrpSimplify(tmpTangentA); wrpSimplify(tmpTangentAlpha); wrpSimplify(tmpTangentBeta);
 
-        toWrappedIDN(tmpTangentA) -> toFortranString("evalTangentdSigmadA" + string(order)) -> writeToFile("Examples/fortranScripts/evalTangentdSigmadA" + string(order) + ".f")
+        call(exportRoutine, args(tmpTangentA, "evalTangentdSigmadA" + string(order), "Examples/fortranScripts/evalTangentdSigmadA" + string(order) + ".f"))
     } \
     defer { dref result }
 

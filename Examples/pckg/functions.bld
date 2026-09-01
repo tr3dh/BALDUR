@@ -337,20 +337,12 @@ decl smplfDiff(tExpr ref expr, tExpr ref dExpr, int amount){
     return tmp
 }
 
+//
+decl substituteCommonSubexpressions(tExpr ref expr){
 
-// Standard Julia Skript Generierung
-decl stdGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref filePath){
-
-    // Umwandlung in Indexnotation, Erzeugen des Juliaskripts, schreiben des Skripts in Datei
-    toWrappedIDN(expr) -> toJuliaString(resLabel) -> writeToFile(filePath)
-}
-
-// Julia Skript Generierung mit Common Subexpression Substitution (CSS)
-decl cssGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref filePath){
-
-    // Funktion nimmt einen Ausdruck entgegen, wandelt ihn in Indexnotation um, substituiert
-    // mehrfach im Ausdruck auftretenden Teilausdrücke und erzeugt ein Juliaskript, dass die diese
-    // Abhängigkeiten vorab ermittelt und danach nur noch an die entsprechenden Stellen einsetzt
+    // Funktion erkennt mehrfach im Ausdruck vorkommende Teilausdrücke, weist diesen Substitutionschlüssel (ext. Nodes)
+    // zu, substituiert sie im Ausdruck und gibt die Substitutionsschlüssel und -terme in hierarchischer Reihelfolge zurück.
+    // (Terme von denen andere Substitutionsterme abhängig sind weiter vorne, die abhängigen Substitutionsterme weiter hinten)
 
     // Veranschaulichung `expr = (S . (E . (epsilon - epsilon_vp))) . (S . (E . (epsilon - epsilon_vp))) . (C + E)`
 
@@ -489,6 +481,26 @@ decl cssGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref file
         expr -> replace(commonSubexprs -> get(i), commonSubexprsKeys -> get(i))
     }
 
+    return [<- elrefs [commonSubexprsKeys, commonSubexprs]]
+}
+
+// Standard Julia Skript Generierung
+decl stdGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref filePath){
+
+    // Umwandlung in Indexnotation, Erzeugen des Juliaskripts, schreiben des Skripts in Datei
+    toWrappedIDN(expr) -> toJuliaString(resLabel) -> writeToFile(filePath)
+}
+
+// Julia Skript Generierung mit Common Subexpression Substitution (CSS)
+decl cssGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref filePath){
+
+    // Funktion nimmt einen Ausdruck entgegen, wandelt ihn in Indexnotation um, substituiert
+    // mehrfach im Ausdruck auftretenden Teilausdrücke und erzeugt ein Juliaskript, dass die diese
+    // Abhängigkeiten vorab ermittelt und danach nur noch an die entsprechenden Stellen einsetzt
+
+    //
+    args [commonSubexprsKeys, commonSubexprs] = substituteCommonSubexpressions(expr)
+
     // Container für Substitutionsobjekte und -terme in Indexnotation
     args [depsKeys, depsVals]
 
@@ -505,4 +517,39 @@ decl cssGenerateJuliaString(tExpr ref expr, string ref resLabel, string ref file
     // Umwandeln des ursprünglichen Ausdrucks mit angestellten Substitutionen in Indexnotation,
     // Generierung des Julia-Skripts mit Angabe der Substitutionen, Schreiben des Julia-Skripts in Datei
     toWrappedIDN(expr) -> toJuliaString(resLabel, depsKeys, depsVals) -> writeToFile(filePath)
+}
+
+// Standard Julia Skript Generierung
+decl stdGenerateFortranString(tExpr ref expr, string ref resLabel, string ref filePath){
+
+    // Umwandlung in Indexnotation, Erzeugen des Juliaskripts, schreiben des Skripts in Datei
+    toWrappedIDN(expr) -> toFortranString(resLabel) -> writeToFile(filePath)
+}
+
+// Julia Skript Generierung mit Common Subexpression Substitution (CSS)
+decl cssGenerateFortranString(tExpr ref expr, string ref resLabel, string ref filePath){
+
+    // Funktion nimmt einen Ausdruck entgegen, wandelt ihn in Indexnotation um, substituiert
+    // mehrfach im Ausdruck auftretenden Teilausdrücke und erzeugt ein Juliaskript, dass die diese
+    // Abhängigkeiten vorab ermittelt und danach nur noch an die entsprechenden Stellen einsetzt
+
+    //
+    args [commonSubexprsKeys, commonSubexprs] = substituteCommonSubexpressions(expr)
+
+    // Container für Substitutionsobjekte und -terme in Indexnotation
+    args [depsKeys, depsVals]
+
+    // Umwandlen der Substitutionsobjekte und -terme in Indexnotation
+    for(int i = 0, i < commonSubexprs -> size(), i ++){
+
+        depsKeys -> emplace(toWrappedIDN(commonSubexprsKeys -> get(i)))
+        depsVals -> emplace(toWrappedIDN(commonSubexprs -> get(i)))
+
+        // //
+        // slog(depsKeys -> get(i), "=>", depsVals -> get(i))
+    }
+
+    // Umwandeln des ursprünglichen Ausdrucks mit angestellten Substitutionen in Indexnotation,
+    // Generierung des Julia-Skripts mit Angabe der Substitutionen, Schreiben des Julia-Skripts in Datei
+    toWrappedIDN(expr) -> toFortranString(resLabel, depsKeys, depsVals) -> writeToFile(filePath)
 }
