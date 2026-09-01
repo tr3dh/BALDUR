@@ -64,21 +64,19 @@ decl evaluateExample(){
     //
     // Das eliptische Integral erster Ordnung ist dabei
     //
-    //      K(k) = (PI / 2) * sum_j [ (2j - 1)!! / 2j!! ]^2 k^2j                [https://arxiv.org/pdf/2212.05694v3]
+    //      K(m) = int_0^(pi/2) du / sqrt(1 - m sin^2 u)                        [https://arxiv.org/pdf/2212.05694v3]
     //
-    // und mit m = k^2
+    // und kann über die Summe
     // 
     //      K(m) = (PI / 2) * sum_j [ (2j - 1)!! / 2j!! ]^2 m^j                 [https://arxiv.org/pdf/2212.05694v3]
     //
-    // Der Sinusterm kann dabei umformuliert werden zu
+    // approximiert werden. Der Sinusterm kann dabei umformuliert werden zu
     //
     //      sin^2 theta_0/2 = (1 - cos theta_0) / 2                             [https://arxiv.org/pdf/1502.06628]
     //
     // Der Cosinus-Term kann über eine Taylorreihe mit der Ordnung n entwickelt werden als.
     //
     //      cos theta_0 = sum_m [(-1)^m / (2m)!] * theta_0 ^ 2m                 [https://wumbo.net/examples/derive-cosine-taylor-series/]
-    //
-    // Die Reihe läuft dabei über m = n / 2
 
     //
     int [KSeriesOrder, cosSeriesOrder] = 10, 10
@@ -148,7 +146,7 @@ decl evaluateExample(){
     //
     int N = 2000
     double h = (theta0Upper - theta0Lower) / double(N)
-    tExpr Kquad
+    tExpr KQuad
 
     // m als reine Zahl, unabhaengig vom symbolischen theta_0 oben im Skript
     tExpr mQuad = sin(theta_0 / 2) ^ 2
@@ -158,20 +156,20 @@ decl evaluateExample(){
     for(int i = 0, i < N, i++){
 
         phiMid = theta0Lower + h * (double(i) + 0.5)
-        Kquad += 1 / sqrt(1.0 - mQuad * (sin(phiMid)^2))
+        KQuad += 1 / sqrt(1.0 - mQuad * (sin(phiMid)^2))
     } \
-    defer{ Kquad *= h }
+    defer{ KQuad *= h }
 
     //
-    tExpr Tquad = 4.0 * sqrt(L / g) * Kquad
+    tExpr TQuad = 4.0 * sqrt(L / g) * KQuad
 
     // Ausdruck : T(L, g, theta_0)
-    Tquad -> replace(L, tExpr(0.5))
-    Tquad -> replace(g, tExpr(9.81))
-    Tquad -> replace(theta_0, tExpr(PI / 2))
+    TQuad -> replace(L, tExpr(0.5))
+    TQuad -> replace(g, tExpr(9.81))
+    TQuad -> replace(theta_0, tExpr(PI / 2))
 
     //
-    slog("TQUAD(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(Tquad))
+    slog("TQUAD(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(TQuad))
 
     //
     slog("* Example evaluated")
