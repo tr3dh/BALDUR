@@ -112,6 +112,7 @@ void defaultSetupLexicalInstances(){
         "->", ">>",                                     // Zugriff auf Statics Scope / Attrib Scopes
         "dref", "invl", "delete", "detach",
         "...",
+        "elrefs",
     };
 
     //
@@ -136,6 +137,7 @@ void defaultSetupLexicalInstances(){
         {"delete", "__delete__"},
         {"detach", "__detach__"},
         {"...", "__unpack__"},
+        {"elrefs", "__eliminateRefs__"},
     };
 
     // Map der Form Operator | Funktionslabel
