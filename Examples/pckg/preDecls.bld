@@ -183,6 +183,24 @@ decl __expAssign__(tExpr ref lhs, int ref rhs){
 }
 
 decl __divAssign__(tExpr ref lhs, tExpr ref rhs){ lhs *= inverse(rhs) }
+decl __divAssign__(tExpr ref lhs, int ref rhs){ lhs *= inverse(tExpr(rhs)) }
+decl __divAssign__(tExpr ref lhs, double ref rhs){ lhs *= inverse(tExpr(rhs)) }
+
+decl __divAssign__(int ref lhs, tExpr ref rhs){
+
+    int cachedLhs = lhs
+
+    recast("tExpr",  lhs) <+ tExpr(cachedLhs)
+    __divAssign__(lhs, rhs)
+}
+
+decl __divAssign__(double ref lhs, tExpr ref rhs){
+
+    double cachedLhs = lhs
+
+    recast("tExpr",  lhs) <+ tExpr(cachedLhs)
+    __divAssign__(lhs, rhs)
+}
 
 // Ueberschreiben der ursrpünglichen Operation durch veralgemeinterte Kontratkion
 // fuer die zweite Stufe

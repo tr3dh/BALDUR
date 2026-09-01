@@ -3,7 +3,7 @@
 🌐 <a href="./README.md">English</a> | <a href="./README.de.md">Deutsch</a>
 </p>
 
-# Basic Albebraic Language for Deriving Unified Tensor Representations (BALDUR)
+# Basic Algebraic Language for Deriving Unified Tensor Representations (BALDUR)
 
 <img align="left" style="width:360px" src="Recc/textures/Baldur_Logo_whiteBG.png">
 

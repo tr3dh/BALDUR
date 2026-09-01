@@ -31,9 +31,6 @@ emplaceExtendedSimplifications()
 setGenerateExportDebugCall(true)
 
 //
-int [TSeriesOrder, KSeriesOrder] = 4, 4
-
-//
 decl tExprScalar(string ref label){ return [tExpr(label, 0)] }
 
 //
@@ -60,38 +57,121 @@ decl evaluateExample(){
     tExpr ref result
     string tResultLabel
     
+    // Die exakte Gleichung für die Periode des Pendels kann über das eliptische
+    // Integral erster Ordnung K(...) geschrieben werden als
+    //
+    //      T = 4 sqrt(l / g) * K (sin^2 theta0/2)                              [https://arxiv.org/pdf/1007.4026]
+    //
+    // Das eliptische Integral erster Ordnung ist dabei
+    //
+    //      K(k) = (PI / 2) * sum_j [ (2j - 1)!! / 2j!! ]^2 k^2j                [https://arxiv.org/pdf/2212.05694v3]
+    //
+    // und mit m = k^2
+    // 
+    //      K(m) = (PI / 2) * sum_j [ (2j - 1)!! / 2j!! ]^2 m^j                 [https://arxiv.org/pdf/2212.05694v3]
+    //
+    // Der Sinusterm kann dabei umformuliert werden zu
+    //
+    //      sin^2 theta_0/2 = (1 - cos theta_0) / 2                             [https://arxiv.org/pdf/1502.06628]
+    //
+    // Der Cosinus-Term kann über eine Taylorreihe mit der Ordnung n entwickelt werden als.
+    //
+    //      cos theta_0 = sum_m [(-1)^m / (2m)!] * theta_0 ^ 2m                 [https://wumbo.net/examples/derive-cosine-taylor-series/]
+    //
+    // Die Reihe läuft dabei über m = n / 2
+
+    //
+    int [KSeriesOrder, cosSeriesOrder] = 10, 10
+
     //
     tExpr[L, g, theta_0] = ...tExprScalars("L", "g", "theta_0")
 
-    decl evalCn(int ref n){ return [ double(ffactorial((2 * n) - 1)) / double(ffactorial(2 * n))] }
-    decl evalKn(int ref order){ return ((-1) ^ order) * (theta_0 ^ (2 * order)) / tExpr(factorial(2 * order)) }
-
-    decl evalK(int ref seriesOrder){
-
-        tExpr res
-
-        for(int i = 0, i < seriesOrder, i ++){ res += wrpSimplified(evalKn(i)) }
-        return [<- wrpSimplified(res)]
-    }
+    //
+    tExpr cosTaylor
 
     //
-    tExpr [k, T] <- evalK(KSeriesOrder), tExpr()
-
-    //
-    for(int order = 0, order < TSeriesOrder, order++){
-
-        T += wrpSimplified((evalCn(order) ^ 2) * (k ^ (2 * order)))
+    for(int order = 0, order < cosSeriesOrder, order ++){
+            
+        cosTaylor += wrpSimplified( \
+            ((-1) ^ order) * (theta_0 ^ (2 * order)) / factorial(2 * order))
     } \
-    defer{ wrpSimplify(T) }
+    defer{ wrpSimplify((cosTaylor)) }
 
     //
-    slog("Taylorreihenansatz fuer die Periodenlaenge des Pendels :", T)
+    tExpr m = (1 - cosTaylor) / 2
+    wrpSimplify(m)
+
+    //
+    tExpr K, mn = tExpr(), tExprScalar("kn")
+
+    //
+    for(int order = 0, order < KSeriesOrder, order ++){
+            
+        K += wrpSimplified( \
+            (PI / 2) * [double(ffactorial(2 * order - 1)) / double(ffactorial(2 * order))]^2 * mn ^ (order))
+    } \
+    defer{ wrpSimplify(K) }
+
+    //
+    K -> replace(mn, m)
+
+    //
+    tExpr T = 4 * sqrt(L / g) * K
 
     // Ausdruck : T(L, g, theta_0)
+    T -> replace(L, tExpr(0.5))
     T -> replace(g, tExpr(9.81))
     T -> replace(theta_0, tExpr(PI / 2))
 
-    slog(rebuild(T))
+    //
+    slog("T(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(T))
+
+    // Abgleich mit Quadratur
+    // 
+    // Das eliptische Integral (Integration über den Winkel Phi)
+    //      K(m) = int_0^(pi/2) du / sqrt(1 - m sin^2 u)
+    //
+    // Damit ist
+    //      K(m) = int_0^(pi/2) dPhi / sqrt(1 - m sin^2 Phi)
+    //
+    // Per Quadratur
+    //      K(m) = sum [ phiStep / sqrt(1 - m sin^2 Phi) ] = phiStep * sum_Phi [ 1 / sqrt(1 - m sin^2 Phi) ]
+    //
+    // wird hier numerisch ausgewertet um einen Referenzwert zu generieren
+
+    // Integrationsgrenzen
+    double [theta0Lower, theta0Upper] = 0.0, (PI / 2.0)
+
+    // Amplitude theta_0, fuer die die Periode berechnet wird
+    double theta0_amplitude = PI / 2.0
+
+    //
+    int N = 2000
+    double h = (theta0Upper - theta0Lower) / double(N)
+    tExpr Kquad
+
+    // m als reine Zahl, unabhaengig vom symbolischen theta_0 oben im Skript
+    tExpr mQuad = sin(theta_0 / 2) ^ 2
+    double phiMid                           // aktuelle Stützstelle
+
+    //
+    for(int i = 0, i < N, i++){
+
+        phiMid = theta0Lower + h * (double(i) + 0.5)
+        Kquad += 1 / sqrt(1.0 - mQuad * (sin(phiMid)^2))
+    } \
+    defer{ Kquad *= h }
+
+    //
+    tExpr Tquad = 4.0 * sqrt(L / g) * Kquad
+
+    // Ausdruck : T(L, g, theta_0)
+    Tquad -> replace(L, tExpr(0.5))
+    Tquad -> replace(g, tExpr(9.81))
+    Tquad -> replace(theta_0, tExpr(PI / 2))
+
+    //
+    slog("TQUAD(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(Tquad))
 
     //
     slog("* Example evaluated")
