@@ -16,6 +16,11 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Examples/0_0_7_aproximatingPeriodicLenghtLinearPendulum.bld
 
+// ! TODO :
+// * rein numerische Gaußquadratur für Vergleich
+// * Annäherung der symbolischen Quadratur und der Reihendarstellung (Vergleich Ergbenisse, Rechenzeiten, etc.)
+// * Ableitungen der Reihendarstellung       
+
 // Includes
 fetch backend ["tensor"]
 fetch script ["pckg/preDecls", "pckg/functions"]

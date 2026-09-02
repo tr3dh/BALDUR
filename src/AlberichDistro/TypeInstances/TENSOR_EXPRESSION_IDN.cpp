@@ -3373,7 +3373,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 
         res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& elem){
             return elem.generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, ""); },
-            true, " \n     & + ");
+            true, " \n     & - ");
     }
     else if(Relation == TkType::Container){
 
