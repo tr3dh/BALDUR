@@ -324,7 +324,7 @@ int main(void)
         if(IsKeyPressed(KEY_F5)){
 
             editor.save();
-            std::string cmd = ".\\Baldur_d execute " + editor.cScriptPath;
+            std::string cmd = ".\\build\\Baldur_d execute " + editor.cScriptPath;
             terminal.m_shell.sendCommand(cmd);
         }
 
