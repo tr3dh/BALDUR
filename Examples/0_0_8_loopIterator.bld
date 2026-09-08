@@ -8,22 +8,21 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Examples/0_0_8_LoopIterator.bld
 
-// g_terminateAfterAssertionFailed = true
+//
+g_terminateAfterAssertionFailed = true
+
+//
+fetch script ["pckg/preDecls", "pckg/functions"]
 
 struct ArgsIterator{
 
     static{ int ID = 0 }
 
-    bool isRefIterator = false
-    bool isValid = false
-
-    int argsSize = -1
-    int currentArg = -1
+    bool [isRefIterator, isValid] = false, false
+    int [argsSize, currentArg, ID] = (-1), (-1), (-1)
 
     args ref reffedPrms
     args containedPrms
-
-    int ID = -1
 
     decl end(){
 
@@ -116,11 +115,36 @@ decl __unpack__(ArgsIterator ref lhs){
     return [lhs -> get()]
 }
 
+struct Range{
+
+    int [start, end] = (-1), (-1)
+
+    decl size(){ return [end - start] }
+    decl get(int idx){ return [start + idx] }
+}
+
+decl Range(int [startIn, endIn]){
+
+    Range new
+    new -> [start, end] = startIn, endIn
+
+    return [<- new]
+}
+
+decl enumerate(args ref prms){
+
+    if(isReference(prms)){
+        return [Range(0, prms -> size()), prms]
+    }
+
+    return [Range(0, prms -> size()), (<- prms)]
+}
+
 decl main(){
 
     slog("Init Main")
 
-    for(it = it(args(1,2,3)), it < it -> end(), it++){             // ref arg | prms
+    for(it = it(args(1,2,3)), it < it -> end(), it++){
 
         // Zugriff per getter oder unpack Syntax
         // ...
@@ -135,7 +159,7 @@ decl main(){
     args p
     p -> emplace(1, 2, 3)
 
-    for(it = it(p), it < it -> end(), it++){             // ref arg | prms
+    for(it = it(p), it < it -> end(), it++){
 
         // Zugriff per getter oder unpack Syntax
         // ...
@@ -146,6 +170,27 @@ decl main(){
         slog(it[])
     } \
     defer{ slog("verlasse for Loop") }
+
+    // einfachste Form der `foreach`-Schleife
+    foreach(ref arg | args(0,1,2)){
+
+        slog(arg)
+    } \
+    defer{ dref arg; slog("verlasse foreach Loop") }
+
+    // `foreach`-Schleife kann auch mit mehreren lokalen Schleifenvariablen pro Frame und
+    // dementsprechend mit mehreren durchlaufenen Listen / Objekten arbeiten
+    // Zusätzlich kann die `foreach`-Schleife nicht nur automatisiert `args`-Objekte aufbereiten,
+    // sondern auch vom Nutzer erstellte Structs
+    // Dazu müssen Member des Nutzer-Structs die Memberfunktionen `size` und `get`
+    // bereitstellen (siehe `Range`, wird von `enumerate` gepackt) 
+    foreach([int idx, ref arg] | enumerate(args(9,1,2))){
+
+        slog(idx, arg)
+    } \
+    defer{ dref [arg]; slog("verlasse foreach Loop") }
+
+    slog("Example evaluated")
 }
 
 //

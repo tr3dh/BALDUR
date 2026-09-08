@@ -4,7 +4,9 @@
 # bash Batch/fetchAllBranches.sh
 
 # Alle Remote-Branches automatisch lokal einrichten und veraltete/umbenannte Branches erkennen und aufräumen
- 
+
+# für den pull aller submodule `git submodule foreach 'git checkout main && git pull origin main'
+
 if ! git rev-parse --git-dir > /dev/null 2>&1; then
     echo "Fehler: Kein Git-Repository gefunden"
     exit 1
