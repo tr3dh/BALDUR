@@ -1,0 +1,146 @@
+// ---------------------------------------------------------------------------
+//                      Example 0.0.8 LoopIterator
+// ---------------------------------------------------------------------------
+// Ausführung des Skripts über Make Target und Spezifikationen
+// - Mit Interpreter build: $ make launch TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_8_LoopIterator.bld
+// - Ohne Interpreter build: $ make exec TARGET=build/BaldurTestEnv SCRIPT=Examples/0_0_8_LoopIterator.bld
+//
+// Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
+// $ ./build/Baldur_d execute Examples/0_0_8_LoopIterator.bld
+
+// g_terminateAfterAssertionFailed = true
+
+struct ArgsIterator{
+
+    static{ int ID = 0 }
+
+    bool isRefIterator = false
+    bool isValid = false
+
+    int argsSize = -1
+    int currentArg = -1
+
+    args ref reffedPrms
+    args containedPrms
+
+    int ID = -1
+
+    decl end(){
+
+        ArgsIterator tmp = this
+
+        tmp -> currentArg = argsSize
+        return [<- tmp]
+    }
+
+    decl access(){
+
+        if(currentArg < argsSize){}
+        else{ return [ void() ] }
+
+        return [<< this -> getPrms() -> get(currentArg)]
+    }
+
+    decl get(){
+
+        return [this -> access()]
+    }
+
+    decl getPrms(){
+
+        if(isRefIterator){ return [reffedPrms] }
+        else{ return [<< containedPrms] }
+    }
+}
+
+decl ArgsIterator(args ref prms, bool prmsIsRValue){
+
+    ArgsIterator tmp
+
+    if(!prmsIsRValue){ [tmp -> reffedPrms] << prms; tmp -> isRefIterator = true }
+    else{ [tmp -> containedPrms] <- prms; tmp -> isRefIterator = false }
+
+    tmp -> isValid = true
+    tmp -> argsSize = tmp -> getPrms() -> size()
+    tmp -> currentArg = 0
+
+    tmp -> ID = ArgsIterator >> ID ++
+    return [<- tmp]
+}
+
+decl rIt(args ref prms){
+
+    return [<- ArgsIterator(prms, true)]
+}
+
+decl lIt(args ref prms){
+
+    return [<- ArgsIterator(prms, false)]
+}
+
+decl __equal__(ArgsIterator ref [lhs, rhs]){
+    
+    return [ nIf(lhs->[ID, currentArg] == rhs->[ID, currentArg]) ]
+}
+
+decl __notEqual__(ArgsIterator ref [lhs, rhs]){
+    
+    return [! (lhs == rhs)]
+}
+
+decl __smaller__(ArgsIterator ref [lhs, rhs]){
+
+    return [lhs -> currentArg < rhs -> currentArg]
+}
+
+decl __increment__(ArgsIterator ref lhs){
+
+    requires {lhs -> isValid && lhs -> currentArg < lhs -> argsSize} "Iterator ungültig oder bereits am Ende"
+    lhs -> currentArg++
+
+    if(lhs -> currentArg >= lhs -> argsSize){ lhs -> isValid = false }
+    return [<< lhs]
+}
+
+decl __unpack__(ArgsIterator ref lhs){
+
+    return [lhs -> get()]
+}
+
+decl main(){
+
+    slog("Init Main")
+
+    for(it = rIt(args(1,2,3)), it < it -> end(), it++){             // ref arg | prms
+
+        // Zugriff per getter oder unpack Syntax
+        // ...
+
+        it[]
+        it...
+
+        slog(it[])
+    } \
+    defer{ slog("verlasse for Loop") }
+
+    args p
+    p -> emplace(1, 2, 3)
+
+    for(it = lIt(p), it < it -> end(), it++){             // ref arg | prms
+
+        // Zugriff per getter oder unpack Syntax
+        // ...
+
+        it[]
+        it...
+
+        slog(it[])
+    } \
+    defer{ slog("verlasse for Loop") }
+}
+
+//
+if(calledAs(__MainProc__)){
+    
+    call(string main => "main", args())
+}

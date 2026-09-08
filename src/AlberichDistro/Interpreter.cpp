@@ -91,10 +91,12 @@ void defaultSetupLexicalInstances(){
 
         // Zuwisungen und Memory Management
         "=", "<<", "<>", "<-", "<+",                            // Memory Management Semantik
+        "\\",                                                   // Pseudoeintrag in Operatorenhierarchie, Preprozessordirektive soll autovervollständigt werden
+        "|",                                                    // Pseudooperatoreintrag für `foreach`
         "+=", "-=", "*=", "/=", "^=",                           // Ops für 2 Arg Operationen
-        ".=", ".n=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",  // für Matrix Ops
+        ".=", ".n=", "..=", ":=", "\\x=", "\\(x)=", "\\(.)=",   // für Matrix Ops
         "\\diff=",
-        "&=", "!&=", "|=", "!|=", "x|=", "!x|=",        // Ops für boolsche/logische 2 Arg Operationen
+        "&=", "!&=", "|=", "!|=", "x|=", "!x|=",                // Ops für boolsche/logische 2 Arg Operationen
 
         // Walrus Operator
         "=>",

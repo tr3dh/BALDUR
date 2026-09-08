@@ -5,7 +5,12 @@
             "label": "open msys mingw64 shell",
             "type": "process",
             "command": "C:\\msys64\\msys2_shell.cmd",
-            "args": ["-mingw64", "-defterm", "-here", "-no-start"],
+            "args": [
+                "-mingw64",
+                "-defterm",
+                "-here",
+                "-no-start"
+            ],
             "problemMatcher": [],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -22,7 +27,9 @@
             "label": "Git Bash",
             "type": "shell",
             "command": "C:\\Program Files\\Git\\bin\\bash.exe",
-            "args": ["-l"],
+            "args": [
+                "-l"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
@@ -38,7 +45,9 @@
             "label": "Alberich Git Bash",
             "type": "shell",
             "command": "C:\\Program Files\\Git\\bin\\bash.exe",
-            "args": ["-l"],
+            "args": [
+                "-l"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}/src/Alberich"
             },
@@ -54,7 +63,9 @@
             "label": "ByteSeq Git Bash",
             "type": "shell",
             "command": "C:\\Program Files\\Git\\bin\\bash.exe",
-            "args": ["-l"],
+            "args": [
+                "-l"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}/src/Alberich/src/Alberich/ByteSequence"
             },
@@ -70,7 +81,9 @@
             "label": "Users Git Bash",
             "type": "shell",
             "command": "${env:USERPROFILE}\\AppData\\Local\\Programs\\Git\\bin\\bash.exe",
-            "args": ["-l"],
+            "args": [
+                "-l"
+            ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
