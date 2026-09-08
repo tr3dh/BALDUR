@@ -10,27 +10,10 @@
 
 fetch script ["0_0_0_testInclude"]
 
-// Includes
-fetch script ["pckg/preDecls", "pckg/functions"]
-
-decl refTest(int ref m){
-
-    logRes(m)
-}
-
 decl main(int [a,b,c]){
 
     slog("Init Main")
     slog("Rueckgabe :", testFunction())
-
-    refTest(1)
-
-    i = 1
-    refTest(i)
-
-    logRes(2 * args(1, 3))
-
-    slog("still standin")
 }
 
 //

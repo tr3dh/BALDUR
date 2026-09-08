@@ -78,6 +78,15 @@ decl lIt(args ref prms){
     return [<- ArgsIterator(prms, false)]
 }
 
+decl it(args ref prms){
+
+    // Wenn `prms` eine Referenz ist, wurde ein LValue in die Funktion eingesetzt
+    // (Referenz konnte direkt hinterlegt werden), ist die Größe jedoch keine Referenz
+    // bedeutet das, ein RValue wurde übergeben und in `prms` geclont (keine Referenz mehr)
+    if(isReference(prms)){ return [<- lIt(prms)] }
+    else{ return [<- rIt(prms)] }
+}
+
 decl __equal__(ArgsIterator ref [lhs, rhs]){
     
     return [ nIf(lhs->[ID, currentArg] == rhs->[ID, currentArg]) ]
@@ -111,7 +120,7 @@ decl main(){
 
     slog("Init Main")
 
-    for(it = rIt(args(1,2,3)), it < it -> end(), it++){             // ref arg | prms
+    for(it = it(args(1,2,3)), it < it -> end(), it++){             // ref arg | prms
 
         // Zugriff per getter oder unpack Syntax
         // ...
@@ -126,7 +135,7 @@ decl main(){
     args p
     p -> emplace(1, 2, 3)
 
-    for(it = lIt(p), it < it -> end(), it++){             // ref arg | prms
+    for(it = it(p), it < it -> end(), it++){             // ref arg | prms
 
         // Zugriff per getter oder unpack Syntax
         // ...
