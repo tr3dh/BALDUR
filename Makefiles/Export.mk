@@ -65,6 +65,8 @@ cleanTmpExamples:
 	find tmp/Examples -type d -name '.LSP_CACHE' -exec rm -rf {} +
 	find tmp/Examples -type f -name '__LPECONFIG.JSON' -delete
 	find tmp/Examples/juliaScripts -type f -name '*.jl' -delete
+	find tmp/Examples/fortranScripts -type f -name '*.f' -delete
+	find tmp/Examples/fortranScripts -type f -name '*.exe' -delete
 	
 exportExamples:
 
