@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "BALDUR: The Baldur tensoralgebraic scripting language"
+abstract: >-
+  Baldur (Basic Algebraic Language for Deriving Unified Tensor Representations)
+  is a minimalist interpreter language that natively supports symbolic
+  manipulation of algebraic and index-notated tensor expressions, backed by a
+  C++ tensor algebra implementation. It was developed as part of a master's
+  thesis at the Institute of Continuum Mechanics (IKM), Leibniz University
+  Hannover.
+authors:
+  - family-names: Rother
+    given-names: Tim
+    # # TODO: Orcid eintragen
+    # orcid: "https://orcid.org/0000-0000-0000-0000"
+    affiliation: "Institute of Continuum Mechanics, Leibniz University Hannover"
+  - family-names: Geisler
+    given-names: Hendrik
+    # # TODO: Orcid eintragen
+    # orcid: "https://orcid.org/0000-0000-0000-0000"            
+    affiliation: "Institute of Continuum Mechanics, Leibniz University Hannover"
+repository-code: "https://github.com/tr3dh/BALDUR"
+url: "https://github.com/tr3dh/BALDUR"
+license: MIT
+version: "v1.1.0"               # siehe .VERSION
+date-released: "2026-09-14"     # Release des Tags 'v1.1.0'
+keywords:
+  - scripting language
+  - tensor algebra
+  - tensor calculus
+  - symbolic computation
+references:
+  - type: thesis
+    title: "Programmierung einer Software zur Ableitung von Tensorgleichungen in Index-Notation"
+    authors:
+      - family-names: Rother
+        given-names: Tim
+    thesis-type: "Master's thesis (unpublished)"
+    institution:
+      name: "Leibniz University Hannover"
+      city: Hannover
+      country: DE
+    department: "Institute of Continuum Mechanics"
+    year: 2026
+    url: "https://github.com/tr3dh/BALDUR/blob/main/Recc/Thesis/Masterthesis_Rother_2026_public.pdf"
+    notes: "Publicly available version, distributed only via the BALDUR repository."
