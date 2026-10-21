@@ -17,13 +17,16 @@
 // Ausführung des Skript über Interpreteraufruf (Pfade für CWD Baldur MainDir gegeben)
 // $ ./build/Baldur_d execute Examples/3_2_1_Example_A_Stress.bld
 
+//
+g_emplaceExtendedSimplifications = true
+
 // Includes
 fetch backend ["tensor"]
 fetch script ["pckg/preDecls", "pckg/functions"]
 
 //
 string [examplePrefix, exampleChapter, exampleTitle] = "A", "3.2.1", "TSM - Modelling Stress"
-int [orderTSM, dimension] = 5, 2
+int [orderTSM, dimension] = 1, 2
 
 int nVoigtComps = getNumOfVoigtComponents(dimension)
 
@@ -78,7 +81,7 @@ decl evaluateExample(){
         examplePrefix + "_" +  tResultLabel + ".jl")
 
     //
-    slog("* Example evaluated")
+    slog("* Example evaluated, Resultexpression with", result -> getNumOfNodes(), "Nodes")
 }
 
 //

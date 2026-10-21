@@ -73,6 +73,8 @@ requires int uniform g_forceSubstitutionFromComplexity          // Einstellen ab
 
 requires bool uniform g_automaticDrefEnabled                    // steuert automatische Dereferenzierung
 
+g_terminateAfterAssertionFailed = true
+
 // Konstanten
 registerConst("PI",                  3.1415926535897930)                    // Kreiszahl PI
 registerConst("EULER",               2.7182818284590450)                    // Eulersche Zahl e
@@ -258,7 +260,7 @@ tExpr [tmplMatrix]                              = tExprTmpl("tmplMat", 2)
 tExpr [tmplTensor]                              = tExprTmpl("tmplTensor", -1)
 
 // std Templates für beliebig stufige Tensoren
-tExpr [tmplA, tmplB, tmplC] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1)
+tExpr [tmplA, tmplB, tmplC, tmplD] = tExprTmpl("tmplA", -1), tExprTmpl("tmplB", -1), tExprTmpl("tmplC", -1), tExprTmpl("tmplD", -1)
 
 // Simplifizierungen
 
@@ -278,6 +280,10 @@ setEqual(0 + tmplScalar, tmplScalar)
 setEqual(tmplScalar - 0, tmplScalar)
 setEqual(0 - tmplScalar, (-1) * tmplScalar)
 
+setEqual(tmplA + (-1) * tmplB, tmplA - tmplB)
+setEqual(tmplA - (-1) * tmplB, tmplA + tmplB)
+setEqual((-1) * ((-1) * tmplA), tmplA)
+
 // Vereinfachung von Standard Operationen
 setEqual(ArgTmplA + ArgTmplA, 2 * ArgTmplA)
 setEqual(ArgTmplA + CnstTmplA * ArgTmplA, (CnstTmplA + 1) * ArgTmplA)
@@ -285,6 +291,14 @@ setEqual(CnstTmplA * ArgTmplA + CnstTmplB * ArgTmplA, (CnstTmplA + CnstTmplB) * 
 setEqual(ArgTmplA - ArgTmplA, zeros(ArgTmplA))
 setEqual(ArgTmplA - CnstTmplA * ArgTmplA, (CnstTmplA - 1) * ArgTmplA)
 setEqual(CnstTmplA * ArgTmplA - CnstTmplB * ArgTmplA, (CnstTmplA - CnstTmplB) * ArgTmplA)
+
+// Ausklammern
+setEqual(tmplA . tmplC + tmplB . tmplC, (tmplA + tmplB) . tmplC)
+setEqual(tmplA . tmplC - tmplB . tmplC, (tmplA - tmplB) . tmplC)
+setEqual(tmplC . tmplA + tmplC . tmplB, tmplC . (tmplA + tmplB))
+setEqual(tmplC . tmplA - tmplC . tmplB, tmplC . (tmplA - tmplB))
+setEqual((tmplA . tmplC) + ((tmplB . tmplC) + tmplD), ((tmplA + tmplB) . tmplC) + tmplD)
+setEqual((tmplA . tmplC) + ((tmplB . tmplC) - tmplD), ((tmplA + tmplB) . tmplC) - tmplD)
 
 // //
 // setEqual(diff(tmplA, CnstTmpl), zeros(tmplA))
@@ -304,6 +318,9 @@ decl emplaceExtendedSimplifications(){
     setEqual(CnstTmplA * (tmplB * CnstTmplB), (CnstTmplA * CnstTmplB) * tmplB)
     setEqual(tmplA * (CnstTmplA * tmplB), CnstTmplA * (tmplA * tmplB))
     setEqual(tmplA * (tmplB * CnstTmplA), CnstTmplA * (tmplA * tmplB))
+
+    setEqual(tmplA . (CnstTmpl * tmplB), CnstTmpl * (tmplA . tmplB))
+    setEqual((CnstTmpl * tmplA) . tmplB, CnstTmpl * (tmplA . tmplB))
 }
 
 decl removeExtendedSimplifications(){
@@ -318,6 +335,9 @@ decl removeExtendedSimplifications(){
     removeEqual(CnstTmplA * (tmplB * CnstTmplB))
     removeEqual(tmplA * (CnstTmplA * tmplB))
     removeEqual(tmplA * (tmplB * CnstTmplA))
+
+    removeEqual(tmplA . (CnstTmpl * tmplB))
+    removeEqual((CnstTmpl * tmplA) . tmplB)
 }
 
 // Diese Simplifizierungen sind vergleichsweise teuer, simplifizieren aber stark
@@ -390,13 +410,24 @@ for(int order = 2, order < g_emplaceTemplatesOnToOrder, order++){
 
     setEqual(contract(tExprIdentity(2 * order), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractForward), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
     setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), tExprIdentity(2 * order), order, contractForward), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
-    setEqual(contract(tExprIdentity(2 * order), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractReversed), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
-    setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), tExprIdentity(2 * order), order, contractReversed), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
+    // setEqual(contract(tExprIdentity(2 * order), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractReversed), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
+    // setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), tExprIdentity(2 * order), order, contractReversed), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order))
 
     setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), order, contractForward), tExprIdentity(2 * order))
     setEqual(contract(inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractForward), tExprIdentity(2 * order))
     setEqual(contract(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), order, contractReversed), tExprIdentity(2 * order))
     setEqual(contract(inverse(tExprArgTmpl("tmplTns" + string(2 * order), 2 * order)), tExprArgTmpl("tmplTns" + string(2 * order), 2 * order), order, contractReversed), tExprIdentity(2 * order))
+
+    for(int m = order, m <= g_emplaceTemplatesOnToOrder, m++){
+
+        setEqual(contract(tExprIdentity(2 * order), tExprTmpl("tmplId" + string(order) + "_" + string(m), m), order, contractForward), tExprTmpl("tmplId" + string(order) + "_" + string(m), m))
+        setEqual(contract(tExprTmpl("tmplId" + string(order) + "_" + string(m), m), tExprIdentity(2 * order), order, contractForward), tExprTmpl("tmplId" + string(order) + "_" + string(m), m))
+    }
+
+    setEqual(contract(CnstTmpl * tmplA, tmplB, order, contractForward), CnstTmpl * contract(tmplA, tmplB, order, contractForward))
+    setEqual(contract(tmplA, CnstTmpl * tmplB, order, contractForward), CnstTmpl * contract(tmplA, tmplB, order, contractForward))
+    setEqual(contract(CnstTmpl * tmplA, tmplB, order, contractReversed), CnstTmpl * contract(tmplA, tmplB, order, contractReversed))
+    setEqual(contract(tmplA, CnstTmpl * tmplB, order, contractReversed), CnstTmpl * contract(tmplA, tmplB, order, contractReversed))
 }
 
 setEqual(identityInstanceTemplate \x identityInstanceTemplate, zeros(identityInstanceTemplate \x identityInstanceTemplate))         // \x
