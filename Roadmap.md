@@ -43,3 +43,5 @@
 - substitution etc in indexnotation sodass css auch direkt in indexnotation stattfinden kann
     * evtl reicht einfacher impl per ==, contains, substitute und getUniqueNodes für die css
     * == muss true zurückgeben nicht wenn indices gleich sondern konsistent sind
+
+# Konsistenz check der Template Repräsentation in == auslagern ??

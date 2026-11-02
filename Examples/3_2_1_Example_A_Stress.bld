@@ -87,6 +87,21 @@ decl evaluateExample(){
 //
 decl main(){
 
+    slog(nSqrt(tExpr("a", 0), tExpr("b", 0)))
+
+    int ID
+    tmplA, tmplB = tExprTmpl(string(ID++), 0), tExprTmpl(string(ID++), 0)
+
+    setEqual(nSqrt(tmplA, tmplA), tExpr(0))
+
+    slog(simplified(nSqrt(tExpr("a", 0), tExpr("a", 0))))
+
+    slog(diff(nSqrt(tExpr("a", 0), tExpr("b", 0)), tExpr("b", 0)))
+
+    slog(nLog(tExpr(8), 2))
+
+    return
+
     //
     logSeparator()
     log("Fuehre Example ", exampleChapter, " ", examplePrefix, " aus : '", exampleTitle, "'")

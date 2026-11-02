@@ -1228,6 +1228,10 @@ void IndexNotatedTensorExpression::sqrtAssign(){
     // reEvaluateIndices();
 }
 
+void IndexNotatedTensorExpression::nSqrtAssign(const IndexNotatedTensorExpression& other){}
+void IndexNotatedTensorExpression::nPowAssign(const IndexNotatedTensorExpression& other){}
+void IndexNotatedTensorExpression::nLogAssign(const IndexNotatedTensorExpression& other){}
+
 void IndexNotatedTensorExpression::sinAssign(){
 
     //

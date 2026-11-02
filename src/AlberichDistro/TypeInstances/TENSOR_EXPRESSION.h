@@ -16,7 +16,12 @@ enum class IndexNotationOperator{
     Frobenius,
     Macaulay,
     Signum,
+
     Sqrt,
+    nSqrt,
+    nPow,
+    nLog,
+
     Sin,
     Cos,
     Tan,
@@ -63,7 +68,12 @@ enum class TensorExpressionOperator{
     Frobenius,
     Macaulay,
     Signum,
+
     Sqrt,
+    nSqrt,
+    nPow,
+    nLog,
+
     Sin,
     Cos,
     Tan,
@@ -220,7 +230,11 @@ struct TensorExpression{
     void frobeniusAssign();
     void macaulayAssign();
     void signumAssign();
+
     void sqrtAssign();
+    void nSqrtAssign(const TensorExpression& other);
+    void nPowAssign(const TensorExpression& other);
+    void nLogAssign(const TensorExpression& other);
 
     void sinAssign();
     void cosAssign();
@@ -345,7 +359,11 @@ struct IndexNotatedTensorExpression{
     void frobeniusAssign();
     void macaulayAssign();
     void signumAssign();
+
     void sqrtAssign();
+    void nSqrtAssign(const IndexNotatedTensorExpression& other);
+    void nPowAssign(const IndexNotatedTensorExpression& other);
+    void nLogAssign(const IndexNotatedTensorExpression& other);
 
     void sinAssign();
     void cosAssign();

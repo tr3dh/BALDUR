@@ -171,6 +171,13 @@ decl __expAssign__(tExpr ref lhs, int ref rhs){
         return {}
     }
 
+    // Abfangen für Potenzierung per eigener algebraischer Node
+    if(lhsIsScalar){
+
+        __nPowAssign__(lhs, rhs)
+        return {}
+    }
+
     //
     tExpr res <+ lhs
 
@@ -182,6 +189,16 @@ decl __expAssign__(tExpr ref lhs, int ref rhs){
     }
 
     lhs <- res
+}
+
+decl __expAssign__(tExpr ref lhs, double ref rhs){
+
+    __nPowAssign__(lhs, rhs)
+}
+
+decl __expAssign__(tExpr ref lhs, tExpr ref rhs){
+
+    __nPowAssign__(lhs, rhs)
 }
 
 decl __divAssign__(tExpr ref lhs, tExpr ref rhs){ lhs *= inverse(rhs) }

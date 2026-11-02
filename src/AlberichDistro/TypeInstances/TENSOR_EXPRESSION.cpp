@@ -1734,6 +1734,123 @@ void TensorExpression::sqrtAssign(){
     // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
 }
 
+void TensorExpression::nSqrtAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::nSqrt;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1 && other.tensorOrder < 1, "...",);
+
+
+    // bei negativem Radikand :
+    // std::pow(negativ, 1.0 / n) liefert NaN, obwohl die n-te Wurzel
+    // fuer ungerade ganze n reell definiert ist z.B. 3te Wurzel aus -8 = -2
+    //
+    //   value < 0                -> Radikand ist negativ
+    //   n == std::floor(n)       -> n ist eine ganze Zahl
+    //   std::fmod(n, 2.0) != 0.0 -> n ist ungerade (Rest bei Division durch 2 ist nicht 0)
+    //
+    // >> Wenn alle drei zutreffen ist das Ergebnis reel und negativ
+    if(isConstant && !isConstantTemplate() && other.isConstant && !other.isConstantTemplate()){
+        
+        // Ref
+        const float& n = other.value;
+
+        // Sonderfall : reeles, negatives Ergebnis
+        if (value < 0 && std::fmod(n, 2.0) != 0.0 && n == std::floor(n)) {
+
+            value = -std::pow(-value, 1.0 / n);
+        }
+        // Standardfall
+        else {
+
+            value = std::pow(value, 1.0 / n);
+        }
+
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    //
+    children.emplace_back(std::move(other));
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::nPowAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::nPow;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1 && other.tensorOrder < 1, "...",);
+
+
+    //
+    if(isConstant && !isConstantTemplate() && other.isConstant && !other.isConstantTemplate()){
+        
+        // Ref
+        const float& n = other.value;
+        value = std::pow(value, n);
+
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    //
+    children.emplace_back(std::move(other));
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
+void TensorExpression::nLogAssign(const TensorExpression& other){
+
+    //
+    static TensorExpressionOperator operation = TensorExpressionOperator::nLog;
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1 && other.tensorOrder < 1, "...",);
+
+
+    //
+    if(isConstant && !isConstantTemplate() && other.isConstant && !other.isConstantTemplate()){
+        
+        // Ref
+        const float& n = other.value;
+        value = std::log(value) / std::log(n);
+        
+        return;
+    }
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Operator;
+    Operator = operation;
+    tensorOrder = 0;
+
+    //
+    children.emplace_back(std::move(other));
+
+    // dimensions spielen hier keine rolle da ausdruck skalar ist >> beschreibende dimensions entsprechen default
+}
+
 void TensorExpression::sinAssign(){
 
     //
@@ -2654,9 +2771,13 @@ std::string TensorExpression::toString(size_t depth) const{
 
         res += "<" + label + ">";     
     }
+    else if(Relation == TkType::Operator && Operator != TensorExpressionOperator::None){
+
+        res += std::string(magic_enum::enum_name(Operator)) + fprintPlainVector(children, [&](const TensorExpression& elem){ return elem.toString(depth+1); });
+    }
     else{
 
-        res += "Invalid Expr";
+        res += "INVALID_EXPR";
     }
 
     // Auskommentieren für Logging ohne Dimensions und Stufen angabe
@@ -3688,6 +3809,346 @@ namespace types{
 
                 GET_RETURN(TENSOR_EXPRESSION, 0);
                 ret0->getMember().sqrtAssign();
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Operator Überladung
+        registerFunction("__nSqrtAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__nSqrtAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.nSqrtAssign(member1);
+        },
+        {});
+
+        // Operator Überladung
+        registerFunction("__nSqrtAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__nSqrtAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.nSqrtAssign(TensorExpression((float)arg1->getMember()));
+        },
+        {});
+
+        // Operator Überladung
+        registerFunction("__nSqrtAssign__", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "__nSqrtAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(DOUBLE, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.nSqrtAssign(TensorExpression(arg1->getMember()));
+        },
+        {});
+
+        //
+        registerFunction("nSqrt", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "nSqrt", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(TENSOR_EXPRESSION, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nSqrtAssign(arg1->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("nSqrt", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "nSqrt", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(INT, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nSqrtAssign(TensorExpression((float)arg1->getMember()));
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("nSqrt", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "nSqrt", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(DOUBLE, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nSqrtAssign(TensorExpression(arg1->getMember()));
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Operator Überladung
+        registerFunction("__nPowAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__nPowAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.nPowAssign(member1);
+        },
+        {});
+
+        // Operator Überladung
+        registerFunction("__nPowAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__nPowAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.nPowAssign(TensorExpression((float)arg1->getMember()));
+        },
+        {});
+
+        // Operator Überladung
+        registerFunction("__nPowAssign__", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "__nPowAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(DOUBLE, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.nPowAssign(TensorExpression(arg1->getMember()));
+        },
+        {});
+
+        //
+        registerFunction("nPow", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "nPow", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(TENSOR_EXPRESSION, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nPowAssign(arg1->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("nPow", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "nPow", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(INT, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nPowAssign(TensorExpression((float)arg1->getMember()));
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("nPow", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "nPow", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(DOUBLE, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nPowAssign(TensorExpression(arg1->getMember()));
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        // Operator Überladung
+        registerFunction("__nLogAssign__", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "__nLogAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(TENSOR_EXPRESSION, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                TensorExpression& member1 = arg1->getMember();
+
+                member0.nLogAssign(member1);
+        },
+        {});
+
+        // Operator Überladung
+        registerFunction("__nLogAssign__", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "__nLogAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(INT, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.nLogAssign(TensorExpression((float)arg1->getMember()));
+        },
+        {});
+
+        // Operator Überladung
+        registerFunction("__nLogAssign__", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "__nLogAssign__", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_ARG(TENSOR_EXPRESSION, 0); GET_ARG(DOUBLE, 1);
+
+                TensorExpression& member0 = arg0->getMember();
+                member0.nLogAssign(TensorExpression(arg1->getMember()));
+        },
+        {});        
+
+
+        //
+        registerFunction("nLog", {TENSOR_EXPRESSION::typeIndex, TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "nLog", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(TENSOR_EXPRESSION, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nLogAssign(arg1->getMember());
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("nLog", {TENSOR_EXPRESSION::typeIndex, INT::typeIndex},
+            [__functionLabel__ = "nLog", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(INT, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nLogAssign(TensorExpression((float)arg1->getMember()));
+        },
+        {TENSOR_EXPRESSION::typeIndex});
+
+        //
+        registerFunction("nLog", {TENSOR_EXPRESSION::typeIndex, DOUBLE::typeIndex},
+            [__functionLabel__ = "nLog", __numArgs__ = 2](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                if(inputs[0]->isLValue()){ returns[0].cloneIntoRValue(inputs[0]->getVariableRef()); }
+                else{ returns[0].moveIntoRValue(inputs[0]->getVariableRef()); }
+
+                //
+                GET_ARG(DOUBLE, 1);
+                GET_RETURN(TENSOR_EXPRESSION, 0);
+
+                ret0->getMember().nLogAssign(TensorExpression(arg1->getMember()));
         },
         {TENSOR_EXPRESSION::typeIndex});
 
