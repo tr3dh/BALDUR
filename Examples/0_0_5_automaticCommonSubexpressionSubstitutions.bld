@@ -67,7 +67,7 @@ decl evaluateExample(){
     slog("* Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
 
     //
-    void tIDNResult = toIDN(result)
+    void tIDNResult = toIdn(result)
     slog("* Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
 
     //

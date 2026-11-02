@@ -241,6 +241,35 @@ decl tUniExpr(string ref label, int order, int uniDimension){
     return [<- tExpr(label, order, args(uniDimension) * order)]
 }
 
+// erzeugt mehrere algebraische Tensorausdruecke mit uniformen Dimensionen
+decl tUniExprs(args labels, int order, int uniDimension){
+
+    args prms
+
+    for(int i = 0, i < labels -> size(), i++){
+
+        prms -> emplace(tUniExpr(labels[i], order, uniDimension))
+    }
+
+    return [prms]
+}
+
+//
+decl tExprScalar(string ref label){ return [tExpr(label, 0)] }
+
+//
+decl tExprScalars(args labels){
+
+    args prms
+
+    for(int i = 0, i < labels -> size(), i++){
+
+        prms -> emplace(tExprScalar(labels[i]))
+    }
+
+    return [prms]
+}
+
 //
 decl cofactor(tExpr ref lhs){ return [det(lhs) * transpose(inverse(lhs))] }
 

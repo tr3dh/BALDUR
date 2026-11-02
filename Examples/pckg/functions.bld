@@ -198,7 +198,7 @@ decl toWrappedIDN(tExpr ref expr){
     bool tmp = getUnwrapOperands()
 
     setUnwrapOperands(false)
-    tIdn res = toIDN(wrap(expr))
+    tIdn res = toIdn(wrap(expr))
 
     setUnwrapOperands(tmp)
 
@@ -210,7 +210,7 @@ decl toUnwrappedIDN(tExpr ref expr){
     bool tmp = getUnwrapOperands()
 
     setUnwrapOperands(true)
-    tIdn res = toIDN(unwrap(expr))
+    tIdn res = toIdn(unwrap(expr))
 
     setUnwrapOperands(tmp)
 

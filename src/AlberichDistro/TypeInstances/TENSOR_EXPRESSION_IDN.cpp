@@ -328,7 +328,7 @@ const std::vector<NotationIndex>& IndexNotatedTensorExpression::getSortedIndices
     return notatedIndices;
 }
 
-//         if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Addition){
+        //         if(member0.Relation != TkType::Operator || member0.Operator != IndexNotationOperator::Addition){
 
         //             moveSelfIntoFirstChild(arg0->getMember());
 
@@ -1228,9 +1228,74 @@ void IndexNotatedTensorExpression::sqrtAssign(){
     // reEvaluateIndices();
 }
 
-void IndexNotatedTensorExpression::nSqrtAssign(const IndexNotatedTensorExpression& other){}
-void IndexNotatedTensorExpression::nPowAssign(const IndexNotatedTensorExpression& other){}
-void IndexNotatedTensorExpression::nLogAssign(const IndexNotatedTensorExpression& other){}
+void IndexNotatedTensorExpression::nSqrtAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1 && other.tensorOrder < 1, "Nicht skalare Operanden an rein skalarer Operation beteiligt",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::nSqrt;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // Anpassen der notatedIndices nicht nötig, da child eh skalar ist
+
+    //
+    children.emplace_back(std::move(other));
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
+void IndexNotatedTensorExpression::nPowAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1 && other.tensorOrder < 1, "Nicht skalare Operanden an rein skalarer Operation beteiligt",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::nPow;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // Anpassen der notatedIndices nicht nötig, da child eh skalar ist
+
+    //
+    children.emplace_back(std::move(other));
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
+
+void IndexNotatedTensorExpression::nLogAssign(const IndexNotatedTensorExpression& other){
+
+    //
+    RETURNING_ASSERT(tensorOrder < 1 && other.tensorOrder < 1, "Nicht skalare Operanden an rein skalarer Operation beteiligt",);
+
+    //
+    moveSelfIntoFirstChild();
+
+    // node erneut Aufsetzen
+    Relation = TkType::Container;
+    Operator = IndexNotationOperator::nLog;
+    notatedIndices = {};
+    tensorOrder = 0;
+
+    // Anpassen der notatedIndices nicht nötig, da child eh skalar ist
+
+    //
+    children.emplace_back(std::move(other));
+
+    // reval falls durchgereichte Index Replaces zu dopplungen in notatedIndices führen
+    // reEvaluateIndices();
+}
 
 void IndexNotatedTensorExpression::sinAssign(){
 
@@ -1576,14 +1641,40 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
 
         //
         RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator " + std::string(magic_enum::enum_name(Operator)) + ", Node : " + toString(), "");
+        
+        // Behandlung von Skalare Summen/Differenzen mit gemischten Operanden (Indexterme und reine Skalare)
+        // Da @tensor keine Skalare als Summanden akzeptiert werden bei skalaren Operationen Indexnotationen vorher in
+        // temporaere Skalare ausgelagert
+        const bool isAddOrSub = (Operator == IndexNotationOperator::Addition || Operator == IndexNotationOperator::Subtraction); // Namen anpassen
+
+        if(isAddOrSub && tensorOrder == 0){
+
+            bool hasScalarOnly = false, hasIndexed = false;
+
+            for(auto& child : children){
+
+                if(child.containsOnlyScalars()){ hasScalarOnly = true; }
+                else{ hasIndexed = true; }
+            }
+
+            if(hasScalarOnly && hasIndexed){
+
+                for(auto& child : children){
+
+                    if(!child.containsOnlyScalars()){
+
+                        child.generateTensorSequenceTullioString(depth + 1, true);
+                        if(terminate){ return ""; }
+                    }
+                }
+            }
+        }
 
         //
         res += fprintPlainVector(children, [&](IndexNotatedTensorExpression& child){ return child.generateTensorSequenceTullioString(depth + 1);},
                                     true, " " + IndexNotationOperatorStrings[Operator] + " ");
     }
     else if(Relation == TkType::Container){
-
-        RETURNING_ASSERT(children.size() == 1, "...","");
 
         switch(Operator){
         
@@ -1599,6 +1690,9 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
             case IndexNotationOperator::Cotan:
             case IndexNotationOperator::Inversion:{
 
+                //    
+                RETURNING_ASSERT(children.size() == 1, "...","");
+
                 //
                 std::string jlFuncLabel;
 
@@ -1611,7 +1705,10 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                 else if(Operator == IndexNotationOperator::Cos){ jlFuncLabel = "cos"; }
                 else if(Operator == IndexNotationOperator::Tan){ jlFuncLabel = "tan"; }
                 else if(Operator == IndexNotationOperator::Cotan){ jlFuncLabel = "cot"; }
-                else{ jlFuncLabel = "inv"; }
+                else if(Operator == IndexNotationOperator::Inversion){ jlFuncLabel = "inv"; }
+                else if(Operator == IndexNotationOperator::nSqrt){ jlFuncLabel = "nSqrt"; }
+                else if(Operator == IndexNotationOperator::nPow){ jlFuncLabel = "nPow"; }
+                else if(Operator == IndexNotationOperator::nLog){ jlFuncLabel = "nLog"; }
 
                 //
                 children.front().generateTensorSequenceTullioString(depth + 1, true);
@@ -1630,6 +1727,39 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
                     res += jlFuncLabel + "(" + children.front().generateTensorSequenceTullioString(depth + 1, false, true) + ")";
                 }
 
+                std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
+                int complexity = getNumOfNodes();
+
+                //
+                dependencieDecls += "\t" + extNodeLabel + " = Base.zeros(Float64, " + printPlainVector(dimensions, false) + ")\n";
+
+                //
+                // dependencieAssignment += "\n\tprintln(\"[Evaluating '" + extNodeLabel + "', Komplexität " + std::to_string(complexity) + fprintPlainVector(children, [](IndexNotatedTensorExpression& child){ return std::to_string(child.getNumOfNodes()); }) + "]\")";
+                dependencieAssignment += "\n\t" + extNodeLabel + " = " + res + "\n";
+
+                *this = asExternalNode(extNodeLabel);
+                res = generateTensorSequenceTullioString(depth + 1);
+
+                break;
+            }
+            case IndexNotationOperator::nSqrt:
+            case IndexNotationOperator::nPow:
+            case IndexNotationOperator::nLog: {
+                
+                //
+                std::string jlFuncLabel;
+
+                if(Operator == IndexNotationOperator::nSqrt){ jlFuncLabel = "nSqrt"; }
+                else if(Operator == IndexNotationOperator::nPow){ jlFuncLabel = "nPow"; }
+                else if(Operator == IndexNotationOperator::nLog){ jlFuncLabel = "nLog"; }
+
+                //
+                bool returnScalar = tensorOrder == 0;
+                bool onlyScalars = containsOnlyScalars();
+                bool useTOps = (returnScalar && !onlyScalars) || !returnScalar;
+
+                res += jlFuncLabel + fprintPlainVector(children, [depth](IndexNotatedTensorExpression& elem){ return elem.generateTensorSequenceTullioString(depth + 1, false, true); });
+                
                 std::string extNodeLabel = "tmpRes_" + std::to_string(dependencieIdx++);
                 int complexity = getNumOfNodes();
 
@@ -1730,90 +1860,9 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceTullioString(siz
     return res;
 }
 
-//
-std::string IndexNotatedTensorExpression::toJuliaString(const std::string& instanceLabel, const std::vector<IndexNotatedTensorExpression>& depsKeys, const std::vector<IndexNotatedTensorExpression>& depsValues) const {
+std::string IndexNotatedTensorExpression::generateJuliaHelpers(){
 
-    //
-    RETURNING_ASSERT(containsDimensions(), "Ohne Dimensionsberücksichtigung kann Julia Skript nicht erstellt werden","");
-
-    // Unique External Nodes
-    auto uniqueExternals = getUniqueExternalNodes();
-
-    // Format :
-    // * depsKeys ist ein Vektor mit den konditionierten externen Nodes für die ein Ausdruck substituiert wird
-    // * depsVals ist die entsprechende Substitution
-    //
-    // Bspl.
-    // DepsKeys[0] = tIdn("devSigma", ...) | DepsVals[0] = toIDN(S . (E0 . (eps0 - epsvp0))  
-
-    //
-    RETURNING_ASSERT(depsKeys.size() == depsValues.size(), "Ungleiche Listengrößen für Deps angegeben", "");
-
-    // //
-    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
-
-    // Übertrag der Abhängigkeiten
-    for(size_t i = 0; i < depsKeys.size(); i++){
-
-        std::vector<const IndexNotatedTensorExpression*> uniqueDepExternals = depsValues[i].getUniqueExternalNodes();
-
-        // //
-        // LOG << fprintPlainVector(uniqueDepExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
-
-        for(auto uniqueNode : uniqueDepExternals){
-
-            bool alreadyIn = std::find_if(uniqueExternals.begin(), uniqueExternals.end(),
-                [uniqueNode](const IndexNotatedTensorExpression* existing) {
-                    return areEqualExternals(*existing, *uniqueNode);
-                }) != uniqueExternals.end();
-
-            if (!alreadyIn) {
-                uniqueExternals.push_back(uniqueNode);
-            }
-        }
-    }
-
-    // //
-    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
-
-    // Löschen der Substituierten aus den Abhängigkeiten
-    for(size_t i = 0; i < depsKeys.size(); i++){
-
-        // Sicherstellen das depsKey externe Node ist
-        RETURNING_ASSERT(areEqualExternals(depsKeys[i].asExternalNode(depsKeys[i].label), depsKeys[i]), "Übergebene Substitution ist keine externe Node", "");
-
-        //
-        uniqueExternals.erase(
-            std::remove_if(uniqueExternals.begin(), uniqueExternals.end(),
-                [&](const IndexNotatedTensorExpression* existing) {
-                    return areEqualExternals(*existing, depsKeys[i]);
-                }),
-            uniqueExternals.end()
-        );
-    }
-
-    // Return string
     std::string res;
-
-    //
-    res += "# Julia Skript\n#\n";
-    res += "# unique external nodes :\n";
-
-    //
-    for(const auto& node : uniqueExternals){
-
-        res += "# | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
-        res += printPlainVector(node->dimensions, false);
-        res += "}\n";
-    }
-
-    //
-    for(const auto& node : depsKeys){
-
-        res += "# | deps '" + getArgLabel(node) + "', order [" + std::to_string(node.tensorOrder) + "], dimensions {";
-        res += printPlainVector(node.dimensions, false);
-        res += "}\n";
-    }
 
     res += "\n";
     res += "using LinearAlgebra\nusing TensorOperations\nusing Dates\n\n";
@@ -1903,8 +1952,9 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     res += "const Scalar0 = Array{Float64,0}\n\n";
 
-    res += "import Base: +, -, *, /, sqrt\n";
-    res += "import Base: sin, cos, tan, cot\n\n";
+    res += "import Base: +, -, *, /, ^, sqrt, inv\n";
+    res += "import Base: sin, cos, tan, cot, log\n\n";
+    res += "import LinearAlgebra: det\n\n";
 
     res += "+(a::Scalar0, b::Scalar0) = a[] + b[]\n";
     res += "+(a::Scalar0, b::Real)    = a[] + b\n";
@@ -1923,6 +1973,12 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
     res += "/(a::Scalar0, b::Real)    = a[] / b\n";
     res += "/(a::Real,    b::Scalar0) = a / b[]\n\n";
 
+    res += "^(a::Scalar0, b::Scalar0) = a[] ^ b[]\n";
+    res += "^(a::Scalar0, b::Real)    = a[] ^ b\n";
+    res += "^(a::Real,    b::Scalar0) = a ^ b[]\n\n";
+
+    res += "log(a::Scalar0) = log(a[])\n";
+
     res += "sqrt(a::Scalar0) = sqrt(a[])\n";
     res += "sin(a::Scalar0)  = sin(a[])\n";
     res += "cos(a::Scalar0)  = cos(a[])\n";
@@ -1931,6 +1987,131 @@ std::string IndexNotatedTensorExpression::toJuliaString(const std::string& insta
 
     res += "det(a::Scalar0)  = a[]\n";
     res += "inv(a::Scalar0)  = 1 / a[]\n\n";
+
+    res += "function nSqrt(a, n)\n";
+    res += "    x = a isa AbstractArray ? a[] : a\n";
+    res += "    k = n isa AbstractArray ? n[] : n\n";
+    res += "    if x < 0\n";
+    res += "        # negativer Radikand: nur fuer ungerade ganze n reell definiert\n";
+    res += "        if isinteger(k) && isodd(Int(k))\n";
+    res += "            return -((-x)^(1 / k))\n";
+    res += "        end\n";
+    res += "        return NaN\n";
+    res += "    end\n";
+    res += "    return x^(1 / k)\n";
+    res += "end\n\n";
+
+    res += "function nPow(a, n)\n";
+    res += "    x = a isa AbstractArray ? a[] : a\n";
+    res += "    k = n isa AbstractArray ? n[] : n\n";
+    res += "    # negative Basis mit nicht-ganzzahligem Exponent: kein reelles Ergebnis\n";
+    res += "    if x < 0 && !isinteger(k)\n";
+    res += "        return NaN\n";
+    res += "    end\n";
+    res += "    return x^k\n";
+    res += "end\n\n";
+
+    res += "function nLog(a, n)\n";
+    res += "    x = a isa AbstractArray ? a[] : a\n";
+    res += "    k = n isa AbstractArray ? n[] : n\n";
+    res += "    # Argument und Basis muessen nicht-negativ sein\n";
+    res += "    if x < 0 || k < 0\n";
+    res += "        return NaN\n";
+    res += "    end\n";
+    res += "    return log(x) / log(k)\n";
+    res += "end\n\n";
+
+    return res;
+}
+
+//
+std::string IndexNotatedTensorExpression::toJuliaString(const std::string& instanceLabel, const std::vector<IndexNotatedTensorExpression>& depsKeys, const std::vector<IndexNotatedTensorExpression>& depsValues) const {
+
+    //
+    RETURNING_ASSERT(containsDimensions(), "Ohne Dimensionsberücksichtigung kann Julia Skript nicht erstellt werden","");
+
+    // Unique External Nodes
+    auto uniqueExternals = getUniqueExternalNodes();
+
+    // Format :
+    // * depsKeys ist ein Vektor mit den konditionierten externen Nodes für die ein Ausdruck substituiert wird
+    // * depsVals ist die entsprechende Substitution
+    //
+    // Bspl.
+    // DepsKeys[0] = tIdn("devSigma", ...) | DepsVals[0] = toIdn(S . (E0 . (eps0 - epsvp0))  
+
+    //
+    RETURNING_ASSERT(depsKeys.size() == depsValues.size(), "Ungleiche Listengrößen für Deps angegeben", "");
+
+    // //
+    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
+    // Übertrag der Abhängigkeiten
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        std::vector<const IndexNotatedTensorExpression*> uniqueDepExternals = depsValues[i].getUniqueExternalNodes();
+
+        // //
+        // LOG << fprintPlainVector(uniqueDepExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
+        for(auto uniqueNode : uniqueDepExternals){
+
+            bool alreadyIn = std::find_if(uniqueExternals.begin(), uniqueExternals.end(),
+                [uniqueNode](const IndexNotatedTensorExpression* existing) {
+                    return areEqualExternals(*existing, *uniqueNode);
+                }) != uniqueExternals.end();
+
+            if (!alreadyIn) {
+                uniqueExternals.push_back(uniqueNode);
+            }
+        }
+    }
+
+    // //
+    // LOG << fprintPlainVector(uniqueExternals, [](const IndexNotatedTensorExpression* elem){ return elem -> toString(1); }) << endln;
+
+    // Löschen der Substituierten aus den Abhängigkeiten
+    for(size_t i = 0; i < depsKeys.size(); i++){
+
+        // Sicherstellen das depsKey externe Node ist
+        RETURNING_ASSERT(areEqualExternals(depsKeys[i].asExternalNode(depsKeys[i].label), depsKeys[i]), "Übergebene Substitution ist keine externe Node", "");
+
+        //
+        uniqueExternals.erase(
+            std::remove_if(uniqueExternals.begin(), uniqueExternals.end(),
+                [&](const IndexNotatedTensorExpression* existing) {
+                    return areEqualExternals(*existing, depsKeys[i]);
+                }),
+            uniqueExternals.end()
+        );
+    }
+
+    // Return string
+    std::string res;
+
+    //
+    res += "# Julia Skript\n#\n";
+    res += "# unique external nodes :\n";
+
+    //
+    for(const auto& node : uniqueExternals){
+
+        res += "# | arg '" + getArgLabel(*node) + "', order [" + std::to_string(node->tensorOrder) + "], dimensions {";
+        res += printPlainVector(node->dimensions, false);
+        res += "}\n";
+    }
+
+    //
+    for(const auto& node : depsKeys){
+
+        res += "# | deps '" + getArgLabel(node) + "', order [" + std::to_string(node.tensorOrder) + "], dimensions {";
+        res += printPlainVector(node.dimensions, false);
+        res += "}\n";
+    }
+
+    if(generateExportHelpers){
+        res += generateJuliaHelpers();
+    }
 
     //
     res += "\n";
@@ -2146,9 +2327,7 @@ std::string IndexNotatedTensorExpression::toString(size_t depth) const {
 
         result += ")";
     }
-    else if(Relation == TkType::Operator){
-
-        RETURNING_ASSERT(IndexNotationOperatorStrings.contains(Operator), "Unbekannter IndexNotationOperator", "");
+    else if(Relation == TkType::Operator && IndexNotationOperatorStrings.contains(Operator)){
 
         result += depth > 0 ? "(" : "";
 
@@ -2161,6 +2340,10 @@ std::string IndexNotatedTensorExpression::toString(size_t depth) const {
         }
 
         result += depth > 0 ? ")" : "";
+    }
+    else if(Relation == TkType::Operator){
+
+        result += std::string(magic_enum::enum_name(Operator)) + fprintPlainVector(children, [&](const IndexNotatedTensorExpression& elem){ return elem.toString(depth+1); });
     }
 
 
@@ -2256,6 +2439,9 @@ std::map<TensorExpressionOperator, void(IndexNotatedTensorExpression::*)(const I
     {TensorExpressionOperator::MirroringDoubleContraction, &IndexNotatedTensorExpression::mirroringDoubleContractionAssign},
     {TensorExpressionOperator::CrossingDoubleContraction, &IndexNotatedTensorExpression::crossingDoubleContractionAssign},
     {TensorExpressionOperator::Diff, &IndexNotatedTensorExpression::diffAssign},
+    {TensorExpressionOperator::nSqrt, &IndexNotatedTensorExpression::nSqrtAssign},
+    {TensorExpressionOperator::nPow, &IndexNotatedTensorExpression::nPowAssign},
+    {TensorExpressionOperator::nLog, &IndexNotatedTensorExpression::nLogAssign},
 };
 
 // void IndexNotatedTensorExpression::reEvaluateIndices(){
@@ -2510,8 +2696,8 @@ namespace types{
         {INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex});
 
         //
-        registerFunction("toIDN", {TENSOR_EXPRESSION::typeIndex},
-            [__functionLabel__ = "toIDN", __numArgs__ = 1](FREG_ARGS){
+        registerFunction("toIdn", {TENSOR_EXPRESSION::typeIndex},
+            [__functionLabel__ = "toIdn", __numArgs__ = 1](FREG_ARGS){
 
                 // Asserts
                 ASSERT_IS_NO_MEMBER_FUNCTION;
@@ -2920,6 +3106,36 @@ namespace types{
                 member0.diffAssign(member1);
         },
         {});
+
+        //
+        registerFunction("generateJuliaHelpers", {},
+            [__functionLabel__ = "generateJuliaHelpers", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(STRING, 0);
+                ret0->getMember() = IndexNotatedTensorExpression::generateJuliaHelpers();
+        },
+        {STRING::typeIndex});
+
+        //
+        registerFunction("generateFortranHelpers", {},
+            [__functionLabel__ = "generateFortranHelpers", __numArgs__ = 0](FREG_ARGS){
+
+                // Asserts
+                ASSERT_IS_NO_MEMBER_FUNCTION;
+                ASSERT_HAS_N_INPUT_ARGS(__numArgs__);
+                PREPARE_RETURNS;
+
+                // Returns
+                GET_RETURN(STRING, 0);
+                ret0->getMember() = IndexNotatedTensorExpression::generateFortranHelpers();
+        },
+        {STRING::typeIndex});
 
         //
         registerMemberFunction(INDEX_NOTATED_TENSOR_EXPRESSION::typeIndex, "toJuliaString", {},
@@ -3381,7 +3597,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
     }
     else if(Relation == TkType::Container){
 
-        RETURNING_ASSERT(children.size() == 1, "...","");
+        
 
         switch(Operator){
         
@@ -3394,6 +3610,9 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
             case IndexNotationOperator::Tan:
             case IndexNotationOperator::Cotan:{
                 
+                //
+                RETURNING_ASSERT(children.size() == 1, "...","");
+
                 //
                 RETURNING_ASSERT(tensorOrder == 0, "...","");
 
@@ -3414,6 +3633,29 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
 
                 //
                 res += FuncLabel + (areCallArgsWrappedInParens ? "" : "(") + callArgs + (areCallArgsWrappedInParens ? "" : ")"); 
+
+                break;
+            }
+            //
+            case IndexNotationOperator::nSqrt:
+            case IndexNotationOperator::nPow:
+            case IndexNotationOperator::nLog:{
+
+                //
+                RETURNING_ASSERT(tensorOrder == 0, "...","");
+
+                //
+                std::string FuncLabel;
+
+                if(Operator == IndexNotationOperator::nSqrt){ FuncLabel = "NSQRT"; }
+                else if(Operator == IndexNotationOperator::nPow){ FuncLabel = "NPOW"; }
+                else if(Operator == IndexNotationOperator::nLog){ FuncLabel = "NLOG"; }
+
+                // Beide Operanden einzeln als Argumente erzeugen
+                std::string firstArg  = children[0].generateTensorSequenceFortranString(depth + 1, false, useTensorNotation, "");
+                std::string secondArg = children[1].generateTensorSequenceFortranString(depth + 1, false, useTensorNotation, "");
+
+                res += FuncLabel + "(" + firstArg + ", " + secondArg + ")";
 
                 break;
             }
@@ -3463,7 +3705,6 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
                 return generateTensorSequenceFortranString(depth + 1, forceSubstitution, useTensorNotation, "");
                 break;
             }
-
             default:{
 
                 res += children.front().generateTensorSequenceFortranString(depth + 1, false, useTensorNotation, "");
@@ -3471,6 +3712,558 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
             }
         }
     }
+
+    return res;
+}
+
+std::string IndexNotatedTensorExpression::generateFortranHelpers(){
+
+    std::string res;
+
+    res += "\n";
+    res += "C     Gibt die Groeße des 1D-Arrays zurück,\n";
+    res += "C     dass über die Dimensionen projiziert wird\n";
+    res += "      INTEGER FUNCTION TENS_SIZE(DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER DIMS(*), RANK, I, S\n";
+    res += "      S = 1\n";
+    res += "      DO 10 I = 1, RANK\n";
+    res += "        S = S * DIMS(I)\n";
+    res += "   10 CONTINUE\n";
+    res += "      TENS_SIZE = S\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Mapt Indices pro Dimension auf Index in\n";
+    res += "C     1D-Array\n";
+    res += "      INTEGER FUNCTION TENS_INDEX(DIMS, RANK, IDX)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER DIMS(*), RANK, IDX(*), I, S, STRIDE\n";
+    res += "      S = 1\n";
+    res += "      STRIDE = 1\n";
+    res += "      DO 10 I = 1, RANK\n";
+    res += "        S = S + (IDX(I)-1)*STRIDE\n";
+    res += "        STRIDE = STRIDE*DIMS(I)\n";
+    res += "   10 CONTINUE\n";
+    res += "      TENS_INDEX = S\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt einen Nulltensor in uebergenem\n";
+    res += "C     Tensor 'A' für uebergebenen Dimension\n";
+    res += "C     und Ordnung\n";
+    res += "      SUBROUTINE CREATE_ZEROS(A, DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER DIMS(*), RANK, N, I\n";
+    res += "      INTEGER TENS_SIZE\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      N = TENS_SIZE(DIMS, RANK)\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        A(I) = 0.0D0\n";
+    res += "   10 CONTINUE\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt einen Einsentensor in uebergenem\n";
+    res += "C     Tensor 'A' für uebergebenen Dimension\n";
+    res += "C     und Ordnung\n";
+    res += "      SUBROUTINE CREATE_ONES(A, DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER DIMS(*), RANK, N, I\n";
+    res += "      INTEGER TENS_SIZE\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      N = TENS_SIZE(DIMS, RANK)\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        A(I) = 1.0D0\n";
+    res += "   10 CONTINUE\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt einen Einheitstensor in uebergenem\n";
+    res += "C     Tensor 'A' für uebergebenen Dimension\n";
+    res += "C     und Ordnung\n";
+    res += "      SUBROUTINE CREATE_IDENTITY(A, DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER MAXR\n";
+    res += "      PARAMETER (MAXR=8)\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      INTEGER DIMS(*), RANK, N, K, NTOT, I, M, POS\n";
+    res += "      INTEGER TENS_SIZE\n";
+    res += "      INTEGER IDX(MAXR), POW(MAXR)\n";
+    res += "      N = DIMS(1)\n";
+    res += "      K = RANK/2\n";
+    res += "      NTOT = TENS_SIZE(DIMS, RANK)\n";
+    res += "      DO 10 I = 1, NTOT\n";
+    res += "        A(I) = 0.0D0\n";
+    res += "   10 CONTINUE\n";
+    res += "      POW(1) = 1\n";
+    res += "      DO 20 M = 2, RANK\n";
+    res += "        POW(M) = POW(M-1)*N\n";
+    res += "   20 CONTINUE\n";
+    res += "      DO 30 I = 1, K\n";
+    res += "        IDX(I) = 1\n";
+    res += "   30 CONTINUE\n";
+    res += "   40 CONTINUE\n";
+    res += "        POS = 1\n";
+    res += "        DO 50 M = 1, K\n";
+    res += "          POS = POS + (IDX(M)-1)*(POW(M)+POW(K+M))\n";
+    res += "   50   CONTINUE\n";
+    res += "        A(POS) = 1.0D0\n";
+    res += "        M = 1\n";
+    res += "   60   CONTINUE\n";
+    res += "        IDX(M) = IDX(M) + 1\n";
+    res += "        IF (IDX(M) .LE. N) GOTO 40\n";
+    res += "        IDX(M) = 1\n";
+    res += "        M = M + 1\n";
+    res += "        IF (M .LE. K) GOTO 60\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt einen Levi-Civita-Tensor in uebergenem\n";
+    res += "C     Tensor 'A' für uebergebenen Dimension\n";
+    res += "C     und Ordnung\n";
+    res += "      SUBROUTINE CREATE_EPS(A)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      INTEGER I, J, K, POS, SGN\n";
+    res += "      DO 10 I = 1, 27\n";
+    res += "        A(I) = 0.0D0\n";
+    res += "   10 CONTINUE\n";
+    res += "      DO 20 I = 1, 3\n";
+    res += "        DO 30 J = 1, 3\n";
+    res += "          DO 40 K = 1, 3\n";
+    res += "            POS = 1 + (I-1) + (J-1)*3 + (K-1)*9\n";
+    res += "            SGN = (I-J)*(J-K)*(K-I)/2\n";
+    res += "            A(POS) = DBLE(SGN)\n";
+    res += "   40     CONTINUE\n";
+    res += "   30   CONTINUE\n";
+    res += "   20 CONTINUE\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt in uebergenem Tensor 'B'\n";
+    res += "C     die Macaulynormen der Elemente von 'A'\n";
+    res += "C     fuer 'N' Elemente\n";
+    res += "      SUBROUTINE ELWISE_MACAULAY(A, B, N)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 A(*), B(*)\n";
+    res += "      INTEGER N, I\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        IF (A(I) .GT. 0.0D0) THEN\n";
+    res += "          B(I) = A(I)\n";
+    res += "        ELSE\n";
+    res += "          B(I) = 0.0D0\n";
+    res += "        END IF\n";
+    res += "   10 CONTINUE\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt in uebergenem Tensor 'B'\n";
+    res += "C     die Signumnormen der Elemente von 'A'\n";
+    res += "C     fuer 'N' Elemente\n";
+    res += "      SUBROUTINE ELWISE_SIGNUM(A, B, N)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 A(*), B(*)\n";
+    res += "      INTEGER N, I\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        IF (A(I) .GT. 0.0D0) THEN\n";
+    res += "          B(I) = 1.0D0\n";
+    res += "        ELSE IF (A(I) .LT. 0.0D0) THEN\n";
+    res += "          B(I) = -1.0D0\n";
+    res += "        ELSE\n";
+    res += "          B(I) = 0.0D0\n";
+    res += "        END IF\n";
+    res += "   10 CONTINUE\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt in uebergenem Tensor 'B'\n";
+    res += "C     die Frobeniusnorm von 'A'\n";
+    res += "C     fuer 'N' Elemente\n";
+    res += "      SUBROUTINE FROBENIUS(A, B, N)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 A(*), B(*)\n";
+    res += "      INTEGER N, I\n";
+    res += "      REAL*8 S\n";
+    res += "\n";
+    res += "      S = 0.0D0\n";
+    res += "\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        S = S + A(I)**2\n";
+    res += "   10 CONTINUE\n";
+    res += "\n";
+    res += "      B(1) = DSQRT(S)\n";
+    res += "\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     gibt einen Tensor vollstaendig aus\n";
+    res += "      SUBROUTINE PRINT_TENSOR(A, DIMS, RANK, NAME)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      CHARACTER*(*) NAME\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      INTEGER DIMS(*), RANK, N, I, COL\n";
+    res += "      INTEGER TENS_SIZE\n";
+    res += "      INTEGER PERLINE\n";
+    res += "      PARAMETER (PERLINE=6)\n";
+    res += "      N = TENS_SIZE(DIMS, RANK)\n";
+    res += "      WRITE(*,*) NAME, '  rank=', RANK, ' dims=(',\n";
+    res += "     &            (DIMS(I), I=1,RANK), ')  N=', N\n";
+    res += "      COL = 0\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        WRITE(*,'(1X,ES13.5,$)') A(I)\n";
+    res += "        COL = COL + 1\n";
+    res += "        IF (COL .GE. PERLINE) THEN\n";
+    res += "          WRITE(*,*)\n";
+    res += "          COL = 0\n";
+    res += "        END IF\n";
+    res += "   10 CONTINUE\n";
+    res += "      IF (COL .GT. 0) WRITE(*,*)\n";
+    res += "      RETURN\n";
+    res += "      END\n\n\n";
+    res += "\n";
+    res += "C     Erstellt einen Zufallstensor in uebergenem\n";
+    res += "C     Tensor 'A' fuer uebergebenen Dimension\n";
+    res += "C     und Ordnung (Werte gleichverteilt in [0,1))\n";
+    res += "      SUBROUTINE CREATE_RANDOM(A, DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER DIMS(*), RANK, N\n";
+    res += "      INTEGER TENS_SIZE\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      N = TENS_SIZE(DIMS, RANK)\n";
+    res += "      CALL RANDOM_NUMBER(A(1:N))\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Erstellt Zufallstensor in [LOW, HIGH)\n";
+    res += "      SUBROUTINE CREATE_RANDOM_RANGE(A, DIMS, RANK,\n";
+    res += "     &                                LOW, HIGH)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER DIMS(*), RANK, N, I\n";
+    res += "      INTEGER TENS_SIZE\n";
+    res += "      REAL*8 LOW, HIGH\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      N = TENS_SIZE(DIMS, RANK)\n";
+    res += "      CALL RANDOM_NUMBER(A(1:N))\n";
+    res += "      DO 10 I = 1, N\n";
+    res += "        A(I) = LOW + A(I)*(HIGH-LOW)\n";
+    res += "   10 CONTINUE\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Macaulay-Klammer: liefert X, falls X > 0, sonst 0\n";
+    res += "      REAL*8 FUNCTION MACAULAY(X)\n";
+    res += "      REAL*8 X\n";
+    res += "      IF (X .GT. 0.0D0) THEN\n";
+    res += "        MACAULAY = X\n";
+    res += "      ELSE\n";
+    res += "        MACAULAY = 0.0D0\n";
+    res += "      END IF\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Signum-Funktion: liefert -1, 0 oder 1 je nach Vorzeichen von X\n";
+    res += "      REAL*8 FUNCTION SIGNUM(X)\n";
+    res += "      REAL*8 X\n";
+    res += "      IF (X .GT. 0.0D0) THEN\n";
+    res += "        SIGNUM = 1.0D0\n";
+    res += "      ELSE IF (X .LT. 0.0D0) THEN\n";
+    res += "        SIGNUM = -1.0D0\n";
+    res += "      ELSE\n";
+    res += "        SIGNUM = 0.0D0\n";
+    res += "      END IF\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Setzt einen festen Seed fuer reproduzierbare\n";
+    res += "C     Zufallszahlen\n";
+    res += "      SUBROUTINE SET_SEED(SEEDVAL)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER SEEDVAL\n";
+    res += "      INTEGER, ALLOCATABLE :: SEED(:)\n";
+    res += "      INTEGER N\n";
+    res += "      CALL RANDOM_SEED(SIZE=N)\n";
+    res += "      ALLOCATE(SEED(N))\n";
+    res += "      SEED = SEEDVAL\n";
+    res += "      CALL RANDOM_SEED(PUT=SEED)\n";
+    res += "      DEALLOCATE(SEED)\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Invertiert einen Tensor gerader Ordnung RANK (=2K),\n";
+    res += "C     aufgefasst als lineare Abbildung zwischen Tensoren\n";
+    res += "C     der Ordnung K (erste K Indizes = Zeilen, letzte K = Spalten).\n";
+    res += "C     Ergebnis wird nach B geschrieben.\n";
+    res += "      SUBROUTINE INVERT_TENSOR(A, B, DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER MAXN\n";
+    res += "      PARAMETER (MAXN=64)\n";
+    res += "      REAL*8 A(*), B(*)\n";
+    res += "      INTEGER DIMS(*), RANK, K, I, J, M\n";
+    res += "      INTEGER NROW, NCOL, PIVOTROW\n";
+    res += "      REAL*8 FACTOR, PIVOT, TEMP\n";
+    res += "      REAL*8 AUG(MAXN, 2*MAXN)\n";
+    res += "\n";
+    res += "C     Ordnung muss gerade sein\n";
+    res += "      IF (MOD(RANK,2) .NE. 0) THEN\n";
+    res += "        WRITE(*,*) 'INVERT_TENSOR: RANK muss gerade sein'\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "      K = RANK/2\n";
+    res += "\n";
+    res += "C     NROW = Produkt der ersten K Dimensionen\n";
+    res += "      NROW = 1\n";
+    res += "      DO 10 I = 1, K\n";
+    res += "        NROW = NROW * DIMS(I)\n";
+    res += "   10 CONTINUE\n";
+    res += "\n";
+    res += "C     NCOL = Produkt der letzten K Dimensionen\n";
+    res += "      NCOL = 1\n";
+    res += "      DO 20 I = K+1, RANK\n";
+    res += "        NCOL = NCOL * DIMS(I)\n";
+    res += "   20 CONTINUE\n";
+    res += "\n";
+    res += "C     Matrix muss quadratisch sein\n";
+    res += "      IF (NROW .NE. NCOL) THEN\n";
+    res += "        WRITE(*,*) 'INVERT_TENSOR: nicht quadratisch, ',\n";
+    res += "     &              NROW, ' x ', NCOL\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "      IF (NROW .GT. MAXN) THEN\n";
+    res += "        WRITE(*,*) 'INVERT_TENSOR: MAXN zu klein fuer ', NROW\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "C     Erweiterte Matrix [A | I] aufbauen\n";
+    res += "C     (A ist bereits im flachen Speicher exakt eine NROWxNCOL-Matrix)\n";
+    res += "      DO 30 I = 1, NROW\n";
+    res += "        DO 40 J = 1, NCOL\n";
+    res += "          AUG(I, J) = A((J-1)*NROW + I)\n";
+    res += "   40   CONTINUE\n";
+    res += "        DO 50 J = 1, NCOL\n";
+    res += "          IF (I .EQ. J) THEN\n";
+    res += "            AUG(I, NCOL+J) = 1.0D0\n";
+    res += "          ELSE\n";
+    res += "            AUG(I, NCOL+J) = 0.0D0\n";
+    res += "          END IF\n";
+    res += "   50   CONTINUE\n";
+    res += "   30 CONTINUE\n";
+    res += "\n";
+    res += "C     Gauss-Jordan-Elimination mit Zeilenpivotisierung\n";
+    res += "      DO 60 M = 1, NROW\n";
+    res += "        PIVOTROW = M\n";
+    res += "        PIVOT = DABS(AUG(M,M))\n";
+    res += "        DO 70 I = M+1, NROW\n";
+    res += "          IF (DABS(AUG(I,M)) .GT. PIVOT) THEN\n";
+    res += "            PIVOT = DABS(AUG(I,M))\n";
+    res += "            PIVOTROW = I\n";
+    res += "          END IF\n";
+    res += "   70   CONTINUE\n";
+    res += "\n";
+    res += "        IF (PIVOT .LT. 1.0D-14) THEN\n";
+    res += "          WRITE(*,*) 'INVERT_TENSOR: singulaer bei Spalte ', M\n";
+    res += "          STOP\n";
+    res += "        END IF\n";
+    res += "\n";
+    res += "        IF (PIVOTROW .NE. M) THEN\n";
+    res += "          DO 80 J = 1, 2*NCOL\n";
+    res += "            TEMP = AUG(M,J)\n";
+    res += "            AUG(M,J) = AUG(PIVOTROW,J)\n";
+    res += "            AUG(PIVOTROW,J) = TEMP\n";
+    res += "   80     CONTINUE\n";
+    res += "        END IF\n";
+    res += "\n";
+    res += "        FACTOR = AUG(M,M)\n";
+    res += "        DO 90 J = 1, 2*NCOL\n";
+    res += "          AUG(M,J) = AUG(M,J) / FACTOR\n";
+    res += "   90   CONTINUE\n";
+    res += "\n";
+    res += "        DO 100 I = 1, NROW\n";
+    res += "          IF (I .NE. M) THEN\n";
+    res += "            FACTOR = AUG(I,M)\n";
+    res += "            DO 110 J = 1, 2*NCOL\n";
+    res += "              AUG(I,J) = AUG(I,J) - FACTOR*AUG(M,J)\n";
+    res += "  110       CONTINUE\n";
+    res += "          END IF\n";
+    res += "  100   CONTINUE\n";
+    res += "   60 CONTINUE\n";
+    res += "\n";
+    res += "C     Rechte Haelfte zurueck in B schreiben (gleiches Layout wie A)\n";
+    res += "      DO 120 I = 1, NROW\n";
+    res += "        DO 130 J = 1, NCOL\n";
+    res += "          B((J-1)*NROW + I) = AUG(I, NCOL+J)\n";
+    res += "  130   CONTINUE\n";
+    res += "  120 CONTINUE\n";
+    res += "\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n\n";
+    res += "C     Invertiert einen Tensor der Ordnung 0 (Skalar),\n";
+    res += "C     also B = 1/A\n";
+    res += "      SUBROUTINE INVERT_SCALAR(A, B)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 A, B\n";
+    res += "\n";
+    res += "      IF (DABS(A) .LT. 1.0D-14) THEN\n";
+    res += "        WRITE(*,*) 'INVERT_SCALAR: Division durch Null'\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "      B = 1.0D0 / A\n";
+    res += "\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "\n";
+    res += "C     Berechnet die Determinante eines Tensors gerader\n";
+    res += "C     Ordnung RANK (=2K), aufgefasst als lineare Abbildung\n";
+    res += "C     zwischen Tensoren der Ordnung K (analog zu\n";
+    res += "C     INVERT_TENSOR). Ergebnis wird als Skalar DET\n";
+    res += "C     zurueckgegeben.\n";
+    res += "      SUBROUTINE DET_TENSOR(A, DET, DIMS, RANK)\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      INTEGER MAXN\n";
+    res += "      PARAMETER (MAXN=64)\n";
+    res += "      REAL*8 A(*)\n";
+    res += "      INTEGER DIMS(*), RANK, K, I, J, M\n";
+    res += "      INTEGER NROW, NCOL, PIVOTROW\n";
+    res += "      REAL*8 FACTOR, PIVOT, TEMP, DET, SGN\n";
+    res += "      REAL*8 MAT(MAXN, MAXN)\n";
+    res += "\n";
+    res += "C     Ordnung muss gerade sein\n";
+    res += "      IF (MOD(RANK,2) .NE. 0) THEN\n";
+    res += "        WRITE(*,*) 'DET_TENSOR: RANK muss gerade sein'\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "      K = RANK/2\n";
+    res += "\n";
+    res += "C     NROW = Produkt der ersten K Dimensionen\n";
+    res += "      NROW = 1\n";
+    res += "      DO 10 I = 1, K\n";
+    res += "        NROW = NROW * DIMS(I)\n";
+    res += "   10 CONTINUE\n";
+    res += "\n";
+    res += "C     NCOL = Produkt der letzten K Dimensionen\n";
+    res += "      NCOL = 1\n";
+    res += "      DO 20 I = K+1, RANK\n";
+    res += "        NCOL = NCOL * DIMS(I)\n";
+    res += "   20 CONTINUE\n";
+    res += "\n";
+    res += "C     Matrix muss quadratisch sein\n";
+    res += "      IF (NROW .NE. NCOL) THEN\n";
+    res += "        WRITE(*,*) 'DET_TENSOR: nicht quadratisch, ',\n";
+    res += "     &              NROW, ' x ', NCOL\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "      IF (NROW .GT. MAXN) THEN\n";
+    res += "        WRITE(*,*) 'DET_TENSOR: MAXN zu klein fuer ', NROW\n";
+    res += "        STOP\n";
+    res += "      END IF\n";
+    res += "\n";
+    res += "C     Matrix kopieren (gleiches Layout wie INVERT_TENSOR)\n";
+    res += "      DO 30 I = 1, NROW\n";
+    res += "        DO 40 J = 1, NCOL\n";
+    res += "          MAT(I, J) = A((J-1)*NROW + I)\n";
+    res += "   40   CONTINUE\n";
+    res += "   30 CONTINUE\n";
+    res += "\n";
+    res += "      SGN = 1.0D0\n";
+    res += "\n";
+    res += "C     Gauss-Elimination mit Zeilenpivotisierung\n";
+    res += "C     (ohne Normierung, nur obere Dreiecksform)\n";
+    res += "      DO 60 M = 1, NROW\n";
+    res += "        PIVOTROW = M\n";
+    res += "        PIVOT = DABS(MAT(M,M))\n";
+    res += "        DO 70 I = M+1, NROW\n";
+    res += "          IF (DABS(MAT(I,M)) .GT. PIVOT) THEN\n";
+    res += "            PIVOT = DABS(MAT(I,M))\n";
+    res += "            PIVOTROW = I\n";
+    res += "          END IF\n";
+    res += "   70   CONTINUE\n";
+    res += "\n";
+    res += "        IF (PIVOT .LT. 1.0D-14) THEN\n";
+    res += "          DET = 0.0D0\n";
+    res += "          RETURN\n";
+    res += "        END IF\n";
+    res += "\n";
+    res += "        IF (PIVOTROW .NE. M) THEN\n";
+    res += "          DO 80 J = 1, NCOL\n";
+    res += "            TEMP = MAT(M,J)\n";
+    res += "            MAT(M,J) = MAT(PIVOTROW,J)\n";
+    res += "            MAT(PIVOTROW,J) = TEMP\n";
+    res += "   80     CONTINUE\n";
+    res += "          SGN = -SGN\n";
+    res += "        END IF\n";
+    res += "\n";
+    res += "        DO 100 I = M+1, NROW\n";
+    res += "          FACTOR = MAT(I,M) / MAT(M,M)\n";
+    res += "          DO 110 J = M, NCOL\n";
+    res += "            MAT(I,J) = MAT(I,J) - FACTOR*MAT(M,J)\n";
+    res += "  110     CONTINUE\n";
+    res += "  100   CONTINUE\n";
+    res += "   60 CONTINUE\n";
+    res += "\n";
+    res += "      DET = SGN\n";
+    res += "      DO 120 I = 1, NROW\n";
+    res += "        DET = DET * MAT(I,I)\n";
+    res += "  120 CONTINUE\n";
+    res += "\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+            res += "\n";
+    res += "C     n-te Wurzel von X: NSQRT = X**(1/XN)\n";
+    res += "C     Negatives X ist nur fuer ungerade ganze XN reell definiert,\n";
+    res += "C     sonst NaN\n";
+    res += "      REAL*8 FUNCTION NSQRT(X, XN)\n";
+    res += "      USE IEEE_ARITHMETIC\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 X, XN\n";
+    res += "      IF (X .LT. 0.0D0) THEN\n";
+    res += "        IF (XN .EQ. DNINT(XN) .AND.\n";
+    res += "     &      DABS(DMOD(XN, 2.0D0)) .EQ. 1.0D0) THEN\n";
+    res += "          NSQRT = -((-X)**(1.0D0/XN))\n";
+    res += "        ELSE\n";
+    res += "          NSQRT = IEEE_VALUE(NSQRT, IEEE_QUIET_NAN)\n";
+    res += "        END IF\n";
+    res += "      ELSE\n";
+    res += "        NSQRT = X**(1.0D0/XN)\n";
+    res += "      END IF\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Potenz: NPOW = X**XN\n";
+    res += "C     Negative Basis mit nicht-ganzzahligem Exponent ergibt NaN\n";
+    res += "      REAL*8 FUNCTION NPOW(X, XN)\n";
+    res += "      USE IEEE_ARITHMETIC\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 X, XN\n";
+    res += "      IF (X .LT. 0.0D0 .AND. XN .NE. DNINT(XN)) THEN\n";
+    res += "        NPOW = IEEE_VALUE(NPOW, IEEE_QUIET_NAN)\n";
+    res += "      ELSE\n";
+    res += "        NPOW = X**XN\n";
+    res += "      END IF\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     Logarithmus von X zur Basis B: NLOG = log_B(X)\n";
+    res += "C     X < 0 oder B < 0 ergibt NaN, X = 0 ergibt -Inf\n";
+    res += "      REAL*8 FUNCTION NLOG(X, B)\n";
+    res += "      USE IEEE_ARITHMETIC\n";
+    res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
+    res += "      REAL*8 X, B\n";
+    res += "      IF (X .LT. 0.0D0 .OR. B .LT. 0.0D0) THEN\n";
+    res += "        NLOG = IEEE_VALUE(NLOG, IEEE_QUIET_NAN)\n";
+    res += "      ELSE\n";
+    res += "        NLOG = DLOG(X) / DLOG(B)\n";
+    res += "      END IF\n";
+    res += "      RETURN\n";
+    res += "      END\n";
+    res += "\n";
+    res += "C     gibt einen Tensor vollstaendig aus\n";
 
     return res;
 }
@@ -3489,7 +4282,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     // * depsVals ist die entsprechende Substitution
     //
     // Bspl.
-    // DepsKeys[0] = tIdn("devSigma", ...) | DepsVals[0] = toIDN(S . (E0 . (eps0 - epsvp0))  
+    // DepsKeys[0] = tIdn("devSigma", ...) | DepsVals[0] = toIdn(S . (E0 . (eps0 - epsvp0))  
 
     //
     RETURNING_ASSERT(depsKeys.size() == depsValues.size(), "Ungleiche Listengrößen für Deps angegeben", "");
@@ -3597,500 +4390,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
 
     if(generateExportHelpers){
 
-        res += "\n";
-        res += "C     Gibt die Groeße des 1D-Arrays zurück,\n";
-        res += "C     dass über die Dimensionen projiziert wird\n";
-        res += "      INTEGER FUNCTION TENS_SIZE(DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER DIMS(*), RANK, I, S\n";
-        res += "      S = 1\n";
-        res += "      DO 10 I = 1, RANK\n";
-        res += "        S = S * DIMS(I)\n";
-        res += "   10 CONTINUE\n";
-        res += "      TENS_SIZE = S\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Mapt Indices pro Dimension auf Index in\n";
-        res += "C     1D-Array\n";
-        res += "      INTEGER FUNCTION TENS_INDEX(DIMS, RANK, IDX)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER DIMS(*), RANK, IDX(*), I, S, STRIDE\n";
-        res += "      S = 1\n";
-        res += "      STRIDE = 1\n";
-        res += "      DO 10 I = 1, RANK\n";
-        res += "        S = S + (IDX(I)-1)*STRIDE\n";
-        res += "        STRIDE = STRIDE*DIMS(I)\n";
-        res += "   10 CONTINUE\n";
-        res += "      TENS_INDEX = S\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt einen Nulltensor in uebergenem\n";
-        res += "C     Tensor 'A' für uebergebenen Dimension\n";
-        res += "C     und Ordnung\n";
-        res += "      SUBROUTINE CREATE_ZEROS(A, DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER DIMS(*), RANK, N, I\n";
-        res += "      INTEGER TENS_SIZE\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      N = TENS_SIZE(DIMS, RANK)\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        A(I) = 0.0D0\n";
-        res += "   10 CONTINUE\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt einen Einsentensor in uebergenem\n";
-        res += "C     Tensor 'A' für uebergebenen Dimension\n";
-        res += "C     und Ordnung\n";
-        res += "      SUBROUTINE CREATE_ONES(A, DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER DIMS(*), RANK, N, I\n";
-        res += "      INTEGER TENS_SIZE\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      N = TENS_SIZE(DIMS, RANK)\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        A(I) = 1.0D0\n";
-        res += "   10 CONTINUE\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt einen Einheitstensor in uebergenem\n";
-        res += "C     Tensor 'A' für uebergebenen Dimension\n";
-        res += "C     und Ordnung\n";
-        res += "      SUBROUTINE CREATE_IDENTITY(A, DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER MAXR\n";
-        res += "      PARAMETER (MAXR=8)\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      INTEGER DIMS(*), RANK, N, K, NTOT, I, M, POS\n";
-        res += "      INTEGER TENS_SIZE\n";
-        res += "      INTEGER IDX(MAXR), POW(MAXR)\n";
-        res += "      N = DIMS(1)\n";
-        res += "      K = RANK/2\n";
-        res += "      NTOT = TENS_SIZE(DIMS, RANK)\n";
-        res += "      DO 10 I = 1, NTOT\n";
-        res += "        A(I) = 0.0D0\n";
-        res += "   10 CONTINUE\n";
-        res += "      POW(1) = 1\n";
-        res += "      DO 20 M = 2, RANK\n";
-        res += "        POW(M) = POW(M-1)*N\n";
-        res += "   20 CONTINUE\n";
-        res += "      DO 30 I = 1, K\n";
-        res += "        IDX(I) = 1\n";
-        res += "   30 CONTINUE\n";
-        res += "   40 CONTINUE\n";
-        res += "        POS = 1\n";
-        res += "        DO 50 M = 1, K\n";
-        res += "          POS = POS + (IDX(M)-1)*(POW(M)+POW(K+M))\n";
-        res += "   50   CONTINUE\n";
-        res += "        A(POS) = 1.0D0\n";
-        res += "        M = 1\n";
-        res += "   60   CONTINUE\n";
-        res += "        IDX(M) = IDX(M) + 1\n";
-        res += "        IF (IDX(M) .LE. N) GOTO 40\n";
-        res += "        IDX(M) = 1\n";
-        res += "        M = M + 1\n";
-        res += "        IF (M .LE. K) GOTO 60\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt einen Levi-Civita-Tensor in uebergenem\n";
-        res += "C     Tensor 'A' für uebergebenen Dimension\n";
-        res += "C     und Ordnung\n";
-        res += "      SUBROUTINE CREATE_EPS(A)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      INTEGER I, J, K, POS, SGN\n";
-        res += "      DO 10 I = 1, 27\n";
-        res += "        A(I) = 0.0D0\n";
-        res += "   10 CONTINUE\n";
-        res += "      DO 20 I = 1, 3\n";
-        res += "        DO 30 J = 1, 3\n";
-        res += "          DO 40 K = 1, 3\n";
-        res += "            POS = 1 + (I-1) + (J-1)*3 + (K-1)*9\n";
-        res += "            SGN = (I-J)*(J-K)*(K-I)/2\n";
-        res += "            A(POS) = DBLE(SGN)\n";
-        res += "   40     CONTINUE\n";
-        res += "   30   CONTINUE\n";
-        res += "   20 CONTINUE\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt in uebergenem Tensor 'B'\n";
-        res += "C     die Macaulynormen der Elemente von 'A'\n";
-        res += "C     fuer 'N' Elemente\n";
-        res += "      SUBROUTINE ELWISE_MACAULAY(A, B, N)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      REAL*8 A(*), B(*)\n";
-        res += "      INTEGER N, I\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        IF (A(I) .GT. 0.0D0) THEN\n";
-        res += "          B(I) = A(I)\n";
-        res += "        ELSE\n";
-        res += "          B(I) = 0.0D0\n";
-        res += "        END IF\n";
-        res += "   10 CONTINUE\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt in uebergenem Tensor 'B'\n";
-        res += "C     die Signumnormen der Elemente von 'A'\n";
-        res += "C     fuer 'N' Elemente\n";
-        res += "      SUBROUTINE ELWISE_SIGNUM(A, B, N)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      REAL*8 A(*), B(*)\n";
-        res += "      INTEGER N, I\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        IF (A(I) .GT. 0.0D0) THEN\n";
-        res += "          B(I) = 1.0D0\n";
-        res += "        ELSE IF (A(I) .LT. 0.0D0) THEN\n";
-        res += "          B(I) = -1.0D0\n";
-        res += "        ELSE\n";
-        res += "          B(I) = 0.0D0\n";
-        res += "        END IF\n";
-        res += "   10 CONTINUE\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt in uebergenem Tensor 'B'\n";
-        res += "C     die Frobeniusnorm von 'A'\n";
-        res += "C     fuer 'N' Elemente\n";
-        res += "      SUBROUTINE FROBENIUS(A, B, N)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      REAL*8 A(*), B(*)\n";
-        res += "      INTEGER N, I\n";
-        res += "      REAL*8 S\n";
-        res += "\n";
-        res += "      S = 0.0D0\n";
-        res += "\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        S = S + A(I)**2\n";
-        res += "   10 CONTINUE\n";
-        res += "\n";
-        res += "      B(1) = DSQRT(S)\n";
-        res += "\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     gibt einen Tensor vollstaendig aus\n";
-        res += "      SUBROUTINE PRINT_TENSOR(A, DIMS, RANK, NAME)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      CHARACTER*(*) NAME\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      INTEGER DIMS(*), RANK, N, I, COL\n";
-        res += "      INTEGER TENS_SIZE\n";
-        res += "      INTEGER PERLINE\n";
-        res += "      PARAMETER (PERLINE=6)\n";
-        res += "      N = TENS_SIZE(DIMS, RANK)\n";
-        res += "      WRITE(*,*) NAME, '  rank=', RANK, ' dims=(',\n";
-        res += "     &            (DIMS(I), I=1,RANK), ')  N=', N\n";
-        res += "      COL = 0\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        WRITE(*,'(1X,ES13.5,$)') A(I)\n";
-        res += "        COL = COL + 1\n";
-        res += "        IF (COL .GE. PERLINE) THEN\n";
-        res += "          WRITE(*,*)\n";
-        res += "          COL = 0\n";
-        res += "        END IF\n";
-        res += "   10 CONTINUE\n";
-        res += "      IF (COL .GT. 0) WRITE(*,*)\n";
-        res += "      RETURN\n";
-        res += "      END\n\n\n";
-        res += "\n";
-        res += "C     Erstellt einen Zufallstensor in uebergenem\n";
-        res += "C     Tensor 'A' fuer uebergebenen Dimension\n";
-        res += "C     und Ordnung (Werte gleichverteilt in [0,1))\n";
-        res += "      SUBROUTINE CREATE_RANDOM(A, DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER DIMS(*), RANK, N\n";
-        res += "      INTEGER TENS_SIZE\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      N = TENS_SIZE(DIMS, RANK)\n";
-        res += "      CALL RANDOM_NUMBER(A(1:N))\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Erstellt Zufallstensor in [LOW, HIGH)\n";
-        res += "      SUBROUTINE CREATE_RANDOM_RANGE(A, DIMS, RANK,\n";
-        res += "     &                                LOW, HIGH)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER DIMS(*), RANK, N, I\n";
-        res += "      INTEGER TENS_SIZE\n";
-        res += "      REAL*8 LOW, HIGH\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      N = TENS_SIZE(DIMS, RANK)\n";
-        res += "      CALL RANDOM_NUMBER(A(1:N))\n";
-        res += "      DO 10 I = 1, N\n";
-        res += "        A(I) = LOW + A(I)*(HIGH-LOW)\n";
-        res += "   10 CONTINUE\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Macaulay-Klammer: liefert X, falls X > 0, sonst 0\n";
-        res += "      REAL*8 FUNCTION MACAULAY(X)\n";
-        res += "      REAL*8 X\n";
-        res += "      IF (X .GT. 0.0D0) THEN\n";
-        res += "        MACAULAY = X\n";
-        res += "      ELSE\n";
-        res += "        MACAULAY = 0.0D0\n";
-        res += "      END IF\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Signum-Funktion: liefert -1, 0 oder 1 je nach Vorzeichen von X\n";
-        res += "      REAL*8 FUNCTION SIGNUM(X)\n";
-        res += "      REAL*8 X\n";
-        res += "      IF (X .GT. 0.0D0) THEN\n";
-        res += "        SIGNUM = 1.0D0\n";
-        res += "      ELSE IF (X .LT. 0.0D0) THEN\n";
-        res += "        SIGNUM = -1.0D0\n";
-        res += "      ELSE\n";
-        res += "        SIGNUM = 0.0D0\n";
-        res += "      END IF\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "C     Setzt einen festen Seed fuer reproduzierbare\n";
-        res += "C     Zufallszahlen\n";
-        res += "      SUBROUTINE SET_SEED(SEEDVAL)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER SEEDVAL\n";
-        res += "      INTEGER, ALLOCATABLE :: SEED(:)\n";
-        res += "      INTEGER N\n";
-        res += "      CALL RANDOM_SEED(SIZE=N)\n";
-        res += "      ALLOCATE(SEED(N))\n";
-        res += "      SEED = SEEDVAL\n";
-        res += "      CALL RANDOM_SEED(PUT=SEED)\n";
-        res += "      DEALLOCATE(SEED)\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-                res += "\n";
-        res += "C     Invertiert einen Tensor gerader Ordnung RANK (=2K),\n";
-        res += "C     aufgefasst als lineare Abbildung zwischen Tensoren\n";
-        res += "C     der Ordnung K (erste K Indizes = Zeilen, letzte K = Spalten).\n";
-        res += "C     Ergebnis wird nach B geschrieben.\n";
-        res += "      SUBROUTINE INVERT_TENSOR(A, B, DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER MAXN\n";
-        res += "      PARAMETER (MAXN=64)\n";
-        res += "      REAL*8 A(*), B(*)\n";
-        res += "      INTEGER DIMS(*), RANK, K, I, J, M\n";
-        res += "      INTEGER NROW, NCOL, PIVOTROW\n";
-        res += "      REAL*8 FACTOR, PIVOT, TEMP\n";
-        res += "      REAL*8 AUG(MAXN, 2*MAXN)\n";
-        res += "\n";
-        res += "C     Ordnung muss gerade sein\n";
-        res += "      IF (MOD(RANK,2) .NE. 0) THEN\n";
-        res += "        WRITE(*,*) 'INVERT_TENSOR: RANK muss gerade sein'\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "      K = RANK/2\n";
-        res += "\n";
-        res += "C     NROW = Produkt der ersten K Dimensionen\n";
-        res += "      NROW = 1\n";
-        res += "      DO 10 I = 1, K\n";
-        res += "        NROW = NROW * DIMS(I)\n";
-        res += "   10 CONTINUE\n";
-        res += "\n";
-        res += "C     NCOL = Produkt der letzten K Dimensionen\n";
-        res += "      NCOL = 1\n";
-        res += "      DO 20 I = K+1, RANK\n";
-        res += "        NCOL = NCOL * DIMS(I)\n";
-        res += "   20 CONTINUE\n";
-        res += "\n";
-        res += "C     Matrix muss quadratisch sein\n";
-        res += "      IF (NROW .NE. NCOL) THEN\n";
-        res += "        WRITE(*,*) 'INVERT_TENSOR: nicht quadratisch, ',\n";
-        res += "     &              NROW, ' x ', NCOL\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "      IF (NROW .GT. MAXN) THEN\n";
-        res += "        WRITE(*,*) 'INVERT_TENSOR: MAXN zu klein fuer ', NROW\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "C     Erweiterte Matrix [A | I] aufbauen\n";
-        res += "C     (A ist bereits im flachen Speicher exakt eine NROWxNCOL-Matrix)\n";
-        res += "      DO 30 I = 1, NROW\n";
-        res += "        DO 40 J = 1, NCOL\n";
-        res += "          AUG(I, J) = A((J-1)*NROW + I)\n";
-        res += "   40   CONTINUE\n";
-        res += "        DO 50 J = 1, NCOL\n";
-        res += "          IF (I .EQ. J) THEN\n";
-        res += "            AUG(I, NCOL+J) = 1.0D0\n";
-        res += "          ELSE\n";
-        res += "            AUG(I, NCOL+J) = 0.0D0\n";
-        res += "          END IF\n";
-        res += "   50   CONTINUE\n";
-        res += "   30 CONTINUE\n";
-        res += "\n";
-        res += "C     Gauss-Jordan-Elimination mit Zeilenpivotisierung\n";
-        res += "      DO 60 M = 1, NROW\n";
-        res += "        PIVOTROW = M\n";
-        res += "        PIVOT = DABS(AUG(M,M))\n";
-        res += "        DO 70 I = M+1, NROW\n";
-        res += "          IF (DABS(AUG(I,M)) .GT. PIVOT) THEN\n";
-        res += "            PIVOT = DABS(AUG(I,M))\n";
-        res += "            PIVOTROW = I\n";
-        res += "          END IF\n";
-        res += "   70   CONTINUE\n";
-        res += "\n";
-        res += "        IF (PIVOT .LT. 1.0D-14) THEN\n";
-        res += "          WRITE(*,*) 'INVERT_TENSOR: singulaer bei Spalte ', M\n";
-        res += "          STOP\n";
-        res += "        END IF\n";
-        res += "\n";
-        res += "        IF (PIVOTROW .NE. M) THEN\n";
-        res += "          DO 80 J = 1, 2*NCOL\n";
-        res += "            TEMP = AUG(M,J)\n";
-        res += "            AUG(M,J) = AUG(PIVOTROW,J)\n";
-        res += "            AUG(PIVOTROW,J) = TEMP\n";
-        res += "   80     CONTINUE\n";
-        res += "        END IF\n";
-        res += "\n";
-        res += "        FACTOR = AUG(M,M)\n";
-        res += "        DO 90 J = 1, 2*NCOL\n";
-        res += "          AUG(M,J) = AUG(M,J) / FACTOR\n";
-        res += "   90   CONTINUE\n";
-        res += "\n";
-        res += "        DO 100 I = 1, NROW\n";
-        res += "          IF (I .NE. M) THEN\n";
-        res += "            FACTOR = AUG(I,M)\n";
-        res += "            DO 110 J = 1, 2*NCOL\n";
-        res += "              AUG(I,J) = AUG(I,J) - FACTOR*AUG(M,J)\n";
-        res += "  110       CONTINUE\n";
-        res += "          END IF\n";
-        res += "  100   CONTINUE\n";
-        res += "   60 CONTINUE\n";
-        res += "\n";
-        res += "C     Rechte Haelfte zurueck in B schreiben (gleiches Layout wie A)\n";
-        res += "      DO 120 I = 1, NROW\n";
-        res += "        DO 130 J = 1, NCOL\n";
-        res += "          B((J-1)*NROW + I) = AUG(I, NCOL+J)\n";
-        res += "  130   CONTINUE\n";
-        res += "  120 CONTINUE\n";
-        res += "\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n\n";
-        res += "C     Invertiert einen Tensor der Ordnung 0 (Skalar),\n";
-        res += "C     also B = 1/A\n";
-        res += "      SUBROUTINE INVERT_SCALAR(A, B)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      REAL*8 A, B\n";
-        res += "\n";
-        res += "      IF (DABS(A) .LT. 1.0D-14) THEN\n";
-        res += "        WRITE(*,*) 'INVERT_SCALAR: Division durch Null'\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "      B = 1.0D0 / A\n";
-        res += "\n";
-        res += "      RETURN\n";
-        res += "      END\n";
-        res += "\n";
-        res += "\n";
-        res += "C     Berechnet die Determinante eines Tensors gerader\n";
-        res += "C     Ordnung RANK (=2K), aufgefasst als lineare Abbildung\n";
-        res += "C     zwischen Tensoren der Ordnung K (analog zu\n";
-        res += "C     INVERT_TENSOR). Ergebnis wird als Skalar DET\n";
-        res += "C     zurueckgegeben.\n";
-        res += "      SUBROUTINE DET_TENSOR(A, DET, DIMS, RANK)\n";
-        res += "      IMPLICIT REAL*8 (A-H,O-Z)\n";
-        res += "      INTEGER MAXN\n";
-        res += "      PARAMETER (MAXN=64)\n";
-        res += "      REAL*8 A(*)\n";
-        res += "      INTEGER DIMS(*), RANK, K, I, J, M\n";
-        res += "      INTEGER NROW, NCOL, PIVOTROW\n";
-        res += "      REAL*8 FACTOR, PIVOT, TEMP, DET, SGN\n";
-        res += "      REAL*8 MAT(MAXN, MAXN)\n";
-        res += "\n";
-        res += "C     Ordnung muss gerade sein\n";
-        res += "      IF (MOD(RANK,2) .NE. 0) THEN\n";
-        res += "        WRITE(*,*) 'DET_TENSOR: RANK muss gerade sein'\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "      K = RANK/2\n";
-        res += "\n";
-        res += "C     NROW = Produkt der ersten K Dimensionen\n";
-        res += "      NROW = 1\n";
-        res += "      DO 10 I = 1, K\n";
-        res += "        NROW = NROW * DIMS(I)\n";
-        res += "   10 CONTINUE\n";
-        res += "\n";
-        res += "C     NCOL = Produkt der letzten K Dimensionen\n";
-        res += "      NCOL = 1\n";
-        res += "      DO 20 I = K+1, RANK\n";
-        res += "        NCOL = NCOL * DIMS(I)\n";
-        res += "   20 CONTINUE\n";
-        res += "\n";
-        res += "C     Matrix muss quadratisch sein\n";
-        res += "      IF (NROW .NE. NCOL) THEN\n";
-        res += "        WRITE(*,*) 'DET_TENSOR: nicht quadratisch, ',\n";
-        res += "     &              NROW, ' x ', NCOL\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "      IF (NROW .GT. MAXN) THEN\n";
-        res += "        WRITE(*,*) 'DET_TENSOR: MAXN zu klein fuer ', NROW\n";
-        res += "        STOP\n";
-        res += "      END IF\n";
-        res += "\n";
-        res += "C     Matrix kopieren (gleiches Layout wie INVERT_TENSOR)\n";
-        res += "      DO 30 I = 1, NROW\n";
-        res += "        DO 40 J = 1, NCOL\n";
-        res += "          MAT(I, J) = A((J-1)*NROW + I)\n";
-        res += "   40   CONTINUE\n";
-        res += "   30 CONTINUE\n";
-        res += "\n";
-        res += "      SGN = 1.0D0\n";
-        res += "\n";
-        res += "C     Gauss-Elimination mit Zeilenpivotisierung\n";
-        res += "C     (ohne Normierung, nur obere Dreiecksform)\n";
-        res += "      DO 60 M = 1, NROW\n";
-        res += "        PIVOTROW = M\n";
-        res += "        PIVOT = DABS(MAT(M,M))\n";
-        res += "        DO 70 I = M+1, NROW\n";
-        res += "          IF (DABS(MAT(I,M)) .GT. PIVOT) THEN\n";
-        res += "            PIVOT = DABS(MAT(I,M))\n";
-        res += "            PIVOTROW = I\n";
-        res += "          END IF\n";
-        res += "   70   CONTINUE\n";
-        res += "\n";
-        res += "        IF (PIVOT .LT. 1.0D-14) THEN\n";
-        res += "          DET = 0.0D0\n";
-        res += "          RETURN\n";
-        res += "        END IF\n";
-        res += "\n";
-        res += "        IF (PIVOTROW .NE. M) THEN\n";
-        res += "          DO 80 J = 1, NCOL\n";
-        res += "            TEMP = MAT(M,J)\n";
-        res += "            MAT(M,J) = MAT(PIVOTROW,J)\n";
-        res += "            MAT(PIVOTROW,J) = TEMP\n";
-        res += "   80     CONTINUE\n";
-        res += "          SGN = -SGN\n";
-        res += "        END IF\n";
-        res += "\n";
-        res += "        DO 100 I = M+1, NROW\n";
-        res += "          FACTOR = MAT(I,M) / MAT(M,M)\n";
-        res += "          DO 110 J = M, NCOL\n";
-        res += "            MAT(I,J) = MAT(I,J) - FACTOR*MAT(M,J)\n";
-        res += "  110     CONTINUE\n";
-        res += "  100   CONTINUE\n";
-        res += "   60 CONTINUE\n";
-        res += "\n";
-        res += "      DET = SGN\n";
-        res += "      DO 120 I = 1, NROW\n";
-        res += "        DET = DET * MAT(I,I)\n";
-        res += "  120 CONTINUE\n";
-        res += "\n";
-        res += "      RETURN\n";
-        res += "      END\n";
+        res += generateFortranHelpers();
     }
 
     if(uniqueExternals.empty()){
@@ -4105,7 +4405,7 @@ std::string IndexNotatedTensorExpression::toFortranString(const std::string& ins
     }
 
     res += "      IMPLICIT REAL*8 (A-H,O-Z)\n\n";
-    res += "      REAL*8 MACAULAY, SIGNUM\n\n";
+    res += "      REAL*8 MACAULAY, SIGNUM, NSQRT, NPOW, NLOG\n";
 
     // Maximale Order bestimmen
     int maxOrder = 0;

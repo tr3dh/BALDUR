@@ -36,21 +36,6 @@ emplaceExtendedSimplifications()
 setGenerateExportDebugCall(true)
 
 //
-decl tExprScalar(string ref label){ return [tExpr(label, 0)] }
-
-//
-decl tExprScalars(args labels){
-
-    args prms
-
-    for(int i = 0, i < labels -> size(), i++){
-
-        prms -> emplace(tExprScalar(labels[i]))
-    }
-
-    return [prms]
-}
-
 decl printArgs(args prms){
     slog(...prms)
 }
@@ -65,7 +50,8 @@ decl evaluateExample(){
     // Die exakte Gleichung für die Periode des Pendels kann über das eliptische
     // Integral erster Ordnung K(...) geschrieben werden als
     //
-    //      T = 4 sqrt(l / g) * K (sin^2 theta0/2)                              [https://arxiv.org/pdf/1007.4026]
+    //      T = 4 sqrt(l / g) * K (sin^2 theta0/2)                              [https://arxiv.org/pdf/1007.4026] &
+    //                                                                          [https://arxiv.org/pdf/2212.05694v3]
     //
     // Das eliptische Integral erster Ordnung ist dabei
     //

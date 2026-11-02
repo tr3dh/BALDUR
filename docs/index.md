@@ -70,7 +70,7 @@ expr = wrap(a * A + b * B)
 
 // Conversion to index notation
 assert(expr->isUnwrapped() == getUnwrapOperands(), “...”)
-tIdn idnExpr = toIDN(expr)
+tIdn idnExpr = toIdn(expr)
 
 // Export to Julia script
 string jlScript = idnExpr->toJuliaString(“evalExpr”)

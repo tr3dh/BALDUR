@@ -377,6 +377,9 @@ struct IndexNotatedTensorExpression{
 
     void evaluateIndexDimensions(std::map<int, int>& indexDimensions) const;
 
+    static std::string generateJuliaHelpers();
+    static std::string generateFortranHelpers();
+
     // std::string wrapTensorSequenceIDNString() const;
     // std::string generateTensorSequenceIDNString(size_t depth = 0, bool forceSubstitution = false, bool useTensorNotation = false);
 

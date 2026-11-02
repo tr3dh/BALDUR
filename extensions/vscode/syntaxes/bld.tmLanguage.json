@@ -6,9 +6,20 @@
       "match": "//.*$"
     },
     {
+      "name": "comment.block.bld",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
       "name": "string.quoted.double.bld",
       "begin": "\"",
-      "end": "\""
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.bld",
+          "match": "\\\\."
+        }
+      ]
     },
     {
       "name": "keyword.control.bld",
@@ -24,7 +35,7 @@
     },
     {
       "name": "constant.numeric.bld",
-      "match": "\\b[0-9]+\\b"
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
     },
     {
       "name": "variable.other.bld",

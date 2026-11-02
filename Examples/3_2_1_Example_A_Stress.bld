@@ -69,7 +69,7 @@ decl evaluateExample(){
     slog("* Ergebnis in Ausdrucksnotation mit", result->getNumOfNodes(), "Nodes und", result->getNumOfExternalNodes(), "external Nodes")
 
     //
-    void tIDNResult = toIDN(result)
+    void tIDNResult = toIdn(result)
     slog("* Ergebnis Indexnotation mit", tIDNResult->getNumOfNodes(), "Nodes und", tIDNResult->getNumOfExternalNodes(), "external Nodes")
 
     //
@@ -84,23 +84,34 @@ decl evaluateExample(){
     slog("* Example evaluated, Resultexpression with", result -> getNumOfNodes(), "Nodes")
 }
 
+setGenerateExportHelpers(false)
+setGenerateExportDebugCall(true)
+
 //
 decl main(){
 
-    slog(nSqrt(tExpr("a", 0), tExpr("b", 0)))
+    a, b, c, d = ...tExprScalars("a", "b", "c", "d")
 
-    int ID
-    tmplA, tmplB = tExprTmpl(string(ID++), 0), tExprTmpl(string(ID++), 0)
+    Aa, Bb, Cc = ...tUniExprs(args("Aa", "Bb", "Cc"), 2, 3)
 
-    setEqual(nSqrt(tmplA, tmplA), tExpr(0))
+    tExpr expr = nSqrt(a + b + trace(Cc), c + d)
+    slog(expr)
 
-    slog(simplified(nSqrt(tExpr("a", 0), tExpr("a", 0))))
+    tIdn idnExpr = toIdn(expr)
+    slog(idnExpr)
 
-    slog(diff(nSqrt(tExpr("a", 0), tExpr("b", 0)), tExpr("b", 0)))
+    string script = "include(\"helpers.jl\")\n" + idnExpr -> toJuliaString("evalExpr")
+    slog(script)
 
-    slog(nLog(tExpr(8), 2))
+    script -> writeToFile("Examples/juliaScripts/evalExpr.jl")
+    generateJuliaHelpers() -> writeToFile("Examples/juliaScripts/helpers.jl")
 
-    slog(diff(tExpr("a", 0) ^ tExpr("c", 0), tExpr("b", 0)))
+    script = idnExpr -> toFortranString("evalExpr")
+    script -> writeToFile("Examples/fortranScripts/evalExpr.f")
+
+    generateFortranHelpers() -> writeToFile("Examples/fortranScripts/helpers.f")
+
+    // string script = stdGenerateJuliaString(idnExpr, "evalExpr", "Examples/juliaScripts/evalExpr.jl")
 
     return
 
