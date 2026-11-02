@@ -84,36 +84,8 @@ decl evaluateExample(){
     slog("* Example evaluated, Resultexpression with", result -> getNumOfNodes(), "Nodes")
 }
 
-setGenerateExportHelpers(false)
-setGenerateExportDebugCall(true)
-
 //
 decl main(){
-
-    a, b, c, d = ...tExprScalars("a", "b", "c", "d")
-
-    Aa, Bb, Cc = ...tUniExprs(args("Aa", "Bb", "Cc"), 2, 3)
-
-    tExpr expr = nSqrt(a + b + trace(Cc), c + d)
-    slog(expr)
-
-    tIdn idnExpr = toIdn(expr)
-    slog(idnExpr)
-
-    string script = "include(\"helpers.jl\")\n" + idnExpr -> toJuliaString("evalExpr")
-    slog(script)
-
-    script -> writeToFile("Examples/juliaScripts/evalExpr.jl")
-    generateJuliaHelpers() -> writeToFile("Examples/juliaScripts/helpers.jl")
-
-    script = idnExpr -> toFortranString("evalExpr")
-    script -> writeToFile("Examples/fortranScripts/evalExpr.f")
-
-    generateFortranHelpers() -> writeToFile("Examples/fortranScripts/helpers.f")
-
-    // string script = stdGenerateJuliaString(idnExpr, "evalExpr", "Examples/juliaScripts/evalExpr.jl")
-
-    return
 
     //
     logSeparator()

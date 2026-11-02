@@ -113,7 +113,7 @@ decl evaluateExample(){
     T -> replace(theta_0, tExpr(PI / 2))
 
     //
-    slog("T(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(T))
+    slog("TApprox(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(T))
 
     // Abgleich mit Quadratur
     // 
@@ -160,7 +160,7 @@ decl evaluateExample(){
     TQuad -> replace(theta_0, tExpr(PI / 2))
 
     //
-    slog("TQUAD(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(TQuad))
+    slog("TQuad(L = 0.5, g = 9.81, theta_0 = PI/2) :", rebuild(TQuad))
 
     //
     slog("* Example evaluated")
