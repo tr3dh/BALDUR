@@ -254,6 +254,12 @@ decl frobenius(tExpr ref lhs){
     return [sqrt(trace(transpose(lhs) . lhs))]
 }
 
+// Logarithmus naturalis
+decl ln(tExpr ref lhs){
+
+    return [nLog(lhs, EULER)]
+}
+
 // Template Deklarationen für Ableitungs und Vereinfachungs Templates
 
 // Konstantentemplates
@@ -541,3 +547,37 @@ setDiffTemplate(cos(tmplScalar), tmplA, (-1) * sin(tmplScalar) * diff(tmplScalar
 // alternative Ableitungen von tan / cotan
 setDiffTemplate(tan(tmplScalar), tmplA, inverse(cos(tmplScalar)^2) * diff(tmplScalar, tmplA))
 setDiffTemplate(cotan(tmplScalar), tmplA, (-1) * inverse(sin(tmplScalar)^2) * diff(tmplScalar, tmplA))
+
+// Potenzen, Wurzeln, Logarithmen
+
+// Potenz: d(a^b) = a^b * (b' * ln(a) + b * a' / a)
+setDiffTemplate(tmplScalar ^ otherTmplScalar, tmplA, \
+    (tmplScalar ^ otherTmplScalar) * (diff(otherTmplScalar, tmplA) * ln(tmplScalar) + otherTmplScalar * inverse(tmplScalar) * diff(tmplScalar, tmplA)))
+
+// b konstant: Potenzregel
+setDiffTemplate(tmplScalar ^ CnstTmpl, tmplA, CnstTmpl * (tmplScalar ^ (CnstTmpl - 1)) * diff(tmplScalar, tmplA))
+
+// a konstant: Exponentialregel
+setDiffTemplate(CnstTmpl ^ tmplScalar, tmplA, (CnstTmpl ^ tmplScalar) * ln(CnstTmpl) * diff(tmplScalar, tmplA))
+
+// n-te Wurzel: nSqrt(a, n) = a^(1/n)
+// d = nSqrt(a, n) * ( (-1/n^2) * n' * ln(a) + (1/n) * a' / a )
+setDiffTemplate(nSqrt(tmplScalar, otherTmplScalar), tmplA, \
+    nSqrt(tmplScalar, otherTmplScalar) * ((-1) * inverse(otherTmplScalar * otherTmplScalar) * diff(otherTmplScalar, tmplA) * ln(tmplScalar) + inverse(otherTmplScalar) * inverse(tmplScalar) * diff(tmplScalar, tmplA)))
+
+// n konstant: d = (1/n) * nSqrt(a, n) / a * a'
+setDiffTemplate(nSqrt(tmplScalar, CnstTmpl), tmplA, inverse(CnstTmpl) * nSqrt(tmplScalar, CnstTmpl) * inverse(tmplScalar) * diff(tmplScalar, tmplA))
+
+// a konstant: d = nSqrt(a, n) * ln(a) * (-1/n^2) * n'
+setDiffTemplate(nSqrt(CnstTmpl, tmplScalar), tmplA, (-1) * nSqrt(CnstTmpl, tmplScalar) * ln(CnstTmpl) * inverse(tmplScalar * tmplScalar) * diff(tmplScalar, tmplA))
+
+// Logarithmus zur Basis n: nLog(a, n) = ln(a) / ln(n)
+// d = a' / (a * ln(n)) - ln(a) * n' / (n * ln(n)^2)
+setDiffTemplate(nLog(tmplScalar, otherTmplScalar), tmplA, \
+    inverse(tmplScalar * ln(otherTmplScalar)) * diff(tmplScalar, tmplA) - ln(tmplScalar) * inverse(otherTmplScalar * ln(otherTmplScalar)^2) * diff(otherTmplScalar, tmplA))
+
+// Basis konstant: d = a' / (a * ln(n))
+setDiffTemplate(nLog(tmplScalar, CnstTmpl), tmplA, inverse(tmplScalar * ln(CnstTmpl)) * diff(tmplScalar, tmplA))
+
+// Argument konstant: d = -nLog(a, n) * n' / (n * ln(n))
+setDiffTemplate(nLog(CnstTmpl, tmplScalar), tmplA, (-1) * nLog(CnstTmpl, tmplScalar) * inverse(tmplScalar * ln(tmplScalar)) * diff(tmplScalar, tmplA))

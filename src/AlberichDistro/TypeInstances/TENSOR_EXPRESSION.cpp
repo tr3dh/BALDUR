@@ -33,6 +33,9 @@ std::map<TensorExpressionOperator, void (TensorExpression::*)(const TensorExpres
     {TensorExpressionOperator::Diff, &TensorExpression::diffAssign},
     {TensorExpressionOperator::CrossingDoubleContraction, &TensorExpression::crossingDoubleContractionAssign},
     {TensorExpressionOperator::MirroringDoubleContraction, &TensorExpression::mirroringDoubleContractionAssign},
+    {TensorExpressionOperator::nSqrt, &TensorExpression::nSqrtAssign},
+    {TensorExpressionOperator::nPow, &TensorExpression::nPowAssign},
+    {TensorExpressionOperator::nLog, &TensorExpression::nLogAssign},
 };
 
 std::map<TensorExpressionOperator, void (TensorExpression::*)()> singleArgOperatorMemberFunctions{
