@@ -28,7 +28,7 @@ IndexNotatedTensorExpression::IndexNotatedTensorExpression(const std::string& la
     fillIndices();
 }
 
-IndexNotatedTensorExpression::IndexNotatedTensorExpression(float valueIn) : value(valueIn){
+IndexNotatedTensorExpression::IndexNotatedTensorExpression(double valueIn) : value(valueIn){
 
     Relation = TkType::Argument;
     tensorOrder = 0;
@@ -3399,6 +3399,20 @@ std::string fortranApplyDims(const IndexNotatedTensorExpression& member, const s
     return res;
 };
 
+// Konstante als Fortran-Double-Literal ausgeben, negative in Klammern
+std::string fortranLiteral(double v){
+
+    std::ostringstream oss;
+    oss << std::setprecision(17) << v;
+    std::string s = oss.str();
+
+    auto pos = s.find_first_of("eE");
+    if(pos != std::string::npos){ s[pos] = 'D'; }   // 1e-05 -> 1D-05
+    else{ s += "D0"; }                              // 2 -> 2D0
+
+    return v < 0 ? "(" + s + ")" : s;
+}
+
 // Funktion sollte unter keinen umständen auf Object angewendet werden mit dem weiter gearbeitet werden soll
 // dafür gibts die wrapper funktion
 std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(size_t depth, bool forceSubstitution, bool useTensorNotation, const std::string& resLabel){
@@ -3568,7 +3582,7 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
         *this = this -> asExternalNode(tmpResLabel);
     }
 
-    if(isConstant){ res += string::strippedString(value); }
+    if(isConstant){ res += fortranLiteral(value); }
     else if(Relation == TkType::Argument && (tensorOrder == 0 || useTensorNotation)){
 
         res += getArgLabel(*this);
@@ -3664,10 +3678,14 @@ std::string IndexNotatedTensorExpression::generateTensorSequenceFortranString(si
             case IndexNotationOperator::Frobenius:
             case IndexNotationOperator::Inversion:{
         
-                // Inhalt (1 Node) wird substituiert
-                children.front().generateTensorSequenceFortranString(depth + 1, false, false, "");
+                IndexNotatedTensorExpression& child = children.front();
 
-                //
+                // Alles, was kein reines Argument ist, in ein tmpRes auslagern
+                // >> danach ist child eine externe Node mit gültigem Label
+                if(child.Relation != TkType::Argument || child.isConstant){
+                    child.generateTensorSequenceFortranString(depth + 1, true, false, "");
+                }
+
                 std::string tmpResLabel = "tmpRes" + std::to_string(dependencieIdx++);
 
                 // Predecls für substituierte Dependencie

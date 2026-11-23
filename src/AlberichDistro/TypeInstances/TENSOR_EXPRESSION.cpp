@@ -514,7 +514,7 @@ TensorExpression::TensorExpression(const std::string& labelIn, int tensorOrderIn
     dimensions = dimensionsIn;
 }
 
-TensorExpression::TensorExpression(float valueIn) : value(valueIn){
+TensorExpression::TensorExpression(double valueIn) : value(valueIn){
 
     Relation = TkType::Argument;
     tensorOrder = 0;

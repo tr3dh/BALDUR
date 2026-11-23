@@ -135,7 +135,7 @@ struct TensorExpression{
 
     int contractNIndices = 0;
     int tensorOrder = -1;
-    float value = 0.0f;
+    double value = 0.0f;
 
     std::string label = NULLSTR;
 
@@ -147,7 +147,7 @@ struct TensorExpression{
     // Konstruktion einer Arg node
     TensorExpression(const std::string& labelIn, int tensorOrderIn);
     TensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn);
-    TensorExpression(float valueIn);
+    TensorExpression(double valueIn);
 
     bool operator==(const TensorExpression& other) const;
 
@@ -279,7 +279,7 @@ struct IndexNotatedTensorExpression{
 
     //
     bool isConstant = false;
-    float value = 0.0f;
+    double value = 0.0f;
 
     int tensorOrder = -1;
 
@@ -298,7 +298,7 @@ struct IndexNotatedTensorExpression{
     //
     IndexNotatedTensorExpression();
     IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn);
-    IndexNotatedTensorExpression(float valueIn);
+    IndexNotatedTensorExpression(double valueIn);
     IndexNotatedTensorExpression(const std::string& labelIn, int tensorOrderIn, const std::vector<int>& dimensionsIn);
 
     //
